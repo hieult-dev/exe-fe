@@ -46,6 +46,7 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
@@ -86,8 +87,156 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@keyframes paw-float {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-12px) rotate(6deg);
+  }
+}
+
+@keyframes paw-drift {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.45;
+  }
+
+  50% {
+    transform: translate(10px, -8px) rotate(-8deg);
+    opacity: 0.7;
+  }
+
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.45;
+  }
+}
+
+@keyframes paw-wiggle {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(8deg);
+  }
+}
+
+@keyframes paw-pop {
+  0% {
+    transform: scale(0.94);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-paw-float {
+    animation: paw-float 6s ease-in-out infinite;
+  }
+
+  .animate-paw-float-slow {
+    animation: paw-float 10s ease-in-out infinite;
+  }
+
+  .animate-paw-drift {
+    animation: paw-drift 7s ease-in-out infinite;
+  }
+
+  .animate-paw-wiggle {
+    animation: paw-wiggle 2.6s ease-in-out infinite;
+  }
+
+  .animate-paw-pop {
+    animation: paw-pop 0.8s ease-out both;
+  }
+
+  .animation-delay-200 {
+    animation-delay: 0.2s;
+  }
+
+  .animation-delay-400 {
+    animation-delay: 0.4s;
+  }
+
+  .animation-delay-700 {
+    animation-delay: 0.7s;
+  }
+}
+
+@keyframes pet-float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pet-marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-pet-float {
+    animation: pet-float 6s ease-in-out infinite;
+  }
+
+  .animate-pet-marquee {
+    animation: pet-marquee 18s linear infinite;
+  }
+
+  .animation-delay-200 {
+    animation-delay: 0.2s;
+  }
+
+  .animation-delay-400 {
+    animation-delay: 0.4s;
+  }
+
+  .animation-delay-600 {
+    animation-delay: 0.6s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .animate-pet-float,
+  .animate-pet-marquee {
+    animation: none;
   }
 }

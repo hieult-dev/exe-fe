@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { PetMomentsSection } from "@/common/home/components/pet-moments-section"
 
 import { Navigation } from "@/common/home/components/navigation"
 import { mockSpas, serviceCategories, type Spa } from "@/common/utils/mock-data"
@@ -60,6 +61,7 @@ export function AppHome() {
       <FeaturedSpasSection spas={featuredSpas} onViewDetails={setSelectedSpa} />
       <MapSection spas={filteredSpas} onSpaSelect={setSelectedSpa} userLocation={userLocation} />
       <SpaListSection spas={filteredSpas} onViewDetails={setSelectedSpa} />
+      <PetMomentsSection />
       <CtaSection />
       <HomeFooter />
     </div>
