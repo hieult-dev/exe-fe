@@ -14,7 +14,7 @@ export function AppHome() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedService, setSelectedService] = useState("All")
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | undefined>()
-  const [selectedSpa, setSelectedSpa] = useState<Spa | null>(null)
+  const [, setSelectedSpa] = useState<Spa | null>(null)
 
   const handleUseLocation = () => {
     if (!navigator.geolocation) return
