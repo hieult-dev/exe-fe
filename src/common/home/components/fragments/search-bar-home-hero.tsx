@@ -1,5 +1,3 @@
-"use client"
-
 import { Search, MapPin } from "lucide-react"
 import { Button } from "react-bootstrap"
 

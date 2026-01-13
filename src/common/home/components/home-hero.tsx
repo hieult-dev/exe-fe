@@ -8,7 +8,7 @@ interface HomeHeroProps {
 
 export function HomeHero({ totalSpas, onSearch, onUseLocation }: HomeHeroProps) {
   return (
-    <section className="relative pt-32 pb-16 px-4 bg-gradient-to-b from-secondary/30 to-background">
+    <section className="relative pt-32 pb-16 px-4 bg-gradient-to-b from-[#1e90ff]/20 to-background">
       <div className="container mx-auto text-center">
         <div className="max-w-4xl mx-auto space-y-6">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-balance">

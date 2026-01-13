@@ -1,7 +1,7 @@
 export function HomeFooter() {
   return (
     <footer className="py-12 bg-muted/30 border-t border-border">
-      <div className="container mx-auto px-4">
+      <div className="w-full px-4">
         <div className="grid md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
