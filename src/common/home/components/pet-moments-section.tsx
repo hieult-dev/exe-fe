@@ -12,14 +12,7 @@ export function PetMomentsSection() {
 
     return (
         <section className="py-14 bg-muted/20">
-            <div className="container mx-auto px-4">
-                <div className="flex items-end justify-between gap-4 mb-6 flex-wrap">
-                    <div>
-                        <h2 className="text-3xl md:text-4xl font-bold">Pet Moments</h2>
-                        <p className="text-muted-foreground">Real spa scenes from our partners</p>
-                    </div>
-                    <div className="text-sm text-muted-foreground">Swipe or watch the loop</div>
-                </div>
+            <div className="w-full px-4">
 
                 <div className="relative overflow-hidden">
                     <div className="flex w-max gap-4 motion-safe:animate-pet-marquee">
