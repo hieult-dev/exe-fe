@@ -14,7 +14,7 @@ export function SpaListSection({ spas, onViewDetails }: SpaListSectionProps) {
       <div className="container mx-auto px-4">
         <div className="flex items-center gap-3 mb-8">
           <TrendingUp className="h-6 w-6 text-primary" />
-          <h2 className="text-3xl md:text-4xl font-bold">All Spas ({spas.length})</h2>
+          <h2 className="text-3xl md:text-4xl font-bold">Tất cả tiệm spa({spas.length})</h2>
         </div>
         {spas.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -24,7 +24,7 @@ export function SpaListSection({ spas, onViewDetails }: SpaListSectionProps) {
           </div>
         ) : (
           <div className="text-center py-16">
-            <p className="text-xl text-muted-foreground">No spas match your criteria</p>
+            <p className="text-xl text-muted-foreground">Không có tiệm spa nào phù hợp với tiêu chí của bạn</p>
           </div>
         )}
       </div>

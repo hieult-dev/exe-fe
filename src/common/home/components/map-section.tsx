@@ -15,7 +15,7 @@ export function MapSection({ spas, onSpaSelect, userLocation }: MapSectionProps)
       <div className="container mx-auto px-4">
         <div className="flex items-center gap-3 mb-8">
           <MapPin className="h-6 w-6 text-primary" />
-          <h2 className="text-3xl md:text-4xl font-bold">Spa Map</h2>
+          <h2 className="text-3xl md:text-4xl font-bold">Bản đồ tiệm spa</h2>
         </div>
 
         <InteractiveMap spas={spas} onSpaSelect={onSpaSelect} userLocation={userLocation} />
