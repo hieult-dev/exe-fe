@@ -9,29 +9,29 @@ export function HomeFooter() {
               <span className="text-2xl font-bold text-primary">PetSpaHub</span>
             </div>
             <p className="text-muted-foreground leading-relaxed">
-              The leading platform connecting pet spas and pet lovers in Vietnam
+              Nền tảng hàng đầu kết nối các spa thú cưng và những người yêu thú cưng tại Việt Nam.
             </p>
           </div>
           <div>
-            <h4 className="font-semibold mb-4">For Customers</h4>
+            <h4 className="font-semibold mb-4">Dành cho khách hàng</h4>
             <ul className="space-y-2 text-muted-foreground">
-              <li>Find a Spa</li>
-              <li>Book</li>
-              <li>Reviews</li>
-              <li>Offers</li>
+              <li>Tìm spa</li>
+              <li>Đặt lịch</li>
+              <li>Đánh giá</li>
+              <li>Khuyến mãi</li>
             </ul>
           </div>
           <div>
-            <h4 className="font-semibold mb-4">For Spas</h4>
+            <h4 className="font-semibold mb-4">Dành cho Spa</h4>
             <ul className="space-y-2 text-muted-foreground">
-              <li>List Your Spa</li>
-              <li>Manage</li>
-              <li>Pricing</li>
-              <li>Support</li>
+              <li>Đăng ký spa</li>
+              <li>Quản lý</li>
+              <li>Giá cả</li>
+              <li>Hỗ trợ</li>
             </ul>
           </div>
           <div>
-            <h4 className="font-semibold mb-4">Contact</h4>
+            <h4 className="font-semibold mb-4">Liên hệ</h4>
             <ul className="space-y-2 text-muted-foreground">
               <li>Email: info@petspahub.vn</li>
               <li>Hotline: 1900-xxxx</li>

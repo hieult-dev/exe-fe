@@ -19,19 +19,28 @@ export function AppHome() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
   const handleUseLocation = () => {
-    if (!navigator.geolocation) return
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        })
-      },
-      (error) => {
-        console.error("Error getting location:", error)
-        alert("Unable to get your location. Please allow location access.")
-      },
-    )
+    return new Promise<void>((resolve, reject) => {
+      if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser.")
+        reject(new Error("Geolocation not supported"))
+        return
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          })
+          resolve()
+        },
+        (error) => {
+          console.error("Error getting location:", error)
+          alert("Unable to get your location. Please allow location access.")
+          reject(error)
+        },
+      )
+    })
   }
 
   const filteredSpas = useMemo(() => {
@@ -51,7 +60,7 @@ export function AppHome() {
 
   return (
     <div className="min-h-screen ">
-      <Navigation />
+      <Navigation onUseLocation={handleUseLocation} />
 
       <div className="w-full">
         <div className="flex gap-1">
@@ -60,7 +69,7 @@ export function AppHome() {
             onToggle={() => setIsSidebarCollapsed((v) => !v)}
           />
           <main className="min-w-0 flex-1 px-0">
-            <HomeHero totalSpas={mockSpas.length} onSearch={setSearchQuery} onUseLocation={handleUseLocation} />
+            <HomeHero totalSpas={mockSpas.length} />
             <ServiceFilterSection
               services={serviceCategories}
               selectedService={selectedService}

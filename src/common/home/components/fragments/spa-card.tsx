@@ -14,7 +14,7 @@ export function SpaCard({ spa, onViewDetails }: SpaCardProps) {
         <img src={spa.image || "/placeholder.svg"} alt={spa.name} className="w-full h-full object-cover" />
         {spa.featured && (
           <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold">
-            Featured
+            Hot
           </div>
         )}
       </div>
@@ -56,7 +56,7 @@ export function SpaCard({ spa, onViewDetails }: SpaCardProps) {
           ))}
           {spa.services.length > 3 && (
             <span className="px-3 py-1 bg-muted text-muted-foreground text-xs rounded-full">
-              +{spa.services.length - 3} more
+              +{spa.services.length - 3} nữa
             </span>
           )}
         </div>
@@ -64,7 +64,7 @@ export function SpaCard({ spa, onViewDetails }: SpaCardProps) {
         <div className="pt-2 border-t border-border">
           <div className="flex items-center justify-between">
             <span className="font-semibold text-primary">{spa.priceRange}</span>
-            <Button onClick={() => onViewDetails(spa)}>View Details</Button>
+            <Button onClick={() => onViewDetails(spa)}>Xem chi tiết</Button>
           </div>
         </div>
       </div>

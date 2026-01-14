@@ -1,12 +1,26 @@
-import { Search, MapPin } from "lucide-react"
+import { Search, MapPin, Loader2 } from "lucide-react"
 import { Button } from "react-bootstrap"
+import { useState } from "react"
 
 interface SearchBarProps {
   onSearch: (query: string) => void
-  onUseLocation: () => void
+  onUseLocation: () => Promise<void>
 }
 
 export function SearchBar({ onSearch, onUseLocation }: SearchBarProps) {
+  const [locating, setLocating] = useState(false)
+
+  const handleUseLocation = async () => {
+    try {
+      setLocating(true)
+      await onUseLocation()
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLocating(false)
+    }
+  }
+
   return (
     <div className="flex flex-col md:flex-row gap-3 max-w-3xl mx-auto">
       <div className="flex-1 relative">
@@ -18,9 +32,9 @@ export function SearchBar({ onSearch, onUseLocation }: SearchBarProps) {
           onChange={(e) => onSearch(e.target.value)}
         />
       </div>
-      <Button onClick={onUseLocation} size="lg" variant="outline-primary" className="gap-2 bg-transparent">
-        <MapPin className="h-5 w-5" />
-        Use Location
+      <Button onClick={handleUseLocation} size="lg" variant="outline-primary" className="gap-2 bg-transparent" disabled={locating}>
+        {locating ? <Loader2 className="h-5 w-5 animate-spin" /> : <MapPin className="h-5 w-5" />}
+        {locating ? "Đang xác định..." : "Sử dụng vị trí của tôi"}
       </Button>
     </div>
   )

@@ -6,11 +6,11 @@ import {
   Globe,
   User,
   Package,
-  Heart,
+  MapPin,
   ShoppingCart,
 } from "lucide-react"
 
-export function Navigation() {
+export function Navigation({ onUseLocation }: { onUseLocation: () => Promise<void> }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -41,19 +41,23 @@ export function Navigation() {
 
                 <button className="flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  <span>Dang nhap</span>
+                  <span>Đăng nhập</span>
                 </button>
                 <button className="flex items-center gap-2">
                   <Package className="h-4 w-4" />
-                  <span>Don hang</span>
-                </button>
-                <button className="flex items-center gap-2">
-                  <Heart className="h-4 w-4" />
-                  <span>Yeu thich</span>
+                  <span>Đơn hàng</span>
                 </button>
                 <button className="flex items-center gap-2">
                   <ShoppingCart className="h-4 w-4" />
-                  <span>Gio hang</span>
+                  <span>Giỏ hàng</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void onUseLocation()}
+                  className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-sm font-medium text-white"
+                >
+                  <MapPin className="h-4 w-4 text-white" />
+                  <span>Vị trí của tôi</span>
                 </button>
               </div>
             </div>
@@ -83,31 +87,35 @@ export function Navigation() {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <button className="flex items-center gap-2">
                   <Globe className="h-4 w-4" />
-                  <span>Tieng Viet</span>
+                  <span>Tiếng Việt</span>
                 </button>
                 <button className="flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  <span>Dang nhap</span>
+                  <span>Đăng nhập</span>
+                </button>
+                <button
+                  className="flex items-center gap-2"
+                  onClick={() => void onUseLocation()}
+                >
+                  <MapPin className="h-4 w-4" />
+                  <span>Vị trí của tôi</span>
                 </button>
                 <button className="flex items-center gap-2">
                   <Package className="h-4 w-4" />
-                  <span>Don hang</span>
+                  <span>Đơn hàng</span>
                 </button>
-                <button className="flex items-center gap-2">
-                  <Heart className="h-4 w-4" />
-                  <span>Yeu thich</span>
-                </button>
+                {/* Favorite removed; moved to hero as location button */}
                 <button className="flex items-center gap-2">
                   <ShoppingCart className="h-4 w-4" />
-                  <span>Gio hang</span>
+                  <span>Giỏ hàng</span>
                 </button>
               </div>
               <div className="flex flex-wrap gap-4 text-sm font-semibold">
-                <a href="#dog">Thuc an cho</a>
-                <a href="#cat">Thuc an meo</a>
+                <a href="#dog">Thức ăn chó</a>
+                <a href="#cat">Thức ăn mèo</a>
                 <a href="#spa">Spa</a>
-                <a href="#toys">Do choi</a>
-                <a href="#care">Cham soc</a>
+                <a href="#toys">Đồ chơi</a>
+                <a href="#care">Chăm sóc</a>
               </div>
             </div>
           )}
