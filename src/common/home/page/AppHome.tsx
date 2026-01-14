@@ -12,7 +12,7 @@ import { ServiceFilterSection } from "@/common/home/components/service-filter-se
 import { SpaListSection } from "@/common/home/components/spa-list-section"
 
 export function AppHome() {
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery, ] = useState("")
   const [selectedService, setSelectedService] = useState("All")
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | undefined>()
   const [, setSelectedSpa] = useState<Spa | null>(null)
