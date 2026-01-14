@@ -13,13 +13,13 @@ import {
 } from "lucide-react"
 
 const items = [
-    { label: "Meo", sub: "Cat & Kitten", icon: Cat },
-    { label: "Cho", sub: "Dog & Puppy", icon: Dog },
-    { label: "Danh sach yeu thich", sub: "Wish List", icon: Heart },
-    { label: "Flash sale", sub: "Sieu giam gia", icon: Flame },
-    { label: "Gia tot hom nay", sub: "Today's Deals", icon: Tag },
-    { label: "Thuong hieu", sub: "Brand", icon: PawPrint },
-    { label: "Cam nang thu cung", sub: "Petmall Blog", icon: BookOpen },
+    { label: "Mèo", sub: "Mèo & Mèo con", icon: Cat },
+    { label: "Chó", sub: "Chó & Chó con", icon: Dog },
+    { label: "Danh sách yêu thích", sub: "Wish List", icon: Heart },
+    { label: "Flash sale", sub: "Siêu giảm giá", icon: Flame },
+    { label: "Gia tốt hôm nay", sub: "Today's Deals", icon: Tag },
+    { label: "Thương hiệu", sub: "Brand", icon: PawPrint },
+    { label: "ẩm nang thú cưng", sub: "Petmall Blog", icon: BookOpen },
     { label: "Hotline", sub: "0902.848.949", icon: Phone },
     { label: "Petmall season end year", sub: "", icon: PartyPopper },
 ]
@@ -49,7 +49,7 @@ export function LeftSidebar({ collapsed, onToggle }: LeftSidebarProps) {
                     <div className="sticky top-28">
                         <div className="rounded-2xl border bg-white p-4 shadow-sm">
                             <div className="text-sm font-semibold uppercase tracking-wide text-slate-700">
-                                Danh muc
+                                Danh mục
                             </div>
 
                             <div className="mt-4 space-y-2">

@@ -14,7 +14,7 @@ export function FeaturedSpasSection({ spas, onViewDetails }: FeaturedSpasSection
       <div className="container mx-auto px-4">
         <div className="flex items-center gap-3 mb-8">
           <Star className="h-6 w-6 text-primary fill-primary" />
-          <h2 className="text-3xl md:text-4xl font-bold">Featured Spas</h2>
+          <h2 className="text-3xl md:text-4xl font-bold">Spa nổi bật</h2>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {spas.map((spa) => (
