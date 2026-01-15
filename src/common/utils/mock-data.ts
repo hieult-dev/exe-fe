@@ -16,12 +16,12 @@ export type Spa = {
 }
 
 export const serviceCategories = [
-  "All",
-  "Bathing",
-  "Trimming",
-  "Massage",
-  "Boarding",
-  "Skin Care",
+  "Tất cả",
+  "Spa",
+  "Thú y",
+  "Thức ăn chó",
+  "Thức ăn mèo",
+  "Vệ sinh",
 ]
 
 export const mockSpas: Spa[] = [
