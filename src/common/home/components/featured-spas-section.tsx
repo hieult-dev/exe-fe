@@ -11,6 +11,18 @@ interface FeaturedSpasSectionProps {
 export function FeaturedSpasSection({ spas, onViewDetails }: FeaturedSpasSectionProps) {
   return (
     <section id="featured" className="py-16 bg-muted/30">
+
+      <div className="container mx-auto px-4">
+        <div className="flex items-center gap-3 mb-8">
+          <Star className="h-6 w-6 text-primary fill-primary" />
+          <h2 className="text-3xl md:text-4xl font-bold">Spa Nổi Bật</h2>
+        </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {spas.map((spa) => (
+            <SpaCard key={spa.id} spa={spa} onViewDetails={onViewDetails} />
+          ))}
+        </div>
+      </div>
       <div className="w-full">
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row gap-4 md:gap-6 lg:gap-8">
@@ -42,19 +54,7 @@ export function FeaturedSpasSection({ spas, onViewDetails }: FeaturedSpasSection
                 <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </a>
             </div>
-
           </div>
-        </div>
-      </div>
-      <div className="container mx-auto px-4">
-        <div className="flex items-center gap-3 mb-8">
-          <Star className="h-6 w-6 text-primary fill-primary" />
-          <h2 className="text-3xl md:text-4xl font-bold">Spa Nổi Bật</h2>
-        </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {spas.map((spa) => (
-            <SpaCard key={spa.id} spa={spa} onViewDetails={onViewDetails} />
-          ))}
         </div>
       </div>
     </section>

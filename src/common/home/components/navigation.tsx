@@ -19,13 +19,6 @@ export function Navigation({ onUseLocation }: { onUseLocation: () => Promise<voi
         <div className="mx-auto max-w-7xl px-4">
           <div className="flex h-20 items-center gap-4">
             <div className="flex items-center gap-2 font-black tracking-wide">
-              <div className="h-12 w-12 bg-white flex items-center justify-center overflow-hidden rounded-lg">
-                <img
-                  src="/logo.png"
-                  alt="Logo"
-                  className="h-full w-full object-contain scale-150"
-                />
-              </div>
               <span className="text-xl">PETMALL</span>
             </div>
 
@@ -122,6 +115,136 @@ export function Navigation({ onUseLocation }: { onUseLocation: () => Promise<voi
         </div>
       </div>
 
+      <div className="relative z-20">
+        <div className="bg-[#1e90ff]">
+          <div className="mx-auto max-w-7xl px-4">
+            <nav className="flex flex-wrap items-center gap-6 text-white font-semibold">
+              <div className="relative group">
+                <button className="py-2 border-b-2 border-transparent group-hover:border-white transition">
+                  Dịch vụ
+                </button>
+                <div className="absolute left-0 top-full hidden group-hover:block">
+                  <div className="w-[720px] bg-white text-slate-900 shadow-xl rounded-b-lg p-6">
+                    <div className="grid grid-cols-3 gap-8 text-sm">
+                      <div className="space-y-3">
+                        <div className="font-semibold text-slate-900">Gói spa</div>
+                        <a className="block text-slate-600 hover:text-slate-900" href="#">
+                          Chăm sóc cơ bản
+                        </a>
+                        <a className="block text-slate-600 hover:text-slate-900" href="#">
+                          Chăm sóc nâng cao
+                        </a>
+                        <a className="block text-slate-600 hover:text-slate-900" href="#">
+                          Tắm, cắt tỉa lông
+                        </a>
+                        <a className="block text-slate-600 hover:text-slate-900" href="#">
+                          Go rối, khử mùi
+                        </a>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="font-semibold text-slate-900">Chăm sóc y tế</div>
+                        <a className="block text-slate-600 hover:text-slate-900" href="#">
+                          Khám tổng quát
+                        </a>
+                        <a className="block text-slate-600 hover:text-slate-900" href="#">
+                          Tiêm phòng
+                        </a>
+                        <a className="block text-slate-600 hover:text-slate-900" href="#">
+                          Điều trị bệnh
+                        </a>
+                        <a className="block text-slate-600 hover:text-slate-900" href="#">
+                          Tư vấn dinh dưỡng
+                        </a>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="font-semibold text-slate-900">Thức ăn</div>
+                        <a className="block text-slate-600 hover:text-slate-900" href="#">
+                          Thức ăn hạt
+                        </a>
+                        <a className="block text-slate-600 hover:text-slate-900" href="#">
+                          Thức ăn tươi
+                        </a>
+                        <a className="block text-slate-600 hover:text-slate-900" href="#">
+                          Thức ăn chức năng
+                        </a>
+                        <a className="block text-slate-600 hover:text-slate-900" href="#">
+                          Bánh thưởng
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative group">
+                <button className="py-3 border-b-2 border-transparent group-hover:border-white transition">
+                  Thú cưng
+                </button>
+
+                <div className="absolute left-0 top-full hidden group-hover:block">
+                  <div className="w-40 bg-white text-slate-900 shadow-lg rounded-b-lg py-3">
+                    <a
+                      href="#dog"
+                      className="block px-4 py-2 text-sm hover:bg-slate-100"
+                    >
+                      Chó
+                    </a>
+                    <a
+                      href="#cat"
+                      className="block px-4 py-2 text-sm hover:bg-slate-100"
+                    >
+                      Mèo
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <div className="relative group">
+                <button className="py-3 border-b-2 border-transparent group-hover:border-white transition">
+                  Thức ăn
+                </button>
+
+                <div className="absolute left-0 top-full hidden group-hover:block">
+                  <div className="w-40 bg-white text-slate-900 shadow-lg rounded-b-lg py-3">
+                    <a
+                      href="#dog"
+                      className="block px-4 py-2 text-sm hover:bg-slate-100"
+                    >
+                      Thức ăn hạt
+                    </a>
+                    <a
+                      href="#cat"
+                      className="block px-4 py-2 text-sm hover:bg-slate-100"
+                    >
+                      Thức ăn tươi
+                    </a>
+                    <a
+                      href="#cat"
+                      className="block px-4 py-2 text-sm hover:bg-slate-100"
+                    >
+                      Thức ăn chức năng
+                    </a>
+                    <a
+                      href="#cat"
+                      className="block px-4 py-2 text-sm hover:bg-slate-100"
+                    >
+                      Bánh thưởng
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <button className="py-2 border-b-2 border-transparent hover:border-white transition">
+                Thiết bị thông minh
+              </button>
+              <button className="py-2 border-b-2 border-transparent hover:border-white transition">
+                Hàng mới về
+              </button>
+              <button className="py-2 border-b-2 border-transparent hover:border-white transition">
+                Blogs
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
 
     </header>
   )
