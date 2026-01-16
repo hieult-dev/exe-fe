@@ -15,14 +15,144 @@ export type Spa = {
   featured?: boolean
 }
 
+export type Product = {
+  id: string
+  name: string
+  image?: string
+  rating: number
+  reviews?: number
+  price: string
+  category: string
+  description: string
+  sizes?: string[]
+  variants?: string[]
+}
+
 export const serviceCategories = [
   "Tất cả",
   "Spa",
   "Thú y",
-  "Thức ăn chó",
-  "Thức ăn mèo",
+  "Chó",
+  "Mèo",
   "Vệ sinh",
+  "Sữa tắm",
+  "Đồ chơi",
+  "Đồ ăn"
 ]
+
+export const mockProducts: Product[] = [
+  {
+    id: "p1",
+    name: "Gói spa cơ bản cho mèo",
+    image: "/image/1.png",
+    rating: 4.8,
+    reviews: 120,
+    price: "199,000 VND",
+    category: serviceCategories[1],
+    description: "Gói spa cơ bản giúp mèo sạch sẽ, thư giãn và dễ chịu.",
+  },
+  {
+    id: "p2",
+    name: "Gói spa cao cấp cho chó",
+    image: "/image/2.png",
+    rating: 4.7,
+    reviews: 98,
+    price: "349,000 VND",
+    category: serviceCategories[1],
+    description: "Dịch vụ spa cao cấp dành cho chó với chăm sóc toàn diện.",
+  },
+  {
+    id: "p3",
+    name: "Khám tổng quát cho chó",
+    image: "/image/1.png",
+    rating: 4.6,
+    reviews: 64,
+    price: "259,000 VND",
+    category: serviceCategories[2],
+    description: "Khám sức khỏe tổng quát định kỳ cho chó cưng.",
+  },
+  {
+    id: "p4",
+    name: "Tiêm phòng định kỳ",
+    image: "/image/2.png",
+    rating: 4.5,
+    reviews: 42,
+    price: "189,000 VND",
+    category: serviceCategories[2],
+    description: "Dịch vụ tiêm phòng giúp thú cưng phòng tránh bệnh nguy hiểm.",
+  },
+  {
+    id: "p5",
+    name: "Thức ăn chó",
+    image: "/image/1.png",
+    rating: 4.9,
+    reviews: 210,
+    price: "129,000 VND",
+    category: serviceCategories[3],
+    description: "Thức ăn giàu dinh dưỡng dành cho chó ở mọi độ tuổi.",
+    variants: ["Gà", "Bò"],
+    sizes: ["S", "M", "L"],
+  },
+  {
+    id: "p6",
+    name: "Thức ăn mèo premium",
+    image: "/image/2.png",
+    rating: 4.8,
+    reviews: 176,
+    price: "149,000 VND",
+    category: serviceCategories[4],
+    description: "Thức ăn cao cấp giúp mèo khỏe mạnh và lông bóng mượt.",
+    variants: ["Gà", "Bò"],
+    sizes: ["S", "M", "L"],
+  },
+  {
+    id: "p7",
+    name: "Cát vệ sinh mèo",
+    image: "/image/1.png",
+    rating: 4.4,
+    reviews: 52,
+    price: "99,000 VND",
+    category: serviceCategories[5],
+    description: "Cát vệ sinh khử mùi tốt, an toàn cho mèo.",
+    sizes: ["S", "M", "L"],
+  },
+  {
+    id: "p8",
+    name: "Sữa tắm khử mùi cho chó",
+    image: "/image/2.png",
+    rating: 4.6,
+    reviews: 88,
+    price: "79,000 VND",
+    category: serviceCategories[6],
+    description: "Sữa tắm giúp khử mùi và bảo vệ da cho chó.",
+    sizes: ["S", "M", "L"],
+  },
+  {
+    id: "p9",
+    name: "Đồ chơi gấu bông cho mèo",
+    image: "/image/1.png",
+    rating: 4.3,
+    reviews: 34,
+    price: "59,000 VND",
+    category: serviceCategories[7],
+    description: "Đồ chơi giúp mèo vận động và giảm căng thẳng.",
+    sizes: ["S", "M", "L"],
+  },
+  {
+    id: "p10",
+    name: "Snack thưởng cho chó",
+    image: "/image/2.png",
+    rating: 4.7,
+    reviews: 142,
+    price: "39,000 VND",
+    category: serviceCategories[8],
+    description: "Snack thưởng thơm ngon, phù hợp huấn luyện chó.",
+    variants: ["Gà", "Bò"],
+    sizes: ["S", "M", "L"],
+  },
+]
+
+
 
 export const mockSpas: Spa[] = [
   {
@@ -119,3 +249,5 @@ export const mockSpas: Spa[] = [
     hours: "08:00 - 19:30",
   },
 ]
+
+

@@ -9,7 +9,7 @@ interface SpaCardProps {
 
 export function SpaCard({ spa, onViewDetails }: SpaCardProps) {
   return (
-    <div className="bg-card rounded-lg overflow-hidden border border-border hover:shadow-lg transition-shadow">
+    <div className="bg-card rounded-lg overflow-hidden border border-border hover:shadow-lg transition-shadow h-full flex flex-col">
       <div className="relative h-48 bg-muted">
         <img src={spa.image || "/placeholder.svg"} alt={spa.name} className="w-full h-full object-cover" />
         {spa.featured && (
@@ -19,7 +19,7 @@ export function SpaCard({ spa, onViewDetails }: SpaCardProps) {
         )}
       </div>
 
-      <div className="p-6 space-y-4">
+      <div className="p-6 space-y-4 flex-1 flex flex-col">
         <div>
           <h3 className="text-xl font-bold mb-2">{spa.name}</h3>
           <p className="text-muted-foreground text-sm leading-relaxed">{spa.description}</p>
@@ -61,7 +61,7 @@ export function SpaCard({ spa, onViewDetails }: SpaCardProps) {
           )}
         </div>
 
-        <div className="pt-2 border-t border-border">
+        <div className="pt-2 border-t border-border mt-auto">
           <div className="flex items-center justify-between">
             <span className="font-semibold text-primary">{spa.priceRange}</span>
             <Button onClick={() => onViewDetails(spa)}>Xem chi tiết</Button>

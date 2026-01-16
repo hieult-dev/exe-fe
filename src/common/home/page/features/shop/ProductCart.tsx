@@ -1,0 +1,82 @@
+import { useMemo } from "react"
+import { ProductCard } from "@/common/home/page/features/shop/ProductCard"
+import { ServiceFilter } from "@/common/home/components/fragments/service-filter"
+import { mockProducts, serviceCategories, type Product } from "@/common/utils/mock-data"
+
+interface ProductCartProps {
+  category: string
+  onBackToHome?: () => void
+  onSelectCategory?: (category: string) => void
+  onBookService?: () => void
+  onViewProduct?: (product: Product) => void
+}
+
+export function ProductCart({
+  category,
+  onBackToHome,
+  onSelectCategory,
+  onBookService,
+  onViewProduct,
+}: ProductCartProps) {
+  const isAll = category === serviceCategories[0]
+  const isBookingCategory =
+    category === serviceCategories[1] || category === serviceCategories[2]
+
+  const filteredProducts = useMemo(() => {
+    if (isAll) {
+      return mockProducts
+    }
+    return mockProducts.filter((product) => product.category === category)
+  }, [category, isAll])
+
+  const handleAddToCart = (product: Product) => {
+    console.log("add-to-cart", product)
+  }
+
+  const handlePrimaryAction = (product: Product) => {
+    if (isBookingCategory) {
+      onBookService?.()
+      return
+    }
+    handleAddToCart(product)
+  }
+
+  return (
+    <section className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-10 space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold">San pham</h2>
+            <p className="text-sm text-muted-foreground">Danh muc danh cho {category}</p>
+          </div>
+          {onBackToHome && (
+            <button
+              onClick={onBackToHome}
+              className="rounded-full px-5 py-2 border border-border text-sm hover:bg-muted/60 transition"
+            >
+              Quay lai
+            </button>
+          )}
+        </div>
+
+        <ServiceFilter
+          services={serviceCategories}
+          selectedService={category}
+          onSelectService={(nextCategory) => onSelectCategory?.(nextCategory)}
+        />
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProducts.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              actionLabel={isBookingCategory ? "Dat lich ngay" : undefined}
+              onAction={handlePrimaryAction}
+              onCardClick={onViewProduct}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
