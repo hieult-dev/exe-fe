@@ -11,9 +11,13 @@ import { MapSection } from "@/common/home/components/map-section"
 import { ServiceFilterSection } from "@/common/home/components/service-filter-section"
 import { SpaListSection } from "@/common/home/components/spa-list-section"
 
-export function AppHome() {
+interface AppHomeProps {
+  onSelectProductCategory?: (category: string) => void
+}
+
+export function AppHome({ onSelectProductCategory }: AppHomeProps) {
   const [searchQuery, ] = useState("")
-  const [selectedService, setSelectedService] = useState("All")
+  const [selectedService, setSelectedService] = useState(serviceCategories[0])
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | undefined>()
   const [, setSelectedSpa] = useState<Spa | null>(null)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -51,7 +55,8 @@ export function AppHome() {
         spa.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
         spa.description.toLowerCase().includes(searchQuery.toLowerCase())
 
-      const matchesService = selectedService === "All" || spa.services.includes(selectedService)
+      const matchesService =
+        selectedService === serviceCategories[0] || spa.services.includes(selectedService)
       return matchesSearch && matchesService
     })
   }, [searchQuery, selectedService])
@@ -73,7 +78,10 @@ export function AppHome() {
             <ServiceFilterSection
               services={serviceCategories}
               selectedService={selectedService}
-              onSelectService={setSelectedService}
+              onSelectService={(service) => {
+                setSelectedService(service)
+                onSelectProductCategory?.(service)
+              }}
             />
             <FeaturedSpasSection spas={featuredSpas} onViewDetails={setSelectedSpa} />
             <MapSection spas={filteredSpas} onSpaSelect={setSelectedSpa} userLocation={userLocation} />

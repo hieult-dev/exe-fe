@@ -27,7 +27,7 @@ export function HomeHero({ totalSpas }: HomeHeroProps) {
 
           <div className="pt-6 flex justify-center gap-4">
             <button className="rounded-full px-6 py-3 border border-white/60 text-white bg-transparent hover:bg-white/10 transition">
-              Book now
+              Đặt lịch ngay
             </button>
             <button className="rounded-full px-6 py-3 border border-white/40 text-white bg-transparent hover:bg-white/10 transition">
               Tìm cửa hàng
