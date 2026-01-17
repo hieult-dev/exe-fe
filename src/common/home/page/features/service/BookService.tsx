@@ -32,7 +32,7 @@ export function BookService({ onBack }: BookServiceProps) {
   const [selectedService, setSelectedService] = useState("")
   const [selectedDate, setSelectedDate] = useState("")
   const [selectedTime, setSelectedTime] = useState("")
-  const [discount, setDiscount] = useState(0)
+  const [discount] = useState(0)
 
   const servicePrice = selectedService ? 500000 : 0
   const totalPrice = servicePrice - discount
