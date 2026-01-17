@@ -6,15 +6,20 @@ import { ProductDetail } from "@/common/home/page/features/shop/ProductDetail"
 import { Navigation } from "@/common/home/components/navigation"
 import { HomeHero } from "@/common/home/components/home-hero"
 import { HomeFooter } from "@/common/home/components/home-footer"
-import { mockSpas, serviceCategories } from "@/common/utils/mock-data"
+import { mockSpas } from "@/common/utils/mock-data"
 
 function App() {
   const [activePage, setActivePage] = useState<"home" | "product" | "book" | "detail">("home")
-  const [productCategory, setProductCategory] = useState(serviceCategories[0])
+  const [productCategory, setProductCategory] = useState("Tất cả sản phẩm")
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null)
 
   const handleSelectProductCategory = (category: string) => {
     setProductCategory(category)
+    setActivePage("product")
+  }
+
+  const handleSearch = () => {
+    setProductCategory("Tất cả sản phẩm")
     setActivePage("product")
   }
 
@@ -27,7 +32,7 @@ function App() {
       }
 
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        () => {
           resolve()
         },
         (error) => {
@@ -42,9 +47,13 @@ function App() {
   if (activePage === "product") {
     return (
       <div className="min-h-screen flex flex-col">
-        <Navigation onUseLocation={handleUseLocation} />
+        <Navigation 
+          onUseLocation={handleUseLocation}
+          onLogoClick={() => setActivePage("home")}
+          onSearch={handleSearch}
+        />
         <HomeHero totalSpas={mockSpas.length} />
-        
+
         <div className="flex-1">
           <ProductCart
             category={productCategory}
@@ -57,7 +66,7 @@ function App() {
             }}
           />
         </div>
-        
+
         <HomeFooter />
       </div>
     )
@@ -66,7 +75,11 @@ function App() {
   if (activePage === "book") {
     return (
       <div className="min-h-screen flex flex-col">
-        <Navigation onUseLocation={handleUseLocation} />
+        <Navigation 
+          onUseLocation={handleUseLocation}
+          onLogoClick={() => setActivePage("home")}
+          onSearch={handleSearch}
+        />
         <div className="flex-1">
           <BookService onBack={() => setActivePage("product")} />
         </div>
@@ -78,7 +91,11 @@ function App() {
   if (activePage === "detail" && selectedProductId) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Navigation onUseLocation={handleUseLocation} />
+        <Navigation 
+          onUseLocation={handleUseLocation}
+          onLogoClick={() => setActivePage("home")}
+          onSearch={handleSearch}
+        />
         <div className="flex-1">
           <ProductDetail productId={selectedProductId} onBack={() => setActivePage("product")} />
         </div>

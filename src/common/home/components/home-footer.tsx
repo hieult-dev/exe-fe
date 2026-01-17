@@ -5,8 +5,8 @@ export function HomeFooter() {
         <div className="grid md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="text-3xl">PS</div>
-              <span className="text-2xl font-bold text-primary">PetSpaHub</span>
+              <div className="text-3xl">PP</div>
+              <span className="text-2xl font-bold text-primary">PetPees</span>
             </div>
             <p className="text-muted-foreground leading-relaxed">
               Nền tảng hàng đầu kết nối các spa thú cưng và những người yêu thú cưng tại Việt Nam.

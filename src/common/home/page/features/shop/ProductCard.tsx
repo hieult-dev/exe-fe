@@ -33,13 +33,14 @@ export function ProductCard({
       <div className="p-6 space-y-4 flex-1 flex flex-col">
         <div className="space-y-1">
           <h3 className="text-lg font-bold">{product.name}</h3>
+          
           <div className="flex items-center gap-2 text-sm">
             <div className="flex items-center gap-1">
               <Star className="h-4 w-4 fill-primary text-primary" />
               <span className="font-semibold">{product.rating.toFixed(1)}</span>
             </div>
             {typeof product.reviews === "number" && (
-              <span className="text-muted-foreground">({product.reviews} danh gia)</span>
+              <span className="text-muted-foreground">({product.reviews} đánh giá)</span>
             )}
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import { ProductCard } from "@/common/home/page/features/shop/ProductCard"
 import { CategoryGrid } from "@/common/home/components/fragments/category-grid"
-import { mockProducts, serviceCategories, serviceCategoriesWithImages, type Product } from "@/common/utils/mock-data"
+import { mockProducts, serviceCategoriesWithImages, type Product } from "@/common/utils/mock-data"
 
 interface ProductCartProps {
   category: string
@@ -18,9 +18,9 @@ export function ProductCart({
   onBookService,
   onViewProduct,
 }: ProductCartProps) {
-  const isAll = category === serviceCategories[0]
+  const isAll = category === "Tất cả sản phẩm"
   const isBookingCategory =
-    category === serviceCategories[1] || category === serviceCategories[2]
+    category === "Spa" || category === "Thú y"
 
   const filteredProducts = useMemo(() => {
     if (isAll) {
@@ -46,8 +46,8 @@ export function ProductCart({
       <div className="container mx-auto px-4 py-10 space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold">Sản phẩmphẩm</h2>
-            <p className="text-sm text-muted-foreground">Danh mục dành chocho {category}</p>
+            <h2 className="text-3xl font-bold">Sản phẩm</h2>
+            <p className="text-sm text-muted-foreground">Danh mục dành cho {category}</p>
           </div>
           {onBackToHome && (
             <button

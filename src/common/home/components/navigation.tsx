@@ -10,25 +10,58 @@ import {
   ShoppingCart,
 } from "lucide-react"
 
-export function Navigation({ onUseLocation }: { onUseLocation: () => Promise<void> }) {
+interface NavigationProps {
+  onUseLocation: () => Promise<void>
+  onLogoClick?: () => void
+  onSearch?: (query: string) => void
+}
+
+export function Navigation({ onUseLocation, onLogoClick, onSearch }: NavigationProps) {
   const [open, setOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      onSearch?.(searchQuery)
+      setSearchQuery("")
+    }
+  }
+
+  const handleLogoClick = () => {
+    setOpen(false)
+    onLogoClick?.()
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full">
       <div className="bg-[#1e90ff] text-white">
         <div className="mx-auto max-w-7xl px-4">
           <div className="flex h-20 items-center gap-4">
-            <div className="flex items-center gap-2 font-black tracking-wide">
-              <span className="text-xl">PETMALL</span>
-            </div>
+            <button
+              onClick={handleLogoClick}
+              className="flex items-center gap-2 font-black tracking-wide hover:opacity-80 transition cursor-pointer"
+            >
+              <span className="text-xl">PETPEEs</span>
+            </button>
 
             <div className="hidden md:flex flex-1 items-center gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                <input
-                  className="h-10 w-full rounded-full bg-white pl-9 pr-4 text-sm text-slate-900 placeholder:text-slate-500"
-                  placeholder="Tim kiem san pham..."
-                />
+              <div className="relative flex-1 flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                    className="h-10 w-full rounded-full bg-white pl-9 pr-4 text-sm text-slate-900 placeholder:text-slate-500"
+                    placeholder="Tim kiem san pham..."
+                  />
+                </div>
+                <button
+                  onClick={handleSearch}
+                  className="px-4 rounded-full bg-white text-slate-900 font-semibold hover:bg-slate-100 transition text-sm"
+                >
+                  Tìm kiếm
+                </button>
               </div>
               <div className="flex items-center gap-5 text-sm">
 
@@ -70,12 +103,23 @@ export function Navigation({ onUseLocation }: { onUseLocation: () => Promise<voi
 
           {open && (
             <div className="md:hidden pb-4 space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                <input
-                  className="h-10 w-full rounded-full bg-white pl-9 pr-4 text-sm text-slate-900 placeholder:text-slate-500"
-                  placeholder="Tim kiem san pham..."
-                />
+              <div className="relative flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                    className="h-10 w-full rounded-full bg-white pl-9 pr-4 text-sm text-slate-900 placeholder:text-slate-500"
+                    placeholder="Tim kiem san pham..."
+                  />
+                </div>
+                <button
+                  onClick={handleSearch}
+                  className="px-3 rounded-full bg-white text-slate-900 font-semibold hover:bg-slate-100 transition text-sm"
+                >
+                  Tìm
+                </button>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <button className="flex items-center gap-2">
