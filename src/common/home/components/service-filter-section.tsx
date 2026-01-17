@@ -1,7 +1,8 @@
-import { ServiceFilter } from "@/common/home/components/fragments/service-filter"
+import { CategoryGrid } from "@/common/home/components/fragments/category-grid"
+import { ServiceCategory } from "@/common/utils/mock-data"
 
 interface ServiceFilterSectionProps {
-  services: string[]
+  services: ServiceCategory[]
   selectedService: string
   onSelectService: (service: string) => void
 }
@@ -12,12 +13,12 @@ export function ServiceFilterSection({
   onSelectService,
 }: ServiceFilterSectionProps) {
   return (
-    <section className="py-8 border-b border-border bg-background sticky top-20 z-40">
+    <section className="py-8 border-b border-border bg-background">
       <div className="container mx-auto px-4">
-        <ServiceFilter
-          services={services}
-          selectedService={selectedService}
-          onSelectService={onSelectService}
+        <CategoryGrid
+          categories={services}
+          selectedCategory={selectedService}
+          onSelectCategory={onSelectService}
         />
       </div>
     </section>
