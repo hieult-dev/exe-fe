@@ -115,10 +115,10 @@ export function Navigation({ onUseLocation }: { onUseLocation: () => Promise<voi
         </div>
       </div>
 
-      <div className="relative z-20">
+      <div className="relative z-20 w-full">
         <div className="bg-[#1e90ff]">
           <div className="mx-auto max-w-7xl px-4">
-            <nav className="flex flex-wrap items-center gap-6 text-white font-semibold">
+            <nav className="flex flex-wrap items-center justify-center gap-6 text-white font-semibold">
               <div className="relative group">
                 <button className="py-2 border-b-2 border-transparent group-hover:border-white transition">
                   Dịch vụ

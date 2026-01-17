@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react"
 import { PetMomentsSection } from "@/common/home/components/pet-moments-section"
-import { LeftSidebar } from "@/common/home/components/left-sidebar"
 import { Navigation } from "@/common/home/components/navigation"
 import { mockSpas, serviceCategories, type Spa } from "@/common/utils/mock-data"
 import { CtaSection } from "@/common/home/components/cta-section"
@@ -20,7 +19,6 @@ export function AppHome({ onSelectProductCategory }: AppHomeProps) {
   const [selectedService, setSelectedService] = useState(serviceCategories[0])
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | undefined>()
   const [, setSelectedSpa] = useState<Spa | null>(null)
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
   const handleUseLocation = () => {
     return new Promise<void>((resolve, reject) => {
@@ -68,29 +66,23 @@ export function AppHome({ onSelectProductCategory }: AppHomeProps) {
       <Navigation onUseLocation={handleUseLocation} />
 
       <div className="w-full">
-        <div className="flex gap-1">
-          <LeftSidebar
-            collapsed={isSidebarCollapsed}
-            onToggle={() => setIsSidebarCollapsed((v) => !v)}
+        <main className="min-w-0 flex-1 px-0">
+          <HomeHero totalSpas={mockSpas.length} />
+          <ServiceFilterSection
+            services={serviceCategories}
+            selectedService={selectedService}
+            onSelectService={(service) => {
+              setSelectedService(service)
+              onSelectProductCategory?.(service)
+            }}
           />
-          <main className="min-w-0 flex-1 px-0">
-            <HomeHero totalSpas={mockSpas.length} />
-            <ServiceFilterSection
-              services={serviceCategories}
-              selectedService={selectedService}
-              onSelectService={(service) => {
-                setSelectedService(service)
-                onSelectProductCategory?.(service)
-              }}
-            />
-            <FeaturedSpasSection spas={featuredSpas} onViewDetails={setSelectedSpa} />
-            <MapSection spas={filteredSpas} onSpaSelect={setSelectedSpa} userLocation={userLocation} />
-            <SpaListSection spas={filteredSpas} onViewDetails={setSelectedSpa} />
-            <PetMomentsSection />
-            <CtaSection />
-            <HomeFooter />
-          </main>
-        </div>
+          <FeaturedSpasSection spas={featuredSpas} onViewDetails={setSelectedSpa} />
+          <MapSection spas={filteredSpas} onSpaSelect={setSelectedSpa} userLocation={userLocation} />
+          <SpaListSection spas={filteredSpas} onViewDetails={setSelectedSpa} />
+          <PetMomentsSection />
+          <CtaSection />
+          <HomeFooter />
+        </main>
       </div>
     </div>
   )

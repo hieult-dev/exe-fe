@@ -28,8 +28,14 @@ export type Product = {
   variants?: string[]
 }
 
+export type ServiceCategory = {
+  id: string
+  name: string
+  image: string
+}
+
 export const serviceCategories = [
-  "Tất cả",
+  "Tất cả sản phẩm",
   "Spa",
   "Thú y",
   "Chó",
@@ -37,7 +43,55 @@ export const serviceCategories = [
   "Vệ sinh",
   "Sữa tắm",
   "Đồ chơi",
-  "Đồ ăn"
+  "Thức ăn",
+]
+
+export const serviceCategoriesWithImages: ServiceCategory[] = [
+  {
+    id: "all",
+    name: "Tất cả sản phẩm",
+    image: "/image/all.jpg",
+  },
+  {
+    id: "spa",
+    name: "Spa",
+    image: "/image/spa.jpg",
+  },
+  {
+    id: "vet",
+    name: "Thú y",
+    image: "/image/vet.jpg",
+  },
+  {
+    id: "dog",
+    name: "Chó",
+    image: "/image/dog.jpg",
+  },
+  {
+    id: "cat",
+    name: "Mèo",
+    image: "/image/cat.jpg",
+  },
+  {
+    id: "cleaning",
+    name: "Vệ sinh",
+    image: "/image/cleaning.jpg",
+  },
+  {
+    id: "shampoo",
+    name: "Sữa tắm",
+    image: "/image/shampoo.jpg",
+  },
+  {
+    id: "toys",
+    name: "Đồ chơi",
+    image: "/image/toys.jpg",
+  },
+  {
+    id: "food",
+    name: "Thức ăn",
+    image: "/image/food.jpg",
+  },
 ]
 
 export const mockProducts: Product[] = [
