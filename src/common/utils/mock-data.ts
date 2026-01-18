@@ -26,18 +26,86 @@ export type Product = {
   description: string
   sizes?: string[]
   variants?: string[]
+  fullDescription?: string
+  images?: string[]
 }
 
-export const serviceCategories = [
-  "Tất cả",
-  "Spa",
-  "Thú y",
-  "Chó",
-  "Mèo",
-  "Vệ sinh",
-  "Sữa tắm",
-  "Đồ chơi",
-  "Đồ ăn"
+export type Review = {
+  id: string
+  customerName: string
+  rating: number
+  comment: string
+  date: string
+  helpful: number
+}
+
+export type ServiceCategory = {
+  id: string
+  name: string
+  image: string
+}
+
+export const serviceCategoriesWithImages: ServiceCategory[] = [
+  {
+    id: "all",
+    name: "Tất cả sản phẩm",
+    image: "/image/all.jpg",
+  },
+  {
+    id: "spa",
+    name: "Spa",
+    image: "/image/spa.jpg",
+  },
+  {
+    id: "vet",
+    name: "Thú y",
+    image: "/image/vet.jpg",
+  },
+  {
+    id: "dog",
+    name: "Chó",
+    image: "/image/dog.jpg",
+  },
+  {
+    id: "cat",
+    name: "Mèo",
+    image: "/image/cat.png",
+  },
+  {
+    id: "cleaning",
+    name: "Cát Vệ sinh",
+    image: "/image/cleaning.jpg",
+  },
+  {
+    id: "shampoo",
+    name: "Sữa tắm cho thú cưng",
+    image: "/image/shampoo.jpg",
+  },
+  {
+    id: "toys",
+    name: "Đồ chơi",
+    image: "/image/toys.jpg",
+  },
+  {
+    id: "food",
+    name: "Thức ăn",
+    image: "/image/food.jpg",
+  },
+  {
+    id: "homeCat",
+    name: "Nhà Cho Mèo",
+    image: "/image/homeC.jpg",
+  },
+  {
+    id: "homeDog",
+    name: "Nhà Cho Chó",
+    image: "/image/homeD.jpg",
+  },
+  {
+    id: "accessory",
+    name: "Phụ kiện",
+    image: "/image/accessory.jpg",
+  },
 ]
 
 export const mockProducts: Product[] = [
@@ -48,8 +116,10 @@ export const mockProducts: Product[] = [
     rating: 4.8,
     reviews: 120,
     price: "199,000 VND",
-    category: serviceCategories[1],
+    category: "Spa",
     description: "Gói spa cơ bản giúp mèo sạch sẽ, thư giãn và dễ chịu.",
+    fullDescription: "Gói spa cơ bản của chúng tôi được thiết kế đặc biệt cho những chú mèo yêu thích chăm sóc da và lông. Dịch vụ bao gồm rửa mặt, massage thư giãn, sấy khô và chải lông chuyên nghiệp. Chúng tôi sử dụng các sản phẩm cao cấp, an toàn cho mèo, giúp làm sạch sâu và nuôi dưỡng lông mượt. Mỗi buổi spa kéo dài khoảng 2 giờ với sự chăm sóc tận tâm từ các chuyên gia.",
+    images: ["/image/1.png", "/image/spa1.jpg", "/image/spa2.jpg"],
   },
   {
     id: "p2",
@@ -58,7 +128,7 @@ export const mockProducts: Product[] = [
     rating: 4.7,
     reviews: 98,
     price: "349,000 VND",
-    category: serviceCategories[1],
+    category: "Spa",
     description: "Dịch vụ spa cao cấp dành cho chó với chăm sóc toàn diện.",
   },
   {
@@ -68,7 +138,7 @@ export const mockProducts: Product[] = [
     rating: 4.6,
     reviews: 64,
     price: "259,000 VND",
-    category: serviceCategories[2],
+    category: "Thú y",
     description: "Khám sức khỏe tổng quát định kỳ cho chó cưng.",
   },
   {
@@ -78,7 +148,7 @@ export const mockProducts: Product[] = [
     rating: 4.5,
     reviews: 42,
     price: "189,000 VND",
-    category: serviceCategories[2],
+    category: "Thú y",
     description: "Dịch vụ tiêm phòng giúp thú cưng phòng tránh bệnh nguy hiểm.",
   },
   {
@@ -88,7 +158,7 @@ export const mockProducts: Product[] = [
     rating: 4.9,
     reviews: 210,
     price: "129,000 VND",
-    category: serviceCategories[3],
+    category: "Chó",
     description: "Thức ăn giàu dinh dưỡng dành cho chó ở mọi độ tuổi.",
     variants: ["Gà", "Bò"],
     sizes: ["S", "M", "L"],
@@ -100,7 +170,7 @@ export const mockProducts: Product[] = [
     rating: 4.8,
     reviews: 176,
     price: "149,000 VND",
-    category: serviceCategories[4],
+    category: "Mèo",
     description: "Thức ăn cao cấp giúp mèo khỏe mạnh và lông bóng mượt.",
     variants: ["Gà", "Bò"],
     sizes: ["S", "M", "L"],
@@ -112,7 +182,7 @@ export const mockProducts: Product[] = [
     rating: 4.4,
     reviews: 52,
     price: "99,000 VND",
-    category: serviceCategories[5],
+    category: "Vệ sinh",
     description: "Cát vệ sinh khử mùi tốt, an toàn cho mèo.",
     sizes: ["S", "M", "L"],
   },
@@ -123,21 +193,37 @@ export const mockProducts: Product[] = [
     rating: 4.6,
     reviews: 88,
     price: "79,000 VND",
-    category: serviceCategories[6],
+    category: "Sữa tắm",
     description: "Sữa tắm giúp khử mùi và bảo vệ da cho chó.",
     sizes: ["S", "M", "L"],
   },
   {
     id: "p9",
-    name: "Đồ chơi gấu bông cho mèo",
+    name: "Gấu bông đồ chơi cho mèo (cần câu lông)",
     image: "/image/1.png",
     rating: 4.3,
     reviews: 34,
     price: "59,000 VND",
-    category: serviceCategories[7],
-    description: "Đồ chơi giúp mèo vận động và giảm căng thẳng.",
+    category: "Đồ chơi",
+    description: `Đồ chơi cần câu lông cho mèo giúp bé vận động và giải trí mỗi ngày.
+
+✨ Đặc điểm nổi bật:
+- Cần câu làm từ thép dẻo bền, uốn cong linh hoạt, khó gãy
+- Chuyển động tự nhiên giúp kích thích mèo săn mồi và chơi đùa hứng thú hơn
+- Hỗ trợ giảm stress, tăng vận động, tốt cho sức khỏe và phản xạ
+- Giúp hạn chế tình trạng cào/cắn phá đồ trong nhà
+
+📏 Kích thước:
+- Dây thép dài: 95cm
+- Mồi câu dài: 12cm
+
+🧩 Chất liệu:
+Nhựa, thép dẻo và lông nhân tạo
+
+#dochoimeo #cancaumeo #phukienmeo #chamsocmeo`,
     sizes: ["S", "M", "L"],
-  },
+  }
+  ,
   {
     id: "p10",
     name: "Snack thưởng cho chó",
@@ -145,11 +231,11 @@ export const mockProducts: Product[] = [
     rating: 4.7,
     reviews: 142,
     price: "39,000 VND",
-    category: serviceCategories[8],
+    category: "Thức ăn",
     description: "Snack thưởng thơm ngon, phù hợp huấn luyện chó.",
     variants: ["Gà", "Bò"],
     sizes: ["S", "M", "L"],
-  },
+  }
 ]
 
 
@@ -247,6 +333,49 @@ export const mockSpas: Spa[] = [
     priceRange: "280,000 - 700,000 VND",
     phone: "0906 444 555",
     hours: "08:00 - 19:30",
+  },
+]
+
+export const mockReviews: Review[] = [
+  {
+    id: "r1",
+    customerName: "Nguyễn Thị A",
+    rating: 5,
+    comment: "Sản phẩm rất tốt, mèo tôi rất thích. Lông bóng mượt sau khi sử dụng.",
+    date: "2024-01-15",
+    helpful: 23,
+  },
+  {
+    id: "r2",
+    customerName: "Trần Văn B",
+    rating: 4,
+    comment: "Chất lượng tốt, giá hợp lý. Giao hàng nhanh chóng.",
+    date: "2024-01-10",
+    helpful: 15,
+  },
+  {
+    id: "r3",
+    customerName: "Phạm Minh C",
+    rating: 5,
+    comment: "Tuyệt vời! Chó tôi khỏe mạnh hơn sau khi dùng gói này.",
+    date: "2024-01-05",
+    helpful: 31,
+  },
+  {
+    id: "r4",
+    customerName: "Võ Thị D",
+    rating: 4,
+    comment: "Còn tốt nhưng có thể bao bì lớn hơn một chút.",
+    date: "2023-12-28",
+    helpful: 8,
+  },
+  {
+    id: "r5",
+    customerName: "Hồ Văn E",
+    rating: 5,
+    comment: "Đáng tiền. Sẽ mua lại cho chó tôi.",
+    date: "2023-12-20",
+    helpful: 12,
   },
 ]
 
