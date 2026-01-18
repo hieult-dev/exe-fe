@@ -1,33 +1,36 @@
 import { useMemo } from "react"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { ProductCard } from "@/common/home/page/features/shop/ProductCard"
 import { CategoryGrid } from "@/common/home/components/fragments/category-grid"
 import { mockProducts, serviceCategoriesWithImages, type Product } from "@/common/utils/mock-data"
 
-interface ProductCartProps {
-  category: string
-  onBackToHome?: () => void
-  onSelectCategory?: (category: string) => void
-  onBookService?: () => void
-  onViewProduct?: (product: Product) => void
-}
-
-export function ProductCart({
-  category,
-  onBackToHome,
-  onSelectCategory,
-  onBookService,
-  onViewProduct,
-}: ProductCartProps) {
+export function ProductCart() {
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const defaultCategory = serviceCategoriesWithImages[0]?.name ?? ""
+  const categoryParam = searchParams.get("category")
+  const category = categoryParam || defaultCategory
+  const searchParam = searchParams.get("search") ?? ""
+  const normalizedSearch = searchParam.trim().toLowerCase()
+  const currentSearch = searchParams.toString()
   const isAll = category === "Tất cả sản phẩm"
   const isBookingCategory =
     category === "Spa" || category === "Thú y"
 
   const filteredProducts = useMemo(() => {
-    if (isAll) {
-      return mockProducts
+    let products = mockProducts
+    if (!isAll) {
+      products = products.filter((product) => product.category === category)
     }
-    return mockProducts.filter((product) => product.category === category)
-  }, [category, isAll])
+    if (normalizedSearch) {
+      products = products.filter((product) => {
+        const name = product.name.toLowerCase()
+        const description = product.description.toLowerCase()
+        return name.includes(normalizedSearch) || description.includes(normalizedSearch)
+      })
+    }
+    return products
+  }, [category, isAll, normalizedSearch])
 
   const handleAddToCart = (product: Product) => {
     console.log("add-to-cart", product)
@@ -35,11 +38,32 @@ export function ProductCart({
 
   const handlePrimaryAction = (product: Product) => {
     if (isBookingCategory) {
-      onBookService?.()
+      navigate(currentSearch ? `/booking?${currentSearch}` : "/booking")
       return
     }
     handleAddToCart(product)
   }
+
+  const handleBackToHome = () => {
+    navigate("/")
+  }
+
+  const handleSelectCategory = (nextCategory: string) => {
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.set("category", nextCategory)
+    setSearchParams(nextParams)
+  }
+
+  const handleViewProduct = (product: Product) => {
+    const detailPath = currentSearch
+      ? `/products/${product.id}?${currentSearch}`
+      : `/products/${product.id}`
+    navigate(detailPath)
+  }
+
+  const onBackToHome = handleBackToHome
+  const onSelectCategory = handleSelectCategory
+  const onViewProduct = handleViewProduct
 
   return (
     <section className="min-h-screen bg-background">

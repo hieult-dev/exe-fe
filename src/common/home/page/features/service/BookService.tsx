@@ -1,10 +1,7 @@
 import { useState } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
 import { Phone, Clock, MapPin } from "lucide-react"
 import { mockSpas } from "@/common/utils/mock-data"
-
-interface BookServiceProps {
-  onBack?: () => void
-}
 
 const TIME_SLOTS = [
   "09:00", "09:15", "09:30", "09:45",
@@ -24,7 +21,12 @@ const TIME_SLOTS = [
   "23:00", "23:15", "23:30", "23:45",
 ]
 
-export function BookService({ onBack }: BookServiceProps) {
+export function BookService() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const onBack = () => {
+    navigate(`/products${location.search}`)
+  }
   const [phoneNumber, setPhoneNumber] = useState("")
   const [fullName, setFullName] = useState("")
   const [totalGuests, setTotalGuests] = useState("1")

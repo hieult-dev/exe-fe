@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react"
+import { useLocation, useNavigate, useParams } from "react-router-dom"
 import { Star, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react"
 import { mockProducts, mockReviews } from "@/common/utils/mock-data"
 import { ProductCard } from "./ProductCard"
 
-interface ProductDetailProps {
-  productId: string
-  onBack?: () => void
-}
-
 const REVIEWS_PER_PAGE = 3
 
-export function ProductDetail({ productId, onBack }: ProductDetailProps) {
+export function ProductDetail() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { productId } = useParams()
+  const onBack = () => {
+    navigate(`/products${location.search}`)
+  }
   const product = mockProducts.find((item) => item.id === productId)
   const [selectedSize, setSelectedSize] = useState<string | null>(null)
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null)
