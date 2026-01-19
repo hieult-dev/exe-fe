@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "build": "tsc && vite build",
     "dev": "vite",
     "preview": "vite preview"
