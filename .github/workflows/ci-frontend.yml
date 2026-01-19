@@ -1,0 +1,35 @@
+name: FE CI - TypeScript Check & Build
+
+on:
+  pull_request:
+    branches: ["main", "dev"]
+  push:
+    branches: ["main", "dev"]
+
+permissions:
+  contents: read
+
+jobs:
+  fe-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 1️⃣ Check TypeScript (fail là dừng)
+      - name: TypeScript typecheck
+        run: npm run typecheck
+
+      # 2️⃣ Build FE (đảm bảo Vercel build được)
+      - name: Build
+        run: npm run build
