@@ -1,90 +1,86 @@
-import { AUTH_URL } from "@/common/config/api";
-import { useUserStore } from '@/apps/user/store/UserStore';
-import { REFRESH_TOKEN_URL } from "@/common/config/api";
-import baseApi from "@/common/api/baseApi";
-import type { User } from "@/apps/user/model/index";
+import { AUTH_URL, REFRESH_TOKEN_URL, assertGatewayConfigured } from "@/common/config/api"
+import { useUserStore } from "@/apps/user/store/UserStore"
+import baseApi from "@/common/api/baseApi"
+import type { User } from "@/apps/user/model/index"
+import { clearPersistedUserStore, clearStoredAuthTokens } from "@/common/auth/utils/session"
 
 type TokenRefresh = {
-    accessToken: string,
-    refreshToken: string,
-    role: string,
-    user: User
-};
+  accessToken: string
+  refreshToken: string
+  role: string
+  user: User
+}
 
 type AuthenticationResponse = {
-    accessToken: string,
-    refreshToken: string,
-    role: string,
-    user: User
+  accessToken: string
+  refreshToken: string
+  role: string
+  user: User
 }
 
 function login(email: string, password: string) {
-    return baseApi.post<AuthenticationResponse>(`${AUTH_URL}/authenticate`, {
-        email,
-        password,
-    });
+  assertGatewayConfigured()
+  return baseApi.post<AuthenticationResponse>(`${AUTH_URL}/authenticate`, {
+    email,
+    password,
+  })
 }
 
 function register(data: FormData) {
-    return baseApi.postWithFile<AuthenticationResponse>(
-        `${AUTH_URL}/register`,
-        data
-    )
+  assertGatewayConfigured()
+  return baseApi.postWithFile<AuthenticationResponse>(`${AUTH_URL}/register`, data)
 }
 
 function logout() {
-    localStorage.removeItem("accessToken")
-    localStorage.removeItem("refreshToken")
-    localStorage.removeItem("role")
-    sessionStorage.removeItem("accessToken")
-    sessionStorage.removeItem("refreshToken")
-    sessionStorage.removeItem("role")
-    localStorage.removeItem("user-store")
-    sessionStorage.removeItem("user-store")
-    const refreshToken = useUserStore.getState().refreshToken;
+  const currentRefreshToken = useUserStore.getState().refreshToken
 
-    if (!refreshToken) {
-        return Promise.resolve();
-    }
+  clearStoredAuthTokens()
+  clearPersistedUserStore()
 
-    return baseApi.post<void>(`${AUTH_URL}/logout`, {
-        refreshToken
-    });
+  if (!currentRefreshToken || !AUTH_URL) {
+    return Promise.resolve()
+  }
+
+  return baseApi.post<void>(`${AUTH_URL}/logout`, {
+    refreshToken: currentRefreshToken,
+  })
 }
 
-let refreshPromise: Promise<void> | null = null;
+let refreshPromise: Promise<void> | null = null
+
 async function refreshToken(): Promise<void> {
-    const authStore = useUserStore.getState();
+  const authStore = useUserStore.getState()
 
-    if (!authStore.refreshToken) {
-        return Promise.reject('No refresh token');
+  if (!authStore.refreshToken) {
+    return Promise.reject("No refresh token")
+  }
+
+  assertGatewayConfigured()
+
+  if (refreshPromise) {
+    return refreshPromise
+  }
+
+  authStore.setRefreshingToken(true)
+
+  refreshPromise = (async () => {
+    try {
+      const rs = await baseApi.post<TokenRefresh>(REFRESH_TOKEN_URL, {
+        refreshToken: authStore.refreshToken,
+      })
+
+      if (rs) {
+        authStore.setAuthentication(`Bearer ${rs.accessToken}`)
+        authStore.setRefreshToken(rs.refreshToken)
+        authStore.setUserRole(rs.role)
+      }
+    } finally {
+      authStore.setRefreshingToken(false)
+      refreshPromise = null
     }
+  })()
 
-    if (refreshPromise) {
-        return refreshPromise;
-    }
-
-    authStore.setRefreshingToken(true);
-
-    refreshPromise = (async () => {
-        try {
-            const rs = await baseApi.post<TokenRefresh>(
-                REFRESH_TOKEN_URL,
-                { refreshToken: authStore.refreshToken }
-            );
-
-            if (rs) {
-                authStore.setAuthentication(`Bearer ${rs.accessToken}`);
-                authStore.setRefreshToken(rs.refreshToken);
-                authStore.setUserRole(rs.role);
-            }
-        } finally {
-            authStore.setRefreshingToken(false);
-            refreshPromise = null;
-        }
-    })();
-
-    return refreshPromise;
+  return refreshPromise
 }
 
-export { login, logout, refreshToken, register };
+export { login, logout, refreshToken, register }

@@ -4,11 +4,10 @@ import { AuthLayout } from "./AuthLayout"
 import { User, Phone, Mail, Lock, MapPin, Calendar, Image } from "lucide-react"
 import { notify } from "@/common/toast/ToastHelper"
 import { register } from "@/common/auth/api/authApi"
-import { useUserStore } from "@/apps/user/store/UserStore"
+import { applyAuthSession } from "@/common/auth/utils/session"
 
 export function RegisterPage() {
   const navigate = useNavigate()
-  const { setAuthentication, setRefreshToken, setUserRole, setUser } = useUserStore()
   const onLogin = () => {
     navigate("/login")
   }
@@ -77,17 +76,15 @@ export function RegisterPage() {
 
       const res = await register(formData)
 
-      const bearer = `Bearer ${res.accessToken}`
-
-      setAuthentication(bearer)
-      setRefreshToken(res.refreshToken)
-      setUserRole(res.role)
-      setUser(res.user)
-
-      const storage = localStorage
-      storage.setItem("accessToken", bearer)
-      storage.setItem("refreshToken", res.refreshToken ?? "")
-      storage.setItem("role", res.role ?? "")
+      applyAuthSession(
+        {
+          accessToken: res.accessToken,
+          refreshToken: res.refreshToken,
+          role: res.role,
+          user: res.user,
+        },
+        true
+      )
 
       notify.success("Đăng ký thành công!")
       setTimeout(() => navigate("/", { replace: true }), 600)
@@ -337,3 +334,4 @@ export function RegisterPage() {
     </AuthLayout>
   )
 }
+

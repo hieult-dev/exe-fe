@@ -3,11 +3,10 @@ import { useNavigate } from "react-router-dom"
 import { AuthLayout } from "./AuthLayout"
 import { Mail, Lock } from "lucide-react"
 import { notify } from "@/common/toast/ToastHelper"
-import { useUserStore } from "@/apps/user/store/UserStore"
 import { login } from "@/common/auth/api/authApi"
+import { applyAuthSession } from "@/common/auth/utils/session"
 export function LoginPage() {
   const navigate = useNavigate()
-  const { setAuthentication, setRefreshToken, setUserRole, setUser } = useUserStore()
 
   const onRegister = () => navigate("/register")
   const onForgotPassword = () => navigate("/forgot-password")
@@ -30,17 +29,15 @@ export function LoginPage() {
     try {
 
       const res = await login(_email, password)
-      const bearer = `Bearer ${res.accessToken}`
-      setAuthentication(bearer)
-      setRefreshToken(res.refreshToken)
-      setUserRole(res.role)
-      setUser(res.user)
-
-      // (Tuỳ chọn) Lưu ra storage theo rememberMe
-      const storage = rememberMe ? localStorage : sessionStorage
-      storage.setItem("accessToken", bearer)
-      storage.setItem("refreshToken", res.refreshToken ?? "")
-      storage.setItem("role", res.role ?? "")
+      applyAuthSession(
+        {
+          accessToken: res.accessToken,
+          refreshToken: res.refreshToken,
+          role: res.role,
+          user: res.user,
+        },
+        rememberMe
+      )
 
       notify.success("Đăng nhập thành công!")
       setTimeout(() => navigate("/", { replace: true }), 600)
@@ -208,3 +205,4 @@ export function LoginPage() {
     </AuthLayout>
   )
 }
+

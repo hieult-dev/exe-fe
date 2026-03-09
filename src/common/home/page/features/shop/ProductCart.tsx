@@ -1,27 +1,31 @@
-import { useMemo } from "react"
+﻿import { useMemo } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { ProductCard } from "@/common/home/page/features/shop/ProductCard"
-import { CategoryGrid } from "@/common/home/components/fragments/category-grid"
 import { mockProducts, serviceCategoriesWithImages, type Product } from "@/common/utils/mock-data"
+
+const sortOptions = ["Lien quan", "Moi nhat", "Ban chay", "Gia"]
 
 export function ProductCart() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+
   const defaultCategory = serviceCategoriesWithImages[0]?.name ?? ""
   const categoryParam = searchParams.get("category")
   const category = categoryParam || defaultCategory
   const searchParam = searchParams.get("search") ?? ""
   const normalizedSearch = searchParam.trim().toLowerCase()
   const currentSearch = searchParams.toString()
-  const isAll = category === "Tất cả sản phẩm"
-  const isBookingCategory =
-    category === "Spa" || category === "Thú y"
+
+  const isAll = category === "Tat ca san pham" || category === "Tất cả sản phẩm"
+  const isBookingCategory = category === "Spa" || category === "Thu y" || category === "Thú y"
 
   const filteredProducts = useMemo(() => {
     let products = mockProducts
+
     if (!isAll) {
-      products = products.filter((product) => product.category === category)
+      products = products.filter((product) => product.category.toLowerCase() === category.toLowerCase())
     }
+
     if (normalizedSearch) {
       products = products.filter((product) => {
         const name = product.name.toLowerCase()
@@ -29,11 +33,13 @@ export function ProductCart() {
         return name.includes(normalizedSearch) || description.includes(normalizedSearch)
       })
     }
+
     return products
   }, [category, isAll, normalizedSearch])
 
   const handleAddToCart = (product: Product) => {
     console.log("add-to-cart", product)
+    navigate("/cart")
   }
 
   const handlePrimaryAction = (product: Product) => {
@@ -42,10 +48,6 @@ export function ProductCart() {
       return
     }
     handleAddToCart(product)
-  }
-
-  const handleBackToHome = () => {
-    navigate("/")
   }
 
   const handleSelectCategory = (nextCategory: string) => {
@@ -61,44 +63,86 @@ export function ProductCart() {
     navigate(detailPath)
   }
 
-  const onBackToHome = handleBackToHome
-  const onSelectCategory = handleSelectCategory
-  const onViewProduct = handleViewProduct
-
   return (
-    <section className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-10 space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+    <section className="min-h-screen bg-[#f5f5f5] py-6">
+      <div className="mx-auto grid max-w-7xl gap-4 px-3 md:px-4 lg:grid-cols-[220px,1fr]">
+        <aside className="space-y-4 rounded-sm bg-white p-4">
           <div>
-            <h2 className="text-3xl font-bold">Sản phẩm</h2>
-            <p className="text-sm text-muted-foreground">Danh mục dành cho {category}</p>
+            <h2 className="text-base font-semibold uppercase tracking-wide text-slate-800">Danh muc</h2>
+            <p className="mt-1 text-xs text-slate-500">Chon nhom san pham/dich vu</p>
           </div>
-          {onBackToHome && (
-            <button
-              onClick={onBackToHome}
-              className="rounded-full px-5 py-2 border border-border text-sm hover:bg-muted/60 transition"
-            >
-              Quay lại
-            </button>
+
+          <div className="space-y-1 text-sm">
+            {serviceCategoriesWithImages.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => handleSelectCategory(item.name)}
+                className={`flex w-full items-center rounded-sm px-3 py-2 text-left transition ${
+                  category === item.name
+                    ? "bg-[#fff1ed] font-semibold text-[#ee4d2d]"
+                    : "text-slate-700 hover:bg-[#fafafa]"
+                }`}
+              >
+                {item.name}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => navigate("/")}
+            className="w-full rounded-sm border border-[#ee4d2d] py-2 text-sm font-semibold text-[#ee4d2d] hover:bg-[#fff1ed]"
+          >
+            Quay lai trang chu
+          </button>
+        </aside>
+
+        <div className="space-y-4">
+          <div className="rounded-sm bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h1 className="text-xl font-semibold text-slate-800">Ket qua cho: {category}</h1>
+                {normalizedSearch ? (
+                  <p className="text-sm text-slate-500">Tu khoa tim kiem: {searchParam}</p>
+                ) : (
+                  <p className="text-sm text-slate-500">{filteredProducts.length} san pham hien thi</p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-slate-500">Sap xep:</span>
+                {sortOptions.map((option, index) => (
+                  <button
+                    key={option}
+                    className={`rounded-sm border px-3 py-1.5 ${
+                      index === 0
+                        ? "border-[#ee4d2d] bg-[#ee4d2d] text-white"
+                        : "border-[#e5e5e5] text-slate-700"
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {filteredProducts.length === 0 ? (
+            <div className="rounded-sm bg-white p-10 text-center text-slate-600">
+              Khong tim thay san pham phu hop voi bo loc hien tai.
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  actionLabel={isBookingCategory ? "Dat lich ngay" : undefined}
+                  onAction={handlePrimaryAction}
+                  onCardClick={handleViewProduct}
+                />
+              ))}
+            </div>
           )}
-        </div>
-
-        <CategoryGrid
-          categories={serviceCategoriesWithImages}
-          selectedCategory={category}
-          onSelectCategory={(nextCategory) => onSelectCategory?.(nextCategory)}
-        />
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              actionLabel={isBookingCategory ? "Dat lich ngay" : undefined}
-              onAction={handlePrimaryAction}
-              onCardClick={onViewProduct}
-            />
-          ))}
         </div>
       </div>
     </section>
