@@ -1,5 +1,8 @@
 import { useState, type FormEvent } from "react"
-import { Plus, PencilLine, Trash2, UserCog, UserRound } from "lucide-react"
+import { Plus, PencilLine, Trash2 } from "lucide-react"
+import { DataTable } from "primereact/datatable"
+import { Column } from "primereact/column"
+import type { ColumnBodyOptions } from "primereact/column"
 import { AppDialog } from "@/common/component/AppDialog"
 import { useShopOwnerContext } from "@/common/home/page/features/shop-owner/store/ShopOwnerContext"
 import {
@@ -39,10 +42,10 @@ function statusLabel(status: ShopMemberStatus) {
 }
 
 function statusClass(status: ShopMemberStatus) {
-  if (status === "ACTIVE") return "bg-emerald-50 text-emerald-700"
-  if (status === "INVITED") return "bg-sky-50 text-sky-700"
-  if (status === "INACTIVE") return "bg-slate-100 text-slate-600"
-  return "bg-rose-50 text-rose-700"
+  if (status === "ACTIVE") return "bg-emerald-500 text-white"
+  if (status === "INVITED") return "bg-sky-500 text-white"
+  if (status === "INACTIVE") return "bg-slate-200 text-slate-700"
+  return "bg-rose-500 text-white"
 }
 
 function toForm(member: ShopMember): MemberFormState {
@@ -151,11 +154,70 @@ export function ShopMembersPage() {
     closeDeleteDialog()
   }
 
+  const indexBody = (_member: ShopMember, options: ColumnBodyOptions) => {
+    return <span>{options.rowIndex + 1}</span>
+  }
+
+  const memberBody = (member: ShopMember) => {
+    const initial = (member.fullName.trim()[0] || "U").toUpperCase()
+    return (
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#e8eef8] text-xs font-semibold text-[#2c4b7a]">
+          {initial}
+        </div>
+        <div>
+          <p className="font-semibold text-slate-800">{member.fullName}</p>
+          <p className="text-xs text-slate-500">{member.id}</p>
+        </div>
+      </div>
+    )
+  }
+
+  const roleBody = (member: ShopMember) => {
+    return <span>{roleLabel(member.role)}</span>
+  }
+
+  const phoneBody = (member: ShopMember) => {
+    return <span>{member.phone || "Chưa cập nhật"}</span>
+  }
+
+  const statusBody = (member: ShopMember) => {
+    return (
+      <span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${statusClass(member.status)}`}>
+        {statusLabel(member.status)}
+      </span>
+    )
+  }
+
+  const actionsBody = (member: ShopMember) => {
+    return (
+      <div className="flex items-center justify-center gap-1">
+        <button
+          onClick={() => openEditDialog(member)}
+          title="Sửa thành viên"
+          aria-label="Sửa thành viên"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d8e0ea] text-slate-600 hover:bg-slate-100"
+        >
+          <PencilLine className="h-4 w-4" />
+        </button>
+
+        <button
+          onClick={() => requestDelete(member.id)}
+          title="Xóa thành viên"
+          aria-label="Xóa thành viên"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#f0c2b7] text-[#c73d1e] hover:bg-[#fff4f1]"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+    )
+  }
+
   return (
     <>
       <div className="border-b border-[#f2f2f2] pb-4">
         <h1 className="text-2xl font-semibold text-slate-800">Quản lý thành viên</h1>
-        <p className="mt-1 text-sm text-slate-500">Thêm, sửa, xóa hội viên/quản lý/nhân viên của shop.</p>
+        <p className="mt-1 text-sm text-slate-500">Thêm, sửa, xóa hội viên, quản lý, nhân viên của shop.</p>
       </div>
 
       <div className="pt-5">
@@ -169,49 +231,43 @@ export function ShopMembersPage() {
           </button>
         </div>
 
-        <div className="space-y-3">
-          {data.members.map((member) => (
-            <article key={member.id} className="rounded-sm border border-[#efefef] p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#f5f5f5] pb-3">
-                <div>
-                  <h3 className="inline-flex items-center gap-2 text-base font-semibold text-slate-800">
-                    <UserRound className="h-4 w-4 text-slate-500" />
-                    {member.fullName}
-                  </h3>
-                  <p className="mt-1 text-sm text-slate-500">{member.email}</p>
-                </div>
-
-                <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusClass(member.status)}`}>
-                  {statusLabel(member.status)}
-                </span>
-              </div>
-
-              <div className="mt-3 grid gap-2 text-sm text-slate-700 md:grid-cols-2">
-                <p className="inline-flex items-center gap-2">
-                  <UserCog className="h-4 w-4 text-slate-500" />
-                  Vai trò: <span className="font-semibold">{roleLabel(member.role)}</span>
-                </p>
-                <p>SĐT: <span className="font-semibold">{member.phone || "Chưa cập nhật"}</span></p>
-              </div>
-
-              <div className="mt-3 flex flex-wrap justify-end gap-2">
-                <button
-                  onClick={() => openEditDialog(member)}
-                  className="inline-flex items-center gap-1 rounded-sm border border-[#e8e8e8] px-2 py-1 text-xs text-slate-700 hover:bg-[#fafafa]"
-                >
-                  <PencilLine className="h-3.5 w-3.5" />
-                  Sửa
-                </button>
-                <button
-                  onClick={() => requestDelete(member.id)}
-                  className="inline-flex items-center gap-1 rounded-sm border border-[#f0c2b7] px-2 py-1 text-xs text-[#c73d1e] hover:bg-[#fff4f1]"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Xóa
-                </button>
-              </div>
-            </article>
-          ))}
+        <div className="rounded-sm border border-[#d9e1ec] bg-white">
+          <DataTable
+            value={data.members}
+            dataKey="id"
+            size="small"
+            stripedRows
+            showGridlines
+            tableStyle={{ minWidth: "62rem" }}
+            emptyMessage="Chưa có thành viên nào."
+          >
+            <Column
+              header="TT"
+              body={indexBody}
+              style={{ width: "64px" }}
+              headerStyle={{ textAlign: "center" }}
+              bodyStyle={{ textAlign: "center" }}
+            />
+            <Column field="fullName" header="Thành viên" body={memberBody} style={{ minWidth: "240px" }} />
+            <Column field="email" header="Email" style={{ minWidth: "220px" }} />
+            <Column field="role" header="Vai trò" body={roleBody} style={{ minWidth: "120px" }} />
+            <Column field="phone" header="Số điện thoại" body={phoneBody} style={{ minWidth: "140px" }} />
+            <Column
+              field="status"
+              header="Trạng thái"
+              body={statusBody}
+              style={{ minWidth: "140px" }}
+              headerStyle={{ textAlign: "center" }}
+              bodyStyle={{ textAlign: "center" }}
+            />
+            <Column
+              header="Thao tác"
+              body={actionsBody}
+              style={{ minWidth: "120px" }}
+              headerStyle={{ textAlign: "center" }}
+              bodyStyle={{ textAlign: "center" }}
+            />
+          </DataTable>
         </div>
       </div>
 
@@ -357,4 +413,3 @@ function SelectField({ label, value, options, onChange }: SelectFieldProps) {
     </label>
   )
 }
-
