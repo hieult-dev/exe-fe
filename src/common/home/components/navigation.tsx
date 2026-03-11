@@ -125,7 +125,7 @@ export function Navigation({ onUseLocation }: NavigationProps) {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-[#efefef] shadow-sm">
-        <div className="bg-gradient-to-b from-[#f53d2d] to-[#ff6633] text-white">
+        <div className="bg-gradient-to-b from-[#fc5c88] to-[#ff7ca3] text-white">
           <div className="mx-auto max-w-7xl px-3 md:px-4">
             <div className="hidden h-9 items-center justify-between text-xs md:flex">
               <div className="flex items-center gap-4">
@@ -201,7 +201,7 @@ export function Navigation({ onUseLocation }: NavigationProps) {
                             setOpenAccountDropdown(false)
                             navigate("/profile")
                           }}
-                          className="w-full px-4 py-2 text-left hover:bg-[#fff3ef] hover:text-[#ee4d2d]"
+                          className="w-full px-4 py-2 text-left hover:bg-[#fff0f5] hover:text-[#fc5c88]"
                         >
                           Tài khoản của tôi
                         </button>
@@ -210,7 +210,7 @@ export function Navigation({ onUseLocation }: NavigationProps) {
                             setOpenAccountDropdown(false)
                             navigate("/orders")
                           }}
-                          className="w-full px-4 py-2 text-left hover:bg-[#fff3ef] hover:text-[#ee4d2d]"
+                          className="w-full px-4 py-2 text-left hover:bg-[#fff0f5] hover:text-[#fc5c88]"
                         >
                           Đơn mua
                         </button>
@@ -219,7 +219,7 @@ export function Navigation({ onUseLocation }: NavigationProps) {
                             setOpenAccountDropdown(false)
                             navigate("/shop-owner/profile")
                           }}
-                          className="w-full px-4 py-2 text-left hover:bg-[#fff3ef] hover:text-[#ee4d2d]"
+                          className="w-full px-4 py-2 text-left hover:bg-[#fff0f5] hover:text-[#fc5c88]"
                         >
                           Kênh shop owner
                         </button>
@@ -228,7 +228,7 @@ export function Navigation({ onUseLocation }: NavigationProps) {
                             setOpenAccountDropdown(false)
                             setShowLogoutModal(true)
                           }}
-                          className="w-full px-4 py-2 text-left hover:bg-[#fff3ef] hover:text-[#ee4d2d]"
+                          className="w-full px-4 py-2 text-left hover:bg-[#fff0f5] hover:text-[#fc5c88]"
                         >
                           Đăng xuất
                         </button>
@@ -267,7 +267,7 @@ export function Navigation({ onUseLocation }: NavigationProps) {
                   <button
                     type="button"
                     onClick={handleSearch}
-                    className="inline-flex h-9 w-14 items-center justify-center rounded-sm bg-[#fb5533] text-white hover:bg-[#f04a28] transition"
+                    className="inline-flex h-9 w-14 items-center justify-center rounded-sm bg-[#fc5c88] text-white hover:bg-[#e64b81] transition"
                   >
                     <Search className="h-4 w-4" />
                   </button>
@@ -291,7 +291,7 @@ export function Navigation({ onUseLocation }: NavigationProps) {
                 className="relative ml-auto hidden rounded-sm p-2 hover:bg-white/10 md:inline-flex"
               >
                 <ShoppingCart className="h-7 w-7" />
-                <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-xs font-bold text-[#ee4d2d]">
+                <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-xs font-bold text-[#fc5c88]">
                   2
                 </span>
               </button>
@@ -317,7 +317,7 @@ export function Navigation({ onUseLocation }: NavigationProps) {
                   <button
                     type="button"
                     onClick={handleSearch}
-                    className="inline-flex h-9 w-12 items-center justify-center rounded-sm bg-[#fb5533] text-white"
+                    className="inline-flex h-9 w-12 items-center justify-center rounded-sm bg-[#fc5c88] text-white"
                   >
                     <Search className="h-4 w-4" />
                   </button>
@@ -364,7 +364,7 @@ export function Navigation({ onUseLocation }: NavigationProps) {
 
                 {!isLoggedIn ? (
                   <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => navigate("/login")} className="rounded-sm bg-white px-3 py-2 text-[#ee4d2d]">
+                    <button onClick={() => navigate("/login")} className="rounded-sm bg-white px-3 py-2 text-[#fc5c88]">
                       Đăng nhập
                     </button>
                     <button onClick={() => navigate("/register")} className="rounded-sm border border-white px-3 py-2">
@@ -413,14 +413,14 @@ export function Navigation({ onUseLocation }: NavigationProps) {
               <button
                 key={category}
                 onClick={() => handleChooseCategory(category)}
-                className="whitespace-nowrap border-b-2 border-transparent pt-0.5 hover:border-[#ee4d2d] hover:text-[#ee4d2d]"
+                className="whitespace-nowrap border-b-2 border-transparent pt-0.5 hover:border-[#fc5c88] hover:text-[#fc5c88]"
               >
                 {category}
               </button>
             ))}
             <button
               onClick={() => navigate("/booking")}
-              className="ml-auto inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-[#ee4d2d] px-3 py-1 text-xs font-semibold text-[#ee4d2d]"
+              className="ml-auto inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-[#fc5c88] px-3 py-1 text-xs font-semibold text-[#fc5c88]"
             >
               <Package className="h-3.5 w-3.5" />
               Đặt lịch nhanh
