@@ -1,5 +1,5 @@
-import { useMemo, useState, type FormEvent } from "react"
-import { Plus, PencilLine, Power, PowerOff, Trash2 } from "lucide-react"
+﻿import { useMemo, useState, type FormEvent } from "react"
+import { ListFilter, PencilLine, Plus, Power, PowerOff, RefreshCw, Trash2 } from "lucide-react"
 import { DataTable } from "primereact/datatable"
 import { Column } from "primereact/column"
 import type { ColumnBodyOptions } from "primereact/column"
@@ -15,6 +15,8 @@ type ServiceFormState = {
   description: string
   active: boolean
 }
+
+type ServiceVisibilityFilter = "ALL" | "ACTIVE" | "INACTIVE"
 
 const emptyForm: ServiceFormState = {
   name: "",
@@ -50,10 +52,24 @@ export function ShopServicesPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null)
   const [deletingServiceId, setDeletingServiceId] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState<ServiceVisibilityFilter>("ALL")
   const [formState, setFormState] = useState<ServiceFormState>(emptyForm)
   const [formError, setFormError] = useState("")
 
   const activeCount = useMemo(() => data.services.filter((item) => item.active).length, [data.services])
+  const inactiveCount = data.services.length - activeCount
+
+  const visibleServices = useMemo(() => {
+    if (statusFilter === "ACTIVE") {
+      return data.services.filter((item) => item.active)
+    }
+
+    if (statusFilter === "INACTIVE") {
+      return data.services.filter((item) => !item.active)
+    }
+
+    return data.services
+  }, [data.services, statusFilter])
 
   const openCreateDialog = () => {
     setEditingServiceId(null)
@@ -160,6 +176,12 @@ export function ShopServicesPage() {
     closeDeleteDialog()
   }
 
+  const handleRefreshView = () => {
+    setStatusFilter("ALL")
+    closeFormDialog()
+    closeDeleteDialog()
+  }
+
   const indexBody = (_service: ShopService, options: ColumnBodyOptions) => {
     return <span>{options.rowIndex + 1}</span>
   }
@@ -167,27 +189,27 @@ export function ShopServicesPage() {
   const serviceNameBody = (service: ShopService) => {
     return (
       <div>
-        <p className="font-semibold text-slate-800">{service.name}</p>
-        <p className="text-xs text-slate-500">{service.id}</p>
+        <p className="font-semibold text-[#24364d]">{service.name}</p>
+        <p className="text-xs text-[#73849b]">{service.id}</p>
       </div>
     )
   }
 
   const descriptionBody = (service: ShopService) => {
-    return <span className="block max-w-[320px] truncate">{service.description || "Khong co mo ta"}</span>
+    return <span className="block max-w-[340px] truncate text-[#4c5f78]">{service.description || "Không có mô tả"}</span>
   }
 
   const priceBody = (service: ShopService) => {
-    return <span className="font-semibold text-[#ee4d2d]">{formatCurrencyVND(service.basePrice)}</span>
+    return <span className="font-semibold text-[#ef5c2c]">{formatCurrencyVND(service.basePrice)}</span>
   }
 
   const durationBody = (service: ShopService) => {
-    return <span>{service.durationMin} phút</span>
+    return <span className="text-[#4c5f78]">{service.durationMin} phút</span>
   }
 
   const statusBody = (service: ShopService) => {
     return (
-      <span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${serviceStatusClass(service.active)}`}>
+      <span className={`inline-flex rounded-md px-2.5 py-1 text-xs font-semibold ${serviceStatusClass(service.active)}`}>
         {serviceStatusLabel(service.active)}
       </span>
     )
@@ -195,12 +217,12 @@ export function ShopServicesPage() {
 
   const actionsBody = (service: ShopService) => {
     return (
-      <div className="flex items-center justify-center gap-1">
+      <div className="flex items-center justify-center gap-1.5">
         <button
           onClick={() => toggleServiceStatus(service.id)}
           title={service.active ? "Tạm dừng dịch vụ" : "Kích hoạt dịch vụ"}
           aria-label={service.active ? "Tạm dừng dịch vụ" : "Kích hoạt dịch vụ"}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d8e0ea] text-slate-600 hover:bg-slate-100"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d7dfe9] bg-white text-slate-600 transition hover:bg-slate-50"
         >
           {service.active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
         </button>
@@ -209,7 +231,7 @@ export function ShopServicesPage() {
           onClick={() => openEditDialog(service)}
           title="Sửa dịch vụ"
           aria-label="Sửa dịch vụ"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d8e0ea] text-slate-600 hover:bg-slate-100"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d7dfe9] bg-white text-slate-600 transition hover:bg-slate-50"
         >
           <PencilLine className="h-4 w-4" />
         </button>
@@ -218,7 +240,7 @@ export function ShopServicesPage() {
           onClick={() => requestDelete(service.id)}
           title="Xóa dịch vụ"
           aria-label="Xóa dịch vụ"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#f0c2b7] text-[#c73d1e] hover:bg-[#fff4f1]"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#f0c2b7] bg-white text-[#c73d1e] transition hover:bg-[#fff4f1]"
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -228,82 +250,116 @@ export function ShopServicesPage() {
 
   return (
     <>
-      <div className="border-b border-[#f2f2f2] pb-4">
-        <h1 className="text-2xl font-semibold text-slate-800">Quản lý dịch vụ</h1>
-        <p className="mt-1 text-sm text-slate-500">Thêm, sửa, xóa dịch vụ và quản lý giá, thời lượng, trạng thái hoạt động.</p>
-      </div>
+      <section className="overflow-hidden rounded-2xl border border-[#dbe3ed] bg-white shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-[#e7edf4] bg-[#fbfcfe] px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-5">
+          <h1 className="text-lg font-semibold text-[#24364d]">Danh sách dịch vụ</h1>
 
-      <div className="pt-5">
-        <div className="mb-4 grid gap-3 rounded-sm border border-[#efefef] bg-[#fafafa] p-4 md:grid-cols-3">
-          <SummaryCard label="Tổng dịch vụ" value={String(data.services.length)} />
-          <SummaryCard label="Đang hoạt động" value={String(activeCount)} />
-          <SummaryCard label="Tạm dừng" value={String(data.services.length - activeCount)} />
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            <button
+              onClick={openCreateDialog}
+              className="inline-flex h-9 items-center gap-2 rounded-md bg-[#214388] px-4 text-sm font-semibold text-white transition hover:bg-[#19356a]"
+            >
+              <Plus className="h-4 w-4" />
+              Thêm mới
+            </button>
+
+            <label className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d9e1eb] bg-white px-3 text-sm text-[#52657e]">
+              <ListFilter className="h-4 w-4 text-[#70829a]" />
+              <span>Xem theo</span>
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value as ServiceVisibilityFilter)}
+                className="border-0 bg-transparent font-medium text-[#24364d] outline-none"
+              >
+                <option value="ALL">Tất cả</option>
+                <option value="ACTIVE">Đang hoạt động</option>
+                <option value="INACTIVE">Tạm dừng</option>
+              </select>
+            </label>
+
+            <button
+              onClick={handleRefreshView}
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d9e1eb] bg-white px-4 text-sm font-medium text-[#40526b] transition hover:bg-[#f8fafc]"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </button>
+          </div>
         </div>
 
-        <div className="mb-4 flex justify-end">
-          <button
-            onClick={openCreateDialog}
-            className="inline-flex items-center gap-2 rounded-sm bg-[#ee4d2d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#de4322]"
-          >
-            <Plus className="h-4 w-4" />
-            Thêm dịch vụ
-          </button>
-        </div>
+        <div className="space-y-5 px-4 py-4 lg:px-5 lg:py-5">
+          <p className="text-sm text-[#74849a]">Quản lý giá, thời lượng và trạng thái hoạt động của từng dịch vụ.</p>
 
-        <div className="rounded-sm border border-[#d9e1ec] bg-white">
-          <DataTable
-            value={data.services}
-            dataKey="id"
-            size="small"
-            stripedRows
-            showGridlines
-            tableStyle={{ minWidth: "64rem" }}
-            emptyMessage="Chưa có dịch vụ nào."
-          >
-            <Column
-              header="TT"
-              body={indexBody}
-              style={{ width: "64px" }}
-              headerStyle={{ textAlign: "center" }}
-              bodyStyle={{ textAlign: "center" }}
-            />
-            <Column field="name" header="Tên dịch vụ" body={serviceNameBody} style={{ minWidth: "220px" }} />
-            <Column field="category" header="Nhóm" style={{ minWidth: "140px" }} />
-            <Column field="description" header="Mô tả" body={descriptionBody} style={{ minWidth: "260px" }} />
-            <Column
-              field="basePrice"
-              header="Giá"
-              body={priceBody}
-              style={{ minWidth: "140px" }}
-              headerStyle={{ textAlign: "right" }}
-              bodyStyle={{ textAlign: "right" }}
-            />
-            <Column
-              field="durationMin"
-              header="Thời lượng"
-              body={durationBody}
-              style={{ minWidth: "120px" }}
-              headerStyle={{ textAlign: "center" }}
-              bodyStyle={{ textAlign: "center" }}
-            />
-            <Column
-              field="active"
-              header="Trạng thái"
-              body={statusBody}
-              style={{ minWidth: "140px" }}
-              headerStyle={{ textAlign: "center" }}
-              bodyStyle={{ textAlign: "center" }}
-            />
-            <Column
-              header="Thao tác"
-              body={actionsBody}
-              style={{ minWidth: "140px" }}
-              headerStyle={{ textAlign: "center" }}
-              bodyStyle={{ textAlign: "center" }}
-            />
-          </DataTable>
+          <div className="grid gap-3 md:grid-cols-3">
+            <SummaryCard label="Tổng dịch vụ" value={String(data.services.length)} />
+            <SummaryCard label="Đang hoạt động" value={String(activeCount)} />
+            <SummaryCard label="Tạm dừng" value={String(inactiveCount)} />
+          </div>
+
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-[#24364d]">Quản lý dịch vụ</p>
+              <p className="text-sm text-[#73849b]">Bảng bên dưới là danh sách dịch vụ hiện có của cửa hàng.</p>
+            </div>
+            <p className="text-sm text-[#73849b]">Hiển thị {visibleServices.length}/{data.services.length} dịch vụ</p>
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-[#e2e8f0] bg-white">
+            <DataTable
+              value={visibleServices}
+              dataKey="id"
+              size="small"
+              stripedRows
+              rowHover
+              showGridlines
+              tableStyle={{ minWidth: "68rem" }}
+              emptyMessage="Chưa có dịch vụ nào."
+            >
+              <Column
+                header="TT"
+                body={indexBody}
+                style={{ width: "64px" }}
+                headerStyle={{ textAlign: "center" }}
+                bodyStyle={{ textAlign: "center" }}
+              />
+              <Column field="name" header="Tên dịch vụ" body={serviceNameBody} style={{ minWidth: "240px" }} />
+              <Column field="category" header="Nhóm" style={{ minWidth: "140px" }} />
+              <Column field="description" header="Mô tả" body={descriptionBody} style={{ minWidth: "280px" }} />
+              <Column
+                field="basePrice"
+                header="Giá"
+                body={priceBody}
+                style={{ minWidth: "140px" }}
+                headerStyle={{ textAlign: "right" }}
+                bodyStyle={{ textAlign: "right" }}
+              />
+              <Column
+                field="durationMin"
+                header="Thời lượng"
+                body={durationBody}
+                style={{ minWidth: "120px" }}
+                headerStyle={{ textAlign: "center" }}
+                bodyStyle={{ textAlign: "center" }}
+              />
+              <Column
+                field="active"
+                header="Trạng thái"
+                body={statusBody}
+                style={{ minWidth: "150px" }}
+                headerStyle={{ textAlign: "center" }}
+                bodyStyle={{ textAlign: "center" }}
+              />
+              <Column
+                header="Thao tác"
+                body={actionsBody}
+                style={{ minWidth: "140px" }}
+                headerStyle={{ textAlign: "center" }}
+                bodyStyle={{ textAlign: "center" }}
+              />
+            </DataTable>
+          </div>
         </div>
-      </div>
+      </section>
 
       <AppDialog
         open={isFormOpen}
@@ -316,14 +372,14 @@ export function ShopServicesPage() {
             <button
               type="button"
               onClick={closeFormDialog}
-              className="rounded-sm border border-[#d9d9d9] bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[#fafafa]"
+              className="rounded-lg bg-[#f4f7fb] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[#ecf1f8]"
             >
               Hủy
             </button>
             <button
               type="submit"
               form="shop-service-form"
-              className="rounded-sm bg-[#ee4d2d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#de4322]"
+              className="rounded-lg bg-[#214388] px-4 py-2 text-sm font-semibold text-white hover:bg-[#19356a]"
             >
               {editingServiceId ? "Lưu thay đổi" : "Tạo dịch vụ"}
             </button>
@@ -331,9 +387,7 @@ export function ShopServicesPage() {
         }
       >
         <form id="shop-service-form" onSubmit={handleSave} className="space-y-3">
-          {formError && (
-            <div className="rounded-sm border border-[#f0c2b7] bg-[#fff4f1] px-3 py-2 text-sm text-[#c73d1e]">{formError}</div>
-          )}
+          {formError && <div className="rounded-lg bg-[#fff4f1] px-3 py-2 text-sm text-[#c73d1e]">{formError}</div>}
 
           <div className="grid gap-3 md:grid-cols-2">
             <InputField
@@ -369,7 +423,7 @@ export function ShopServicesPage() {
                 rows={3}
                 value={formState.description}
                 onChange={(event) => setFormState((prev) => ({ ...prev, description: event.target.value }))}
-                className="w-full resize-none rounded-sm border border-[#d9d9d9] bg-white px-3 py-2 text-sm outline-none focus:border-[#ee4d2d]"
+                className="w-full resize-none rounded-lg bg-[#f8fafc] px-3 py-2 text-sm outline-none focus:bg-white"
               />
             </label>
 
@@ -378,7 +432,7 @@ export function ShopServicesPage() {
                 type="checkbox"
                 checked={formState.active}
                 onChange={(event) => setFormState((prev) => ({ ...prev, active: event.target.checked }))}
-                className="h-4 w-4 rounded border-[#d9d9d9]"
+                className="h-4 w-4 rounded"
               />
               Kích hoạt dịch vụ sau khi lưu
             </label>
@@ -396,14 +450,14 @@ export function ShopServicesPage() {
             <button
               type="button"
               onClick={closeDeleteDialog}
-              className="rounded-sm border border-[#d9d9d9] bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[#fafafa]"
+              className="rounded-lg bg-[#f4f7fb] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[#ecf1f8]"
             >
               Hủy
             </button>
             <button
               type="button"
               onClick={confirmDelete}
-              className="rounded-sm bg-[#d93b1f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#c23218]"
+              className="rounded-lg bg-[#d93b1f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#c23218]"
             >
               Xóa dịch vụ
             </button>
@@ -418,9 +472,9 @@ export function ShopServicesPage() {
 
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-sm border border-[#efefef] bg-white p-3">
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="mt-1 text-xl font-semibold text-slate-800">{value}</p>
+    <div className="rounded-xl border border-[#e5ebf3] bg-white p-4">
+      <p className="text-sm text-[#70829a]">{label}</p>
+      <p className="mt-2 text-[1.8rem] font-semibold leading-none text-[#24364d]">{value}</p>
     </div>
   )
 }
@@ -443,8 +497,9 @@ function InputField({ label, value, required = false, type = "text", onChange }:
         required={required}
         min={type === "number" ? 0 : undefined}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-sm border border-[#d9d9d9] bg-white px-3 py-2 text-sm outline-none focus:border-[#ee4d2d]"
+        className="w-full rounded-lg bg-[#f8fafc] px-3 py-2 text-sm outline-none focus:bg-white"
       />
     </label>
   )
 }
+
