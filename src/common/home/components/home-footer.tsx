@@ -1,35 +1,35 @@
-﻿import { Link } from "react-router-dom"
+import { Link } from "react-router-dom"
 
 const columns = [
   {
-    title: "CHAM SOC KHACH HANG",
+    title: "CHĂM SÓC KHÁCH HÀNG",
     links: [
-      { label: "Trung tam tro giup", to: "/products" },
-      { label: "Huong dan dat dich vu", to: "/booking" },
-      { label: "Van chuyen va thanh toan", to: "/cart" },
-      { label: "Bao hanh va hoan tien", to: "/orders" },
+      { label: "Trung tâm trợ giúp", to: "/products" },
+      { label: "Hướng dẫn đặt dịch vụ", to: "/booking" },
+      { label: "Vận chuyển và thanh toán", to: "/cart" },
+      { label: "Bảo hành và hoàn tiền", to: "/orders" },
     ],
   },
   {
-    title: "VE PETPEEs",
+    title: "VỀ PETPEEs",
     links: [
-      { label: "Gioi thieu", to: "/" },
-      { label: "Tuyen dung", to: "/" },
-      { label: "Dieu khoan", to: "/" },
-      { label: "Chinh sach bao mat", to: "/" },
+      { label: "Giới thiệu", to: "/" },
+      { label: "Tuyển dụng", to: "/" },
+      { label: "Điều khoản", to: "/" },
+      { label: "Chính sách bảo mật", to: "/" },
     ],
   },
   {
-    title: "THANH TOAN",
+    title: "THANH TOÁN",
     links: [
-      { label: "Vi dien tu", to: "/cart" },
-      { label: "The ngan hang", to: "/cart" },
-      { label: "Thanh toan khi nhan hang", to: "/cart" },
-      { label: "Tra gop", to: "/cart" },
+      { label: "Ví điện tử", to: "/cart" },
+      { label: "Thẻ ngân hàng", to: "/cart" },
+      { label: "Thanh toán khi nhận hàng", to: "/cart" },
+      { label: "Trả góp", to: "/cart" },
     ],
   },
   {
-    title: "THEO DOI CHUNG TOI",
+    title: "THEO DÕI CHÚNG TÔI",
     links: [
       { label: "Facebook", to: "/" },
       { label: "Instagram", to: "/" },
@@ -41,16 +41,16 @@ const columns = [
 
 export function HomeFooter() {
   return (
-    <footer className="border-t border-[#e5e5e5] bg-white">
+    <footer className="bg-gradient-to-b from-[#fc5c88] to-[#ff7ca3] text-white">
       <div className="mx-auto max-w-7xl px-3 py-8 md:px-4">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {columns.map((column) => (
             <div key={column.title}>
-              <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-700">{column.title}</h4>
-              <ul className="space-y-2 text-sm text-slate-600">
+              <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-white/80">{column.title}</h4>
+              <ul className="space-y-2 text-sm text-white/90">
                 {column.links.map((link) => (
                   <li key={link.label}>
-                    <Link to={link.to} className="hover:text-[#ee4d2d]">
+                    <Link to={link.to} className="hover:text-white transition">
                       {link.label}
                     </Link>
                   </li>
@@ -60,10 +60,10 @@ export function HomeFooter() {
           ))}
         </div>
 
-        <div className="mt-8 border-t border-[#f2f2f2] pt-6 text-xs text-slate-500">
+        <div className="mt-8 border-t border-white/20 pt-6 text-xs text-white/70">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p>© 2026 PETPEEs. Nen tang ket noi mua ban cho pet owner va spa/shop tai Viet Nam.</p>
-            <p>Quoc gia & Khu vuc: Viet Nam | Ho Chi Minh City</p>
+            <p>© 2026 PETPEEs. Nền tảng kết nối mua bán cho pet owner và spa/shop tại Việt Nam.</p>
+            <p>Quốc gia &amp; Khu vực: Việt Nam | Hồ Chí Minh</p>
           </div>
         </div>
       </div>

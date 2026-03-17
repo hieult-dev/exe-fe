@@ -1,4 +1,4 @@
-﻿import { Minus, Plus, Trash2 } from "lucide-react"
+import { Minus, Plus, Trash2 } from "lucide-react"
 
 export type CartLine = {
   id: string
@@ -25,7 +25,7 @@ export function CartItem({ item, onIncrease, onDecrease, onRemove }: CartItemPro
 
         <div>
           <h3 className="line-clamp-2 text-sm text-slate-800">{item.name}</h3>
-          <p className="mt-1 text-xs text-slate-500">San pham chinh hang PETPEEs Mall</p>
+          <p className="mt-1 text-xs text-slate-500">Sản phẩm chính hãng PETPEEs Mall</p>
         </div>
 
         <div className="text-sm font-semibold text-[#ee4d2d]">{item.price.toLocaleString()}đ</div>

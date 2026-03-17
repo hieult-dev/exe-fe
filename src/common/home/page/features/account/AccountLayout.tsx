@@ -6,7 +6,8 @@ import { formatProfileValue, resolveAvatarUrl } from "@/common/user/utils/profil
 const accountNav = [
   { to: "/profile", label: "Tài khoản của tôi" },
   { to: "/my-pets", label: "Thú cưng của tôi" },
-  { to: "/orders", label: "Đơn mua" },
+  { to: "/orders", label: "Đơn mua hàng" },
+  { to: "/my-bookings", label: "Lịch dịch vụ" },
   { to: "/notifications", label: "Thông báo" },
   { to: "/vouchers", label: "Kho voucher" },
 ]

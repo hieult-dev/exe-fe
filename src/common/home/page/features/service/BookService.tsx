@@ -34,6 +34,13 @@ export function BookService() {
   const [selectedService, setSelectedService] = useState("")
   const [selectedDate, setSelectedDate] = useState("")
   const [selectedTime, setSelectedTime] = useState("")
+  
+  // Pet info
+  const [petName, setPetName] = useState("")
+  const [petType, setPetType] = useState("Chó")
+  const [petBreed, setPetBreed] = useState("")
+  const [petWeight, setPetWeight] = useState("")
+
   const [discount] = useState(0)
 
   const servicePrice = selectedService ? 500000 : 0
@@ -53,7 +60,7 @@ export function BookService() {
               onClick={onBack}
               className="rounded-full px-5 py-2 border border-border text-sm hover:bg-muted/60 transition"
             >
-              Quay lai
+              Quay lại
             </button>
           )}
         </div>
@@ -101,6 +108,55 @@ export function BookService() {
                     min="1"
                     className="w-full px-4 py-2 rounded-lg border border-border bg-background"
                   />
+                </div>
+              </div>
+
+              {/* Pet Info */}
+              <div className="border-t border-border pt-6 space-y-4">
+                <h4 className="font-semibold">Thông tin thú cưng</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-semibold mb-2 block">Tên thú cưng *</label>
+                    <input
+                      type="text"
+                      value={petName}
+                      onChange={(e) => setPetName(e.target.value)}
+                      placeholder="VD: Milu"
+                      className="w-full px-4 py-2 rounded-lg border border-border bg-background"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold mb-2 block">Cân nặng (kg) *</label>
+                    <input
+                      type="text"
+                      value={petWeight}
+                      onChange={(e) => setPetWeight(e.target.value)}
+                      placeholder="VD: 5"
+                      className="w-full px-4 py-2 rounded-lg border border-border bg-background"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold mb-2 block">Loài *</label>
+                    <select
+                      value={petType}
+                      onChange={(e) => setPetType(e.target.value)}
+                      className="w-full px-4 py-2 rounded-lg border border-border bg-background text-slate-700"
+                    >
+                      <option value="Chó">Chó</option>
+                      <option value="Mèo">Mèo</option>
+                      <option value="Khác">Khác</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold mb-2 block">Giống (nếu biết)</label>
+                    <input
+                      type="text"
+                      value={petBreed}
+                      onChange={(e) => setPetBreed(e.target.value)}
+                      placeholder="VD: Poodle, Corgi..."
+                      className="w-full px-4 py-2 rounded-lg border border-border bg-background"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -250,7 +306,7 @@ export function BookService() {
                   </div>
 
                   <p className="text-xs text-muted-foreground">
-                    Vui lòng nhân nút "Đặt lịch" đồng ý ban đã đồng ý với Chính sách bảo vệ và điều kiện nhân của Easysalon.
+                    Vui lòng nhấn nút "Đặt lịch" để xác nhận bạn đã đồng ý với Chính sách bảo vệ và điều kiện của PETPEEs.
                   </p>
                 </>
               )}

@@ -1,4 +1,4 @@
-﻿import { ShoppingCart, Star } from "lucide-react"
+import { ShoppingCart, Star } from "lucide-react"
 import type { Product } from "@/common/utils/mock-data"
 
 interface ProductCardProps {
@@ -14,7 +14,7 @@ export function ProductCard({
   onAction,
   onCardClick,
 }: ProductCardProps) {
-  const buttonLabel = actionLabel ?? "Them vao gio hang"
+  const buttonLabel = actionLabel ?? "Thêm vào giỏ hàng"
 
   return (
     <article
@@ -37,7 +37,7 @@ export function ProductCard({
             <Star className="h-3.5 w-3.5 fill-current" />
             <span>{product.rating.toFixed(1)}</span>
           </div>
-          {typeof product.reviews === "number" && <span>({product.reviews} danh gia)</span>}
+          {typeof product.reviews === "number" && <span>({product.reviews} đánh giá)</span>}
         </div>
 
         <div className="mt-auto pt-3">

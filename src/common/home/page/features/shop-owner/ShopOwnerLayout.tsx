@@ -1,6 +1,6 @@
-﻿import type { ReactNode } from "react"
-import { Bell, Building2, ChevronDown, LayoutGrid, Search, Store, Users, Wrench } from "lucide-react"
-import { NavLink, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom"
+import type { ReactNode } from "react"
+import { Bell, CalendarDays, ChevronDown, LayoutGrid, Package, Search, ShoppingCart, Store, Users, Wrench } from "lucide-react"
+import { NavLink, Navigate, Outlet, useNavigate } from "react-router-dom"
 import { useUserStore } from "@/apps/user/store/UserStore"
 import { ShopOwnerProvider } from "@/common/home/page/features/shop-owner/store/ShopOwnerContext"
 import { formatProfileValue, resolveAvatarUrl } from "@/common/user/utils/profile"
@@ -21,22 +21,37 @@ const shopOwnerNav = [
     description: "Giá, thời lượng, trạng thái",
   },
   {
+    to: "/shop-owner/inventory",
+    label: "Quản lý kho",
+    railLabel: "Kho",
+    icon: Package,
+    description: "Sản phẩm, vật tư, tồn kho",
+  },
+  {
     to: "/shop-owner/members",
     label: "Thành viên",
     railLabel: "Thành viên",
     icon: Users,
     description: "Hội viên, quản lý, nhân viên",
   },
+  {
+    to: "/shop-owner/orders",
+    label: "Yêu cầu mua hàng",
+    railLabel: "Đơn hàng",
+    icon: ShoppingCart,
+    description: "Xác nhận, giao hàng, lịch sử",
+  },
+  {
+    to: "/shop-owner/bookings",
+    label: "Lịch dịch vụ",
+    railLabel: "Lịch hẹn",
+    icon: CalendarDays,
+    description: "Quản lý lượt đặt lịch, hẹn khách",
+  },
 ] as const
-
-function resolveDashboardMeta(pathname: string) {
-  const matched = shopOwnerNav.find((item) => pathname.startsWith(item.to))
-  return matched ?? { label: "Dashboard", description: "Khu vực quản trị cửa hàng." }
-}
 
 export function ShopOwnerLayout() {
   const navigate = useNavigate()
-  const location = useLocation()
   const { user, authentication } = useUserStore()
 
   if (!user || !authentication) {
@@ -58,12 +73,11 @@ export function ShopOwnerLayout() {
 
   const ownerKey = user.email?.trim().toLowerCase() || "default"
   const avatarUrl = resolveAvatarUrl(user.avatarUrlPreview)
-  const currentSection = resolveDashboardMeta(location.pathname)
 
   return (
     <ShopOwnerProvider ownerKey={ownerKey}>
-      <div className="min-h-screen bg-[#eef2f6]">
-        <header className="sticky top-0 z-30 bg-[#214388] text-white shadow-sm">
+      <div className="flex h-screen flex-col overflow-hidden bg-[#eef2f6]">
+        <header className="z-30 shrink-0 bg-[#214388] text-white shadow-sm">
           <div className="flex h-16 items-center gap-3 px-4 lg:px-6">
             <button
               type="button"
@@ -111,8 +125,8 @@ export function ShopOwnerLayout() {
           </div>
         </header>
 
-        <div className="grid min-h-[calc(100vh-4rem)] grid-cols-[96px,1fr] bg-[#eef2f6]">
-          <aside className="flex flex-col border-r border-[#dfe5ee] bg-[#f7f8fb]">
+        <div className="grid flex-1 grid-cols-[96px,1fr] overflow-hidden">
+          <aside className="flex h-full flex-col overflow-y-auto border-r border-[#dfe5ee] bg-[#f7f8fb]">
             <nav className="pt-3">
               {shopOwnerNav.map((item) => {
                 const Icon = item.icon
@@ -150,12 +164,9 @@ export function ShopOwnerLayout() {
             </div>
           </aside>
 
-          <section className="min-w-0">
-            <div className="flex flex-col gap-3 px-4 py-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-            </div>
-
-            <main className="px-4 pb-6 lg:px-8 lg:pb-8">
-              <div className="rounded-[24px] bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:p-5">
+          <section className="flex h-full min-w-0 flex-col overflow-y-auto">
+            <main className="flex flex-1 flex-col px-4 py-6 lg:px-8 lg:pb-8">
+              <div className="flex flex-1 flex-col rounded-[24px] bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:p-5">
                 <Outlet />
               </div>
             </main>

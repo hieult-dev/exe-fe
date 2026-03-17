@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import {
   loadShopOwnerData,
   saveShopOwnerData,
+  type ShopInventoryMaterial,
+  type ShopInventoryProduct,
   type ShopInfo,
   type ShopMember,
   type ShopOwnerData,
@@ -13,6 +15,8 @@ type ShopOwnerContextValue = {
   setShop: (shop: ShopInfo) => void
   setServices: (services: ShopService[]) => void
   setMembers: (members: ShopMember[]) => void
+  setInventoryProducts: (products: ShopInventoryProduct[]) => void
+  setInventoryMaterials: (materials: ShopInventoryMaterial[]) => void
 }
 
 const ShopOwnerContext = createContext<ShopOwnerContextValue | null>(null)
@@ -39,6 +43,22 @@ export function ShopOwnerProvider({ ownerKey, children }: ShopOwnerProviderProps
       setShop: (shop) => setData((prev) => ({ ...prev, shop })),
       setServices: (services) => setData((prev) => ({ ...prev, services })),
       setMembers: (members) => setData((prev) => ({ ...prev, members })),
+      setInventoryProducts: (products) =>
+        setData((prev) => ({
+          ...prev,
+          inventory: {
+            ...prev.inventory,
+            products,
+          },
+        })),
+      setInventoryMaterials: (materials) =>
+        setData((prev) => ({
+          ...prev,
+          inventory: {
+            ...prev.inventory,
+            materials,
+          },
+        })),
     }),
     [data]
   )

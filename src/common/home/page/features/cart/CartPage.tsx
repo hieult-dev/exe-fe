@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { CheckoutForm } from "@/common/home/page/features/cart/CheckoutForm"
 import { CartItem, type CartLine } from "@/common/home/page/features/cart/CartItem"
@@ -57,18 +57,18 @@ export function CartPage() {
     <section className="min-h-screen bg-[#f5f5f5] py-6">
       <div className="mx-auto max-w-7xl space-y-4 px-3 md:px-4">
         <div className="rounded-sm bg-white p-4">
-          <h1 className="text-2xl font-semibold text-slate-800">Gio hang cua ban</h1>
-          <p className="mt-1 text-sm text-slate-500">Quan ly san pham tu spa/shop trong mot noi.</p>
+          <h1 className="text-2xl font-semibold text-slate-800">Giỏ hàng của bạn</h1>
+          <p className="mt-1 text-sm text-slate-500">Quản lý sản phẩm từ spa/shop trong một nơi.</p>
         </div>
 
         {items.length === 0 ? (
           <div className="rounded-sm bg-white p-10 text-center">
-            <p className="text-slate-600">Gio hang dang trong. Hay quay lai de tiep tuc mua sam.</p>
+            <p className="text-slate-600">Giỏ hàng đang trống. Hãy quay lại để tiếp tục mua sắm.</p>
             <button
               onClick={() => navigate("/products")}
               className="mt-4 rounded-sm bg-[#ee4d2d] px-6 py-2.5 text-sm font-semibold text-white"
             >
-              Xem san pham
+              Xem sản phẩm
             </button>
           </div>
         ) : (

@@ -1,5 +1,6 @@
 import type { Spa } from "@/common/utils/mock-data"
 import { useEffect, useMemo, useRef } from "react"
+import { Locate } from "lucide-react"
 
 import Map from "ol/Map"
 import View from "ol/View"
@@ -274,6 +275,30 @@ export function InteractiveMap({ spas, onSpaSelect, userLocation }: InteractiveM
   return (
     <div className="w-full h-[600px] rounded-lg border border-border overflow-hidden relative">
       <div ref={containerRef} style={{ height: "100%", width: "100%" }} />
+
+      <button
+        onClick={(e) => {
+          e.preventDefault()
+          if (mapRef.current) {
+            if (userLocation) {
+              mapRef.current.getView().animate({ center: fromLonLat([userLocation.lng, userLocation.lat]), zoom: 15, duration: 500 })
+            } else if ('geolocation' in navigator) {
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  const { latitude, longitude } = pos.coords
+                  mapRef.current?.getView().animate({ center: fromLonLat([longitude, latitude]), zoom: 15, duration: 500 })
+                },
+                (err) => console.warn("Lỗi lấy vị trí: ", err),
+                { enableHighAccuracy: true }
+              )
+            }
+          }
+        }}
+        className="absolute bottom-6 right-6 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white text-slate-700 shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition hover:scale-105 hover:text-emerald-600 focus:outline-none"
+        title="Vị trí của tôi"
+      >
+        <Locate className="h-6 w-6" />
+      </button>
 
       {/* Popup overlay element */}
       <div

@@ -183,35 +183,41 @@ export function ShopServicesPage() {
   }
 
   const indexBody = (_service: ShopService, options: ColumnBodyOptions) => {
-    return <span>{options.rowIndex + 1}</span>
+    return <div className="w-full text-center">{options.rowIndex + 1}</div>
   }
 
   const serviceNameBody = (service: ShopService) => {
     return (
-      <div>
+      <div className="w-full text-center">
         <p className="font-semibold text-[#24364d]">{service.name}</p>
         <p className="text-xs text-[#73849b]">{service.id}</p>
       </div>
     )
   }
 
+  const categoryBody = (service: ShopService) => {
+    return <div className="w-full text-center text-[#4c5f78]">{service.category}</div>
+  }
+
   const descriptionBody = (service: ShopService) => {
-    return <span className="block max-w-[340px] truncate text-[#4c5f78]">{service.description || "Không có mô tả"}</span>
+    return <div className="w-full text-center text-[#4c5f78]">{service.description || "Không có mô tả"}</div>
   }
 
   const priceBody = (service: ShopService) => {
-    return <span className="font-semibold text-[#ef5c2c]">{formatCurrencyVND(service.basePrice)}</span>
+    return <div className="w-full text-center font-semibold text-[#ef5c2c]">{formatCurrencyVND(service.basePrice)}</div>
   }
 
   const durationBody = (service: ShopService) => {
-    return <span className="text-[#4c5f78]">{service.durationMin} phút</span>
+    return <div className="w-full text-center text-[#4c5f78]">{service.durationMin} phút</div>
   }
 
   const statusBody = (service: ShopService) => {
     return (
-      <span className={`inline-flex rounded-md px-2.5 py-1 text-xs font-semibold ${serviceStatusClass(service.active)}`}>
-        {serviceStatusLabel(service.active)}
-      </span>
+      <div className="flex w-full justify-center">
+        <span className={`inline-flex rounded-md px-2.5 py-1 text-xs font-semibold ${serviceStatusClass(service.active)}`}>
+          {serviceStatusLabel(service.active)}
+        </span>
+      </div>
     )
   }
 
@@ -319,41 +325,37 @@ export function ShopServicesPage() {
                 header="TT"
                 body={indexBody}
                 style={{ width: "64px" }}
-                headerStyle={{ textAlign: "center" }}
+                alignHeader="center"
                 bodyStyle={{ textAlign: "center" }}
               />
-              <Column field="name" header="Tên dịch vụ" body={serviceNameBody} style={{ minWidth: "240px" }} />
-              <Column field="category" header="Nhóm" style={{ minWidth: "140px" }} />
-              <Column field="description" header="Mô tả" body={descriptionBody} style={{ minWidth: "280px" }} />
+              <Column field="name" header="Tên dịch vụ" body={serviceNameBody} style={{ minWidth: "240px" }} alignHeader="center" />
+              <Column field="category" header="Nhóm" body={categoryBody} style={{ minWidth: "140px" }} alignHeader="center" />
+              <Column field="description" header="Mô tả" body={descriptionBody} style={{ minWidth: "280px" }} alignHeader="center" />
               <Column
                 field="basePrice"
                 header="Giá"
                 body={priceBody}
-                style={{ minWidth: "140px" }}
-                headerStyle={{ textAlign: "right" }}
-                bodyStyle={{ textAlign: "right" }}
+                alignHeader="center"
+                bodyStyle={{ textAlign: "center" }}
               />
               <Column
                 field="durationMin"
                 header="Thời lượng"
                 body={durationBody}
-                style={{ minWidth: "120px" }}
-                headerStyle={{ textAlign: "center" }}
+                alignHeader="center"
                 bodyStyle={{ textAlign: "center" }}
               />
               <Column
                 field="active"
                 header="Trạng thái"
                 body={statusBody}
-                style={{ minWidth: "150px" }}
-                headerStyle={{ textAlign: "center" }}
+                alignHeader="center"
                 bodyStyle={{ textAlign: "center" }}
               />
               <Column
                 header="Thao tác"
                 body={actionsBody}
-                style={{ minWidth: "140px" }}
-                headerStyle={{ textAlign: "center" }}
+                alignHeader="center"
                 bodyStyle={{ textAlign: "center" }}
               />
             </DataTable>

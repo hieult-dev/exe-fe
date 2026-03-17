@@ -1,9 +1,9 @@
-﻿import { useMemo } from "react"
+import { useMemo } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { ProductCard } from "@/common/home/page/features/shop/ProductCard"
 import { mockProducts, serviceCategoriesWithImages, type Product } from "@/common/utils/mock-data"
 
-const sortOptions = ["Lien quan", "Moi nhat", "Ban chay", "Gia"]
+const sortOptions = ["Liên quan", "Mới nhất", "Bán chạy", "Giá"]
 
 export function ProductCart() {
   const navigate = useNavigate()
@@ -68,8 +68,8 @@ export function ProductCart() {
       <div className="mx-auto grid max-w-7xl gap-4 px-3 md:px-4 lg:grid-cols-[220px,1fr]">
         <aside className="space-y-4 rounded-sm bg-white p-4">
           <div>
-            <h2 className="text-base font-semibold uppercase tracking-wide text-slate-800">Danh muc</h2>
-            <p className="mt-1 text-xs text-slate-500">Chon nhom san pham/dich vu</p>
+            <h2 className="text-base font-semibold uppercase tracking-wide text-slate-800">Danh mục</h2>
+            <p className="mt-1 text-xs text-slate-500">Chọn nhóm sản phẩm/dịch vụ</p>
           </div>
 
           <div className="space-y-1 text-sm">
@@ -92,7 +92,7 @@ export function ProductCart() {
             onClick={() => navigate("/")}
             className="w-full rounded-sm border border-[#ee4d2d] py-2 text-sm font-semibold text-[#ee4d2d] hover:bg-[#fff1ed]"
           >
-            Quay lai trang chu
+            Quay lại trang chủ
           </button>
         </aside>
 
@@ -100,16 +100,16 @@ export function ProductCart() {
           <div className="rounded-sm bg-white p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h1 className="text-xl font-semibold text-slate-800">Ket qua cho: {category}</h1>
+                <h1 className="text-xl font-semibold text-slate-800">Kết quả cho: {category}</h1>
                 {normalizedSearch ? (
-                  <p className="text-sm text-slate-500">Tu khoa tim kiem: {searchParam}</p>
+                  <p className="text-sm text-slate-500">Từ khóa tìm kiếm: {searchParam}</p>
                 ) : (
-                  <p className="text-sm text-slate-500">{filteredProducts.length} san pham hien thi</p>
+                  <p className="text-sm text-slate-500">{filteredProducts.length} sản phẩm hiển thị</p>
                 )}
               </div>
 
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-slate-500">Sap xep:</span>
+                <span className="text-slate-500">Sắp xếp:</span>
                 {sortOptions.map((option, index) => (
                   <button
                     key={option}
@@ -128,7 +128,7 @@ export function ProductCart() {
 
           {filteredProducts.length === 0 ? (
             <div className="rounded-sm bg-white p-10 text-center text-slate-600">
-              Khong tim thay san pham phu hop voi bo loc hien tai.
+              Không tìm thấy sản phẩm phù hợp với bộ lọc hiện tại.
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -136,7 +136,7 @@ export function ProductCart() {
                 <ProductCard
                   key={product.id}
                   product={product}
-                  actionLabel={isBookingCategory ? "Dat lich ngay" : undefined}
+                  actionLabel={isBookingCategory ? "Đặt lịch ngay" : undefined}
                   onAction={handlePrimaryAction}
                   onCardClick={handleViewProduct}
                 />

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { Navigate, Route, Routes, useLocation } from "react-router-dom"
 import { LoginPage } from "@/common/auth/page/LoginPage"
 import { RegisterPage } from "@/common/auth/page/RegisterPage"
@@ -15,12 +15,16 @@ import { VouchersPage } from "@/common/home/page/features/account/VouchersPage"
 import { ShopOwnerLayout, ShopOwnerDefaultRedirect } from "@/common/home/page/features/shop-owner/ShopOwnerLayout"
 import { ShopOverviewPage } from "@/common/home/page/features/shop-owner/ShopOverviewPage"
 import { ShopServicesPage } from "@/common/home/page/features/shop-owner/ShopServicesPage"
+import { ShopInventoryPage } from "@/common/home/page/features/shop-owner/ShopInventoryPage"
 import { ShopMembersPage } from "@/common/home/page/features/shop-owner/ShopMembersPage"
+import { ShopOrdersPage } from "@/common/home/page/features/shop-owner/ShopOrdersPage"
+import { ShopBookingsPage } from "@/common/home/page/features/shop-owner/ShopBookingsPage"
 import { BookService } from "@/common/home/page/features/service/BookService"
 import { ProductDetail } from "@/common/home/page/features/shop/ProductDetail"
 import { ProductCart } from "@/common/home/page/features/shop/ProductCart"
 import { CartPage } from "@/common/home/page/features/cart/CartPage"
 import { OrdersPage } from "@/common/home/page/features/order/OrdersPage"
+import { MyBookingsPage } from "@/common/home/page/features/order/MyBookingsPage"
 import ToastProvider from "@/common/toast/ToastProvider"
 
 function App() {
@@ -80,6 +84,7 @@ function App() {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/my-pets" element={<MyPetsPage />} />
               <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/my-bookings" element={<MyBookingsPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/vouchers" element={<VouchersPage />} />
             </Route>
@@ -88,7 +93,10 @@ function App() {
               <Route path="/shop-owner" element={<ShopOwnerDefaultRedirect />} />
               <Route path="/shop-owner/profile" element={<ShopOverviewPage />} />
               <Route path="/shop-owner/services" element={<ShopServicesPage />} />
+              <Route path="/shop-owner/inventory" element={<ShopInventoryPage />} />
               <Route path="/shop-owner/members" element={<ShopMembersPage />} />
+              <Route path="/shop-owner/orders" element={<ShopOrdersPage />} />
+              <Route path="/shop-owner/bookings" element={<ShopBookingsPage />} />
             </Route>
 
             <Route element={<AuthRedirect />}>

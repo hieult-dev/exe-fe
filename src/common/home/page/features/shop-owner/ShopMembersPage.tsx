@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react"
-import { Plus, PencilLine, Trash2 } from "lucide-react"
+import { PencilLine, Plus, Trash2 } from "lucide-react"
 import { DataTable } from "primereact/datatable"
 import { Column } from "primereact/column"
 import type { ColumnBodyOptions } from "primereact/column"
@@ -113,13 +113,13 @@ export function ShopMembersPage() {
         data.members.map((member) =>
           member.id === editingMemberId
             ? {
-                ...member,
-                fullName,
-                email,
-                phone: formState.phone.trim() || undefined,
-                role: formState.role,
-                status: formState.status,
-              }
+              ...member,
+              fullName,
+              email,
+              phone: formState.phone.trim() || undefined,
+              role: formState.role,
+              status: formState.status,
+            }
             : member
         )
       )
@@ -132,6 +132,7 @@ export function ShopMembersPage() {
         role: formState.role,
         status: formState.status,
       }
+
       setMembers([newMember, ...data.members])
     }
 
@@ -155,17 +156,18 @@ export function ShopMembersPage() {
   }
 
   const indexBody = (_member: ShopMember, options: ColumnBodyOptions) => {
-    return <span>{options.rowIndex + 1}</span>
+    return <div className="w-full text-center">{options.rowIndex + 1}</div>
   }
 
   const memberBody = (member: ShopMember) => {
     const initial = (member.fullName.trim()[0] || "U").toUpperCase()
+
     return (
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#e8eef8] text-xs font-semibold text-[#2c4b7a]">
+      <div className="flex w-full flex-row items-center gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8eef8] text-xs font-semibold text-[#2c4b7a]">
           {initial}
         </div>
-        <div>
+        <div className="text-left">
           <p className="font-semibold text-slate-800">{member.fullName}</p>
           <p className="text-xs text-slate-500">{member.id}</p>
         </div>
@@ -173,19 +175,25 @@ export function ShopMembersPage() {
     )
   }
 
+  const emailBody = (member: ShopMember) => {
+    return <div className="w-full text-center">{member.email}</div>
+  }
+
   const roleBody = (member: ShopMember) => {
-    return <span>{roleLabel(member.role)}</span>
+    return <div className="w-full text-center">{roleLabel(member.role)}</div>
   }
 
   const phoneBody = (member: ShopMember) => {
-    return <span>{member.phone || "Chưa cập nhật"}</span>
+    return <div className="w-full text-center">{member.phone || "Chưa cập nhật"}</div>
   }
 
   const statusBody = (member: ShopMember) => {
     return (
-      <span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${statusClass(member.status)}`}>
-        {statusLabel(member.status)}
-      </span>
+      <div className="flex w-full justify-center">
+        <span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${statusClass(member.status)}`}>
+          {statusLabel(member.status)}
+        </span>
+      </div>
     )
   }
 
@@ -245,26 +253,38 @@ export function ShopMembersPage() {
               header="TT"
               body={indexBody}
               style={{ width: "64px" }}
-              headerStyle={{ textAlign: "center" }}
+              alignHeader="center"
               bodyStyle={{ textAlign: "center" }}
             />
-            <Column field="fullName" header="Thành viên" body={memberBody} style={{ minWidth: "240px" }} />
-            <Column field="email" header="Email" style={{ minWidth: "220px" }} />
-            <Column field="role" header="Vai trò" body={roleBody} style={{ minWidth: "120px" }} />
-            <Column field="phone" header="Số điện thoại" body={phoneBody} style={{ minWidth: "140px" }} />
+            <Column
+              field="fullName"
+              header="Thành viên"
+              body={memberBody}
+              style={{ minWidth: "240px" }}
+              alignHeader="left"
+            />
+            <Column field="email" header="Email" body={emailBody} style={{ minWidth: "220px" }} alignHeader="center" />
+            <Column field="role" header="Vai trò" body={roleBody} style={{ minWidth: "120px" }} alignHeader="center" />
+            <Column
+              field="phone"
+              header="Số điện thoại"
+              body={phoneBody}
+              style={{ minWidth: "140px" }}
+              alignHeader="center"
+            />
             <Column
               field="status"
               header="Trạng thái"
               body={statusBody}
               style={{ minWidth: "140px" }}
-              headerStyle={{ textAlign: "center" }}
+              alignHeader="center"
               bodyStyle={{ textAlign: "center" }}
             />
             <Column
               header="Thao tác"
               body={actionsBody}
               style={{ minWidth: "120px" }}
-              headerStyle={{ textAlign: "center" }}
+              alignHeader="center"
               bodyStyle={{ textAlign: "center" }}
             />
           </DataTable>

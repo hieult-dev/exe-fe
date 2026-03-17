@@ -1,7 +1,7 @@
-﻿import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Bolt, MapPinned, Store } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-import { PetMomentsSection } from "@/common/home/components/pet-moments-section"
+
 import { MapSection } from "@/common/home/components/map-section"
 import { mockProducts, mockSpas, serviceCategoriesWithImages, type Product, type Spa } from "@/common/utils/mock-data"
 
@@ -47,14 +47,9 @@ const quickEntry = [
   "Mã giảm giá",
 ]
 
-function soldPercent(index: number) {
-  return 35 + (index % 5) * 12
-}
-
 export function AppHome({ userLocation }: AppHomeProps) {
   const navigate = useNavigate()
   const featuredSpas = useMemo(() => mockSpas.filter((spa) => spa.featured), [])
-  const flashSaleProducts = useMemo(() => mockProducts.slice(0, 6), [])
   const [bannerIndex, setBannerIndex] = useState(0)
 
   useEffect(() => {
@@ -65,12 +60,14 @@ export function AppHome({ userLocation }: AppHomeProps) {
     return () => window.clearInterval(timer)
   }, [])
 
-  const suggestedProducts = useMemo(() => {
-    const cloned = mockProducts.map((product, index) => ({
-      ...product,
-      id: `${product.id}-extra-${index}`,
-    }))
-    return [...mockProducts, ...cloned]
+
+
+  const goodsProducts = useMemo(() => {
+    return mockProducts.filter((p) => p.category !== "Spa" && p.category !== "Thú y")
+  }, [])
+
+  const serviceProducts = useMemo(() => {
+    return mockProducts.filter((p) => p.category === "Spa" || p.category === "Thú y")
   }, [])
 
   const quickCategories = useMemo(() => serviceCategoriesWithImages.slice(0, 10), [])
@@ -79,11 +76,11 @@ export function AppHome({ userLocation }: AppHomeProps) {
   return (
     <div className="bg-[#f5f5f5] pb-8">
       <main className="mx-auto max-w-7xl space-y-4 px-3 pt-4 md:px-4">
-        <section className="rounded-sm bg-white p-3 md:p-4">
+        <section className="rounded-xl bg-white p-3 md:p-4 shadow-sm border border-slate-100">
           <div className="grid gap-3 md:grid-cols-[2fr,1fr]">
             <button
               onClick={() => navigate("/products")}
-              className="group relative h-52 overflow-hidden rounded-sm text-left md:h-[280px]"
+              className="group relative h-52 overflow-hidden rounded-lg text-left md:h-[280px]"
             >
               <img
                 src={activeBanner.image}
@@ -119,7 +116,7 @@ export function AppHome({ userLocation }: AppHomeProps) {
                 <button
                   key={banner.title}
                   onClick={() => navigate("/products")}
-                  className="group relative h-[134px] overflow-hidden rounded-sm text-left"
+                  className="group relative h-[134px] overflow-hidden rounded-lg text-left"
                 >
                   <img
                     src={banner.image}
@@ -138,151 +135,118 @@ export function AppHome({ userLocation }: AppHomeProps) {
               <button
                 key={entry}
                 onClick={() => navigate("/products")}
-                className="rounded-sm border border-[#efefef] p-2 text-center hover:border-[#ee4d2d]/30"
+                className="rounded-lg border border-[#efefef] p-2 text-center hover:border-[#ee4d2d]/30 hover:bg-orange-50/50 transition"
               >
                 <div className="mx-auto mb-1 h-8 w-8 rounded-full bg-[#fff1ed]" />
-                <p className="text-[11px] text-slate-700 md:text-xs">{entry}</p>
+                <p className="text-[11px] text-slate-700 md:text-xs font-medium">{entry}</p>
               </button>
             ))}
           </div>
         </section>
 
-        <section className="rounded-sm bg-white p-4">
+        <section className="rounded-xl bg-white p-4 shadow-sm border border-slate-100">
           <h3 className="mb-4 text-base font-semibold uppercase tracking-wide text-slate-700">Danh mục</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10">
             {quickCategories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => navigate(`/products?category=${encodeURIComponent(category.name)}`)}
-                className="group flex flex-col items-center gap-2 rounded-sm border border-[#f1f1f1] px-2 py-3 transition hover:-translate-y-0.5 hover:border-[#ee4d2d]/40"
+                className="group flex flex-col items-center gap-2 rounded-lg border border-[#f1f1f1] px-2 py-3 transition hover:-translate-y-0.5 hover:border-[#ee4d2d]/40 shadow-sm hover:shadow"
               >
                 <div className="h-14 w-14 overflow-hidden rounded-full bg-[#fafafa]">
                   <img src={category.image} alt={category.name} className="h-full w-full object-cover" />
                 </div>
-                <span className="text-center text-xs text-slate-700">{category.name}</span>
+                <span className="text-center text-xs font-medium text-slate-700">{category.name}</span>
               </button>
             ))}
           </div>
         </section>
 
-        <section className="rounded-sm bg-white p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="inline-flex items-center gap-2 text-base font-semibold uppercase tracking-wide text-[#ee4d2d]">
-              <Bolt className="h-4 w-4" />
-              Flash sale cho pet
+        {/* Dịch vụ & Spa - Nổi bật hàng đầu */}
+        <section className="rounded-xl bg-emerald-50 p-5 md:p-6 border-2 border-emerald-200 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+            <Bolt className="h-40 w-40" />
+          </div>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 relative z-10">
+            <h3 className="inline-flex items-center gap-2 text-lg md:text-2xl font-bold uppercase tracking-wide text-emerald-800">
+              <Bolt className="h-6 w-6 md:h-8 md:w-8 text-emerald-500 animate-pulse" />
+              Dịch Vụ Spa & Thú Y Nổi Bật
             </h3>
-            <button onClick={() => navigate("/products")} className="text-sm text-[#ee4d2d]">
-              Xem tất cả
+            <button onClick={() => navigate("/products")} className="text-sm font-semibold text-emerald-700 bg-emerald-200/60 hover:bg-emerald-300/60 px-4 py-2 rounded-full transition">
+              Tìm thêm dịch vụ
             </button>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-            {flashSaleProducts.map((product, index) => (
-              <FlashSaleCard key={product.id} product={product} sold={soldPercent(index)} />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 relative z-10">
+            {serviceProducts.slice(0, 6).map((product) => (
+              <ServiceCard key={product.id} product={product} onClick={() => navigate(`/booking`)} />
             ))}
           </div>
         </section>
 
-        <section className="rounded-sm bg-white p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="inline-flex items-center gap-2 text-base font-semibold uppercase tracking-wide text-slate-700">
-              <Store className="h-4 w-4" />
-              Spa/Shop yêu thích
+        {/* Hàng hóa / Vật tư */}
+        <section className="rounded-xl bg-white p-4 md:p-5 shadow-sm border border-[#efefef]">
+          <div className="mb-5 flex items-center justify-between">
+            <h3 className="inline-flex items-center gap-2 text-base md:text-lg font-bold uppercase tracking-wide text-[#ee4d2d]">
+              <Store className="h-5 w-5" />
+              Hàng hóa & Vật tư cho Pet
             </h3>
-            <button onClick={() => navigate("/booking")} className="text-sm text-[#ee4d2d]">
+            <button onClick={() => navigate("/products")} className="text-sm font-medium text-[#ee4d2d] hover:underline">
+              Xem tất cả
+            </button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {goodsProducts.map((product) => (
+              <ProductCard key={product.id} product={product} onClick={() => navigate(`/products/${product.id}`)} />
+            ))}
+          </div>
+        </section>
+
+        {/* Spa Nổi Bật */}
+        <section className="rounded-xl bg-white p-4 md:p-5 shadow-sm border border-[#efefef]">
+          <div className="mb-5 flex items-center justify-between">
+            <h3 className="inline-flex items-center gap-2 text-base md:text-lg font-bold uppercase tracking-wide text-slate-700">
+              <Store className="h-5 w-5" />
+              Spa & Thú y yêu thích
+            </h3>
+            <button onClick={() => navigate("/booking")} className="text-sm font-medium text-[#ee4d2d] hover:underline">
               Đặt lịch ngay
             </button>
           </div>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {featuredSpas.map((spa) => (
               <SpaMallCard key={spa.id} spa={spa} onBook={() => navigate("/booking")} />
             ))}
           </div>
         </section>
 
-        <section className="rounded-sm bg-white">
+        {/* Map Section */}
+        <section className="rounded-xl bg-white shadow-sm border border-[#efefef] overflow-hidden">
           <MapSection spas={mockSpas} onSpaSelect={() => {}} userLocation={userLocation} />
-        </section>
-
-        <PetMomentsSection />
-
-        <section className="rounded-sm bg-white p-4">
-          <h3 className="mb-4 text-center text-lg font-semibold uppercase tracking-wide text-[#ee4d2d]">Gợi ý hôm nay</h3>
-          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-            {suggestedProducts.map((product) => (
-              <button
-                key={product.id}
-                onClick={() => navigate(`/products/${product.id.split("-extra-")[0]}`)}
-                className="group overflow-hidden rounded-sm border border-[#f1f1f1] bg-white text-left transition hover:-translate-y-0.5 hover:border-[#ee4d2d]/30 hover:shadow-sm"
-              >
-                <div className="relative h-40 overflow-hidden">
-                  <img
-                    src={product.image || "/placeholder.svg"}
-                    alt={product.name}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                  />
-                </div>
-                <div className="space-y-2 p-3">
-                  <p className="line-clamp-2 min-h-10 text-sm text-slate-800">{product.name}</p>
-                  <div className="flex items-end justify-between">
-                    <p className="text-base font-semibold text-[#ee4d2d]">{product.price}</p>
-                    <p className="text-xs text-slate-500">Đã bán {15 + (product.id.length % 8) * 9}</p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
         </section>
       </main>
     </div>
   )
 }
 
-function FlashSaleCard({ product, sold }: { product: Product; sold: number }) {
-  return (
-    <button className="group overflow-hidden rounded-sm border border-[#f1f1f1] text-left transition hover:-translate-y-0.5 hover:border-[#ee4d2d]/30 hover:shadow-sm">
-      <div className="relative h-44 overflow-hidden bg-[#fafafa]">
-        <img
-          src={product.image || "/placeholder.svg"}
-          alt={product.name}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-        />
-        <span className="absolute left-2 top-2 rounded-sm bg-[#ffe97a] px-1.5 py-0.5 text-[11px] font-bold text-[#ee4d2d]">
-          -{10 + (product.id.length % 4) * 5}%
-        </span>
-      </div>
-      <div className="space-y-2 p-3">
-        <p className="line-clamp-2 min-h-10 text-sm text-slate-700">{product.name}</p>
-        <p className="text-base font-semibold text-[#ee4d2d]">{product.price}</p>
-        <div className="h-4 overflow-hidden rounded-full bg-[#ffeadf]">
-          <div
-            className="h-full bg-gradient-to-r from-[#ee4d2d] to-[#ff7337]"
-            style={{ width: `${sold}%` }}
-          />
-        </div>
-      </div>
-    </button>
-  )
-}
-
 function SpaMallCard({ spa, onBook }: { spa: Spa; onBook: () => void }) {
   return (
-    <article className="overflow-hidden rounded-sm border border-[#f1f1f1]">
-      <div className="relative h-36 overflow-hidden bg-[#fafafa]">
-        <img src={spa.image} alt={spa.name} className="h-full w-full object-cover" />
+    <article className="overflow-hidden rounded-xl border border-[#f1f1f1] group hover:border-[#ee4d2d]/30 hover:shadow-md transition">
+      <div className="relative h-40 overflow-hidden bg-[#fafafa]">
+        <img src={spa.image} alt={spa.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
       </div>
-      <div className="space-y-2 p-3">
-        <h4 className="line-clamp-1 font-semibold text-slate-800">{spa.name}</h4>
-        <p className="line-clamp-2 text-sm text-slate-600">{spa.address}</p>
+      <div className="space-y-3 p-4">
+        <h4 className="line-clamp-1 font-bold text-slate-800 text-base">{spa.name}</h4>
+        <p className="line-clamp-2 text-sm text-slate-500">{spa.address}</p>
         <div className="flex items-center justify-between text-sm">
-          <span className="font-medium text-[#ee4d2d]">{spa.priceRange}</span>
-          <span className="inline-flex items-center gap-1 text-slate-500">
-            <MapPinned className="h-4 w-4" />
+          <span className="font-bold text-[#ee4d2d]">{spa.priceRange}</span>
+          <span className="inline-flex items-center gap-1 font-medium text-slate-600">
+            <MapPinned className="h-4 w-4 text-emerald-500" />
             {spa.rating}
           </span>
         </div>
         <button
           onClick={onBook}
-          className="w-full rounded-sm border border-[#ee4d2d] py-2 text-sm font-semibold text-[#ee4d2d] hover:bg-[#fff1ed]"
+          className="w-full rounded-lg border border-[#ee4d2d] py-2 text-sm font-bold text-[#ee4d2d] hover:bg-[#ee4d2d] hover:text-white transition"
         >
           Đặt lịch tại spa
         </button>
@@ -291,4 +255,55 @@ function SpaMallCard({ spa, onBook }: { spa: Spa; onBook: () => void }) {
   )
 }
 
+function ProductCard({ product, onClick }: { product: Product; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="group overflow-hidden rounded-xl border border-[#f1f1f1] bg-white text-left transition hover:-translate-y-1 hover:border-[#ee4d2d]/30 hover:shadow-md"
+    >
+      <div className="relative h-48 overflow-hidden bg-[#fafafa]">
+        <img
+          src={product.image || "/placeholder.svg"}
+          alt={product.name}
+          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+        />
+      </div>
+      <div className="space-y-2 p-3">
+        <p className="line-clamp-2 min-h-10 text-sm font-medium text-slate-700 group-hover:text-[#ee4d2d] transition-colors">{product.name}</p>
+        <p className="text-base font-bold text-[#ee4d2d]">{product.price}</p>
+      </div>
+    </button>
+  )
+}
 
+function ServiceCard({ product, onClick }: { product: Product; onClick: () => void }) {
+  return (
+    <div className="overflow-hidden rounded-2xl border-0 bg-white p-5 shadow-[0_2px_12px_rgba(16,185,129,0.08)] transition-all duration-300 hover:shadow-[0_8px_24px_rgba(16,185,129,0.15)] hover:-translate-y-1 h-full flex flex-col group relative">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <div className="flex gap-4">
+        <div className="h-[90px] w-[90px] shrink-0 overflow-hidden rounded-2xl bg-[#fafafa] shadow-inner">
+          <img
+            src={product.image || "/placeholder.svg"}
+            alt={product.name}
+            className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
+          />
+        </div>
+        <div className="flex-1 space-y-2 flex flex-col justify-center">
+          <h4 className="line-clamp-2 text-[15px] font-bold text-slate-800 leading-snug group-hover:text-emerald-700 transition-colors">{product.name}</h4>
+          <div>
+            <span className="inline-block rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-600 border border-emerald-100/50">
+              {product.category}
+            </span>
+          </div>
+          <p className="text-[16px] font-extrabold text-[#ee4d2d]">{product.price}</p>
+        </div>
+      </div>
+      <button
+        onClick={onClick}
+        className="mt-5 w-full rounded-xl bg-emerald-50 py-3 text-[14px] font-bold text-emerald-600 transition-all duration-300 hover:bg-emerald-500 hover:text-white shadow-sm"
+      >
+        Đặt lịch ngay
+      </button>
+    </div>
+  )
+}

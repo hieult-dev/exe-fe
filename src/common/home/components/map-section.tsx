@@ -13,7 +13,7 @@ export function MapSection({ spas, onSpaSelect, userLocation }: MapSectionProps)
     <section id="map" className="p-4 md:p-6">
       <div className="mb-4 flex items-center gap-2">
         <MapPin className="h-5 w-5 text-[#ee4d2d]" />
-        <h2 className="text-base font-semibold uppercase tracking-wide text-slate-700">Ban do spa gan day</h2>
+        <h2 className="text-base font-semibold uppercase tracking-wide text-slate-700">Bản đồ spa gần đây</h2>
       </div>
 
       <InteractiveMap spas={spas} onSpaSelect={onSpaSelect} userLocation={userLocation} />

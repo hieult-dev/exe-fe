@@ -57,13 +57,13 @@ export function ProductDetail() {
       <section className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-10 space-y-6">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-2xl font-bold">Khong tim thay san pham</h2>
+            <h2 className="text-2xl font-bold">Không tìm thấy sản phẩm</h2>
             {onBack && (
               <button
                 onClick={onBack}
                 className="rounded-full px-5 py-2 border border-border text-sm hover:bg-muted/60 transition"
               >
-                Quay lai
+                Quay lại
               </button>
             )}
           </div>
@@ -81,13 +81,13 @@ export function ProductDetail() {
     <section className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-10 space-y-8">
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-3xl font-bold">Chi tiet san pham</h2>
+          <h2 className="text-3xl font-bold">Chi tiết sản phẩm</h2>
           {onBack && (
             <button
               onClick={onBack}
               className="rounded-full px-5 py-2 border border-border text-sm hover:bg-muted/60 transition"
             >
-              Quay lai
+              Quay lại
             </button>
           )}
         </div>
@@ -142,7 +142,7 @@ export function ProductDetail() {
                   <span className="font-semibold">{product.rating.toFixed(1)}</span>
                 </div>
                 {typeof product.reviews === "number" && (
-                  <span className="text-muted-foreground">({product.reviews} danh gia)</span>
+                  <span className="text-muted-foreground">({product.reviews} đánh giá)</span>
                 )}
               </div>
               <div className="text-3xl font-semibold text-primary">{product.price}</div>
@@ -150,7 +150,7 @@ export function ProductDetail() {
 
             <div className="space-y-5 border-t border-border pt-6">
               <div className="space-y-2">
-                <div className="text-sm font-semibold">Chon size</div>
+                <div className="text-sm font-semibold">Chọn size</div>
                 {hasSizes ? (
                   <div className="flex flex-wrap gap-2">
                     {product.sizes?.map((size) => (
@@ -168,12 +168,12 @@ export function ProductDetail() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-sm text-muted-foreground">Khong co size</div>
+                  <div className="text-sm text-muted-foreground">Không có size</div>
                 )}
               </div>
 
               <div className="space-y-2">
-                <div className="text-sm font-semibold">Chon phan loai</div>
+                <div className="text-sm font-semibold">Chọn phân loại</div>
                 {hasVariants ? (
                   <div className="flex flex-wrap gap-2">
                     {product.variants?.map((variant) => (
@@ -191,12 +191,12 @@ export function ProductDetail() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-sm text-muted-foreground">Khong co phan loai</div>
+                  <div className="text-sm text-muted-foreground">Không có phân loại</div>
                 )}
               </div>
 
               <div className="space-y-2">
-                <div className="text-sm font-semibold">So luong</div>
+                <div className="text-sm font-semibold">Số lượng</div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -223,7 +223,7 @@ export function ProductDetail() {
                 }`}
               >
                 <ShoppingCart className="h-5 w-5" />
-                {addedToCart ? "Da them vao gio hang" : "Them vao gio hang"}
+                {addedToCart ? "Đã thêm vào giỏ hàng" : "Thêm vào giỏ hàng"}
               </button>
             </div>
           </div>
@@ -231,7 +231,7 @@ export function ProductDetail() {
 
         {/* Product Description */}
         <div className="border-t border-border pt-8 space-y-4">
-          <h3 className="text-xl font-bold">Mo ta san pham</h3>
+          <h3 className="text-xl font-bold">Mô tả sản phẩm</h3>
           <p className="text-muted-foreground leading-relaxed">
             {expandedDescription ? product.fullDescription : product.description}
           </p>
@@ -240,29 +240,29 @@ export function ProductDetail() {
               onClick={() => setExpandedDescription(!expandedDescription)}
               className="text-primary font-semibold hover:underline"
             >
-              {expandedDescription ? "Thu gon" : "Doc them"}
+              {expandedDescription ? "Thu gọn" : "Xem thêm"}
             </button>
           )}
         </div>
 
         {/* Customer Reviews */}
         <div className="border-t border-border pt-8 space-y-6">
-          <h3 className="text-xl font-bold">Binh luan tu khach hang</h3>
+          <h3 className="text-xl font-bold">Bình luận từ khách hàng</h3>
 
           {/* Write Review Form */}
           <div className="bg-card rounded-lg border border-border p-6 space-y-4">
-            <h4 className="font-semibold">Viet danh gia cua ban</h4>
+            <h4 className="font-semibold">Viết đánh giá của bạn</h4>
             <div className="space-y-3">
               <div>
-                <label className="text-sm font-semibold mb-2 block">Ho ten</label>
+                <label className="text-sm font-semibold mb-2 block">Họ tên</label>
                 <input
                   type="text"
-                  placeholder="Nhap ho ten cua ban"
+                  placeholder="Nhập họ tên của bạn"
                   className="w-full px-4 py-2 rounded-lg border border-border bg-background"
                 />
               </div>
               <div>
-                <label className="text-sm font-semibold mb-2 block">Danh gia</label>
+                <label className="text-sm font-semibold mb-2 block">Đánh giá</label>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button key={star} className="text-2xl hover:text-primary transition">
@@ -272,15 +272,15 @@ export function ProductDetail() {
                 </div>
               </div>
               <div>
-                <label className="text-sm font-semibold mb-2 block">Nhan xet</label>
+                <label className="text-sm font-semibold mb-2 block">Nhận xét</label>
                 <textarea
-                  placeholder="Chia se y kien cua ban..."
+                  placeholder="Chia sẻ ý kiến của bạn..."
                   rows={3}
                   className="w-full px-4 py-2 rounded-lg border border-border bg-background"
                 />
               </div>
               <button className="bg-primary text-primary-foreground px-6 py-2 rounded-full font-semibold hover:bg-primary/90 transition">
-                Gui danh gia
+                Gửi đánh giá
               </button>
             </div>
           </div>
@@ -309,7 +309,7 @@ export function ProductDetail() {
                 </div>
                 <p className="text-muted-foreground">{review.comment}</p>
                 <button className="text-xs text-muted-foreground hover:text-primary transition">
-                  Co ich ({review.helpful})
+                   Có ích ({review.helpful})
                 </button>
               </div>
             ))}
@@ -338,7 +338,7 @@ export function ProductDetail() {
         {/* Related Products */}
         {relatedProducts.length > 0 && (
           <div className="border-t border-border pt-8 space-y-6">
-            <h3 className="text-2xl font-bold">San pham lien quan</h3>
+            <h3 className="text-2xl font-bold">Sản phẩm liên quan</h3>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {relatedProducts.map((p) => (
                 <ProductCard
