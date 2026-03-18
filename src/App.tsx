@@ -21,6 +21,7 @@ import { ShopOrdersPage } from "@/common/home/page/features/shop-owner/ShopOrder
 import { ShopBookingsPage } from "@/common/home/page/features/shop-owner/ShopBookingsPage"
 import { BookService } from "@/common/home/page/features/service/BookService"
 import { ProductDetail } from "@/common/home/page/features/shop/ProductDetail"
+import { ShopDetail } from "@/common/home/page/features/shop/ShopDetail"
 import { ProductCart } from "@/common/home/page/features/shop/ProductCart"
 import { CartPage } from "@/common/home/page/features/cart/CartPage"
 import { OrdersPage } from "@/common/home/page/features/order/OrdersPage"
@@ -77,6 +78,7 @@ function App() {
             <Route path="/" element={<AppHome userLocation={userLocation} />} />
             <Route path="/products" element={<ProductCart />} />
             <Route path="/products/:productId" element={<ProductDetail />} />
+            <Route path="/shop/:shopId" element={<ShopDetail />} />
             <Route path="/booking" element={<BookService />} />
             <Route path="/cart" element={<CartPage />} />
 

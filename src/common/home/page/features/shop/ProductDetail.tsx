@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
-import { Star, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react"
-import { mockProducts, mockReviews } from "@/common/utils/mock-data"
+import { Star, ShoppingCart, ChevronLeft, ChevronRight, Store, MapPin, ShieldCheck, ArrowUpRight, MessageSquare, Phone } from "lucide-react"
+import { mockProducts, mockReviews, mockSpas } from "@/common/utils/mock-data"
 import { ProductCard } from "./ProductCard"
 
 const REVIEWS_PER_PAGE = 3
@@ -21,6 +21,8 @@ export function ProductDetail() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [expandedDescription, setExpandedDescription] = useState(false)
   const [reviewPage, setReviewPage] = useState(0)
+
+  const spa = mockSpas.find(s => s.id === product?.spaId) || mockSpas[0]
 
   useEffect(() => {
     setSelectedSize(product?.sizes?.[0] ?? null)
@@ -43,7 +45,7 @@ export function ProductDetail() {
   }
 
   const relatedProducts = mockProducts.filter(
-    (p) => p.category === product?.category && p.id !== product?.id
+    (p) => (p.spaId === product?.spaId || p.category === product?.category) && p.id !== product?.id
   ).slice(0, 4)
 
   const paginatedReviews = mockReviews.slice(
@@ -245,6 +247,79 @@ export function ProductDetail() {
           )}
         </div>
 
+        {/* Shop Information Section */}
+        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm overflow-hidden relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+          
+          <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
+            {/* Shop Avatar & Basic Info */}
+            <div className="flex items-center gap-5 md:pr-8 md:border-r border-slate-100 shrink-0">
+              <div className="relative">
+                <div className="h-20 w-20 rounded-full border-2 border-primary/20 p-1 bg-white">
+                  <img src={spa.image} alt={spa.name} className="h-full w-full object-cover rounded-full" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white rounded-full p-1 border-2 border-white">
+                  <ShieldCheck className="h-3 w-3" />
+                </div>
+              </div>
+              <div>
+                <h4 
+                  className="font-bold text-xl text-slate-800 flex items-center gap-1.5 cursor-pointer hover:text-primary transition-colors"
+                  onClick={() => navigate(`/shop/${spa.id}`)}
+                >
+                  {spa.name}
+                  <span className="bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-tighter">Mall</span>
+                </h4>
+                <div className="flex items-center gap-3 mt-1.5">
+                  <div className="flex items-center gap-1 text-[13px] font-bold text-amber-500">
+                    <Star className="h-3.5 w-3.5 fill-amber-500" />
+                    {spa.rating}
+                  </div>
+                  <span className="h-1 w-1 rounded-full bg-slate-300" />
+                  <span className="text-[13px] text-slate-500 font-medium">{spa.reviews} đánh giá</span>
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <button className="bg-primary text-white text-[12px] font-bold px-4 py-2 rounded-lg hover:bg-primary/90 transition flex items-center gap-1.5 shadow-lg shadow-primary/20">
+                    <MessageSquare className="h-3.5 w-3.5" />
+                    Chát ngay
+                  </button>
+                  <button 
+                    onClick={() => navigate(`/shop/${spa.id}`)}
+                    className="border border-slate-200 text-slate-600 text-[12px] font-bold px-4 py-2 rounded-lg hover:bg-slate-50 transition flex items-center gap-1.5"
+                  >
+                    <Store className="h-3.5 w-3.5" />
+                    Xem Shop
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Shop Stats & Details */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-8 flex-1">
+              <div className="space-y-1">
+                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                   <Phone className="h-3 w-3" /> Hotline
+                 </div>
+                 <div className="text-[14px] font-bold text-slate-700">{spa.phone}</div>
+              </div>
+              <div className="space-y-1">
+                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Sản phẩm</div>
+                 <div className="text-[14px] font-bold text-primary">120+</div>
+              </div>
+              <div className="space-y-1">
+                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Tham gia</div>
+                 <div className="text-[14px] font-bold text-slate-700">6 tháng trước</div>
+              </div>
+              <div className="col-span-2 sm:col-span-3 space-y-1">
+                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                   <MapPin className="h-3 w-3" /> Địa chỉ
+                 </div>
+                 <div className="text-[13px] text-slate-600 leading-snug font-medium">{spa.address}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Customer Reviews */}
         <div className="border-t border-border pt-8 space-y-6">
           <h3 className="text-xl font-bold">Bình luận từ khách hàng</h3>
@@ -337,15 +412,26 @@ export function ProductDetail() {
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (
-          <div className="border-t border-border pt-8 space-y-6">
-            <h3 className="text-2xl font-bold">Sản phẩm liên quan</h3>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="border-t border-border pt-12 space-y-8">
+            <div className="flex items-center justify-between">
+              <h3 className="text-2xl font-black text-slate-800 tracking-tight">Cùng danh mục từ Shop</h3>
+              <button 
+                onClick={() => navigate("/products")}
+                className="text-sm font-bold text-primary hover:underline flex items-center gap-1"
+              >
+                Xem tất cả <ArrowUpRight className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {relatedProducts.map((p) => (
                 <ProductCard
                   key={p.id}
                   product={p}
                   onAction={() => {}}
-                  onCardClick={() => {}}
+                  onCardClick={(item) => {
+                    navigate(`/products/${item.id}`)
+                    window.scrollTo(0, 0)
+                  }}
                 />
               ))}
             </div>

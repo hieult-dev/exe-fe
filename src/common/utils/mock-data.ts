@@ -28,6 +28,7 @@ export type Product = {
   variants?: string[]
   fullDescription?: string
   images?: string[]
+  spaId?: string
 }
 
 export type Review = {
@@ -120,6 +121,7 @@ export const mockProducts: Product[] = [
     description: "Gói spa cơ bản giúp mèo sạch sẽ, thư giãn và dễ chịu.",
     fullDescription: "Gói spa cơ bản của chúng tôi được thiết kế đặc biệt cho những chú mèo yêu thích chăm sóc da và lông. Dịch vụ bao gồm rửa mặt, massage thư giãn, sấy khô và chải lông chuyên nghiệp. Chúng tôi sử dụng các sản phẩm cao cấp, an toàn cho mèo, giúp làm sạch sâu và nuôi dưỡng lông mượt. Mỗi buổi spa kéo dài khoảng 2 giờ với sự chăm sóc tận tâm từ các chuyên gia.",
     images: ["/image/1.png", "/image/spa1.jpg", "/image/spa2.jpg"],
+    spaId: "1",
   },
   {
     id: "p2",
@@ -130,6 +132,7 @@ export const mockProducts: Product[] = [
     price: "349,000 VND",
     category: "Spa",
     description: "Dịch vụ spa cao cấp dành cho chó với chăm sóc toàn diện.",
+    spaId: "2",
   },
   {
     id: "p3",
@@ -140,6 +143,7 @@ export const mockProducts: Product[] = [
     price: "259,000 VND",
     category: "Thú y",
     description: "Khám sức khỏe tổng quát định kỳ cho chó cưng.",
+    spaId: "1",
   },
   {
     id: "p4",
@@ -150,6 +154,7 @@ export const mockProducts: Product[] = [
     price: "189,000 VND",
     category: "Thú y",
     description: "Dịch vụ tiêm phòng giúp thú cưng phòng tránh bệnh nguy hiểm.",
+    spaId: "2",
   },
   {
     id: "p5",
@@ -162,6 +167,7 @@ export const mockProducts: Product[] = [
     description: "Thức ăn giàu dinh dưỡng dành cho chó ở mọi độ tuổi.",
     variants: ["Gà", "Bò"],
     sizes: ["S", "M", "L"],
+    spaId: "1",
   },
   {
     id: "p6",
@@ -174,6 +180,7 @@ export const mockProducts: Product[] = [
     description: "Thức ăn cao cấp giúp mèo khỏe mạnh và lông bóng mượt.",
     variants: ["Gà", "Bò"],
     sizes: ["S", "M", "L"],
+    spaId: "2",
   },
   {
     id: "p7",
@@ -185,6 +192,7 @@ export const mockProducts: Product[] = [
     category: "Vệ sinh",
     description: "Cát vệ sinh khử mùi tốt, an toàn cho mèo.",
     sizes: ["S", "M", "L"],
+    spaId: "1",
   },
   {
     id: "p8",
@@ -196,6 +204,7 @@ export const mockProducts: Product[] = [
     category: "Sữa tắm",
     description: "Sữa tắm giúp khử mùi và bảo vệ da cho chó.",
     sizes: ["S", "M", "L"],
+    spaId: "2",
   },
   {
     id: "p9",
@@ -222,6 +231,7 @@ Nhựa, thép dẻo và lông nhân tạo
 
 #dochoimeo #cancaumeo #phukienmeo #chamsocmeo`,
     sizes: ["S", "M", "L"],
+    spaId: "1",
   }
   ,
   {
@@ -235,6 +245,52 @@ Nhựa, thép dẻo và lông nhân tạo
     description: "Snack thưởng thơm ngon, phù hợp huấn luyện chó.",
     variants: ["Gà", "Bò"],
     sizes: ["S", "M", "L"],
+    spaId: "2",
+  },
+  {
+    id: "p11",
+    name: "Súp thưởng Ciao cho mèo",
+    image: "/image/1.png",
+    rating: 4.9,
+    reviews: 512,
+    price: "45,000 VND",
+    category: "Mèo",
+    description: "Súp thưởng thơm ngon kích thích vị giác của mèo.",
+    variants: ["Cá ngừ", "Gà"],
+    spaId: "1",
+  },
+  {
+    id: "p12",
+    name: "Xương gặm sạch răng cho chó",
+    image: "/image/2.png",
+    rating: 4.8,
+    reviews: 89,
+    price: "25,000 VND",
+    category: "Chó",
+    description: "Giúp chó sạch răng và giảm stress.",
+    spaId: "1",
+  },
+  {
+    id: "p13",
+    name: "Vòng cổ chuông cho mèo",
+    image: "/image/1.png",
+    rating: 4.5,
+    reviews: 67,
+    price: "15,000 VND",
+    category: "Phụ kiện",
+    description: "Vòng cổ xinh xắn kèm chuông nhỏ cho bé mèo.",
+    spaId: "2",
+  },
+  {
+    id: "p14",
+    name: "Bát ăn đôi chống kiến",
+    image: "/image/2.png",
+    rating: 4.6,
+    reviews: 45,
+    price: "85,000 VND",
+    category: "Tiện ích",
+    description: "Bát ăn thiết kế thông minh ngăn kiến bò vào.",
+    spaId: "2",
   }
 ]
 
@@ -377,6 +433,42 @@ export const mockReviews: Review[] = [
     date: "2023-12-20",
     helpful: 12,
   },
+]
+
+export type UserPet = {
+  id: string
+  name: string
+  type: string
+  breed?: string
+  weight: string
+  image?: string
+}
+
+export const mockUserPets: UserPet[] = [
+  {
+    id: "pet1",
+    name: "Milu",
+    type: "Chó",
+    breed: "Poodle",
+    weight: "5",
+    image: "/image/dog.jpg"
+  },
+  {
+    id: "pet2",
+    name: "Mimi",
+    type: "Mèo",
+    breed: "Anh lông ngắn",
+    weight: "4",
+    image: "/image/cat.png"
+  },
+  {
+    id: "pet3",
+    name: "LuLu",
+    type: "Chó",
+    breed: "Corgi",
+    weight: "8",
+    image: "/image/dog.jpg"
+  }
 ]
 
 

@@ -25,13 +25,6 @@ interface NavigationProps {
   onUseLocation: () => Promise<void>
 }
 
-const hotKeywords = [
-  "spa thú cưng",
-  "cát vệ sinh",
-  "thức ăn cho mèo",
-  "đồ chơi cho chó",
-  "gói tiêm phòng",
-]
 
 const menuCategories = [
   "Tất cả sản phẩm",
@@ -88,13 +81,6 @@ export function Navigation({ onUseLocation }: NavigationProps) {
     setOpenMobileMenu(false)
   }
 
-  const handleQuickSearch = (keyword: string) => {
-    const params = new URLSearchParams()
-    params.set("search", keyword)
-    navigate(`/products?${params.toString()}`)
-    setSearchQuery(keyword)
-    setOpenMobileMenu(false)
-  }
 
   const handleChooseCategory = (category: string) => {
     const params = new URLSearchParams()
@@ -271,17 +257,6 @@ export function Navigation({ onUseLocation }: NavigationProps) {
                   >
                     <Search className="h-4 w-4" />
                   </button>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-white/90">
-                  {hotKeywords.map((keyword) => (
-                    <button
-                      key={keyword}
-                      onClick={() => handleQuickSearch(keyword)}
-                      className="hover:text-white"
-                    >
-                      {keyword}
-                    </button>
-                  ))}
                 </div>
               </div>
 
