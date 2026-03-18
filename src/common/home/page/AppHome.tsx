@@ -38,14 +38,7 @@ const sideBanners = [
   },
 ]
 
-const quickEntry = [
-  "Hàng quốc tế",
-  "Xử lý đơn nhanh",
-  "Deal hot giờ vàng",
-  "Voucher 30%",
-  "Khách hàng thân thiết",
-  "Mã giảm giá",
-]
+
 
 export function AppHome({ userLocation }: AppHomeProps) {
   const navigate = useNavigate()
@@ -130,18 +123,7 @@ export function AppHome({ userLocation }: AppHomeProps) {
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-2 md:grid-cols-6 md:gap-3">
-            {quickEntry.map((entry) => (
-              <button
-                key={entry}
-                onClick={() => navigate("/products")}
-                className="rounded-lg border border-[#efefef] p-2 text-center hover:border-[#ee4d2d]/30 hover:bg-orange-50/50 transition"
-              >
-                <div className="mx-auto mb-1 h-8 w-8 rounded-full bg-[#fff1ed]" />
-                <p className="text-[11px] text-slate-700 md:text-xs font-medium">{entry}</p>
-              </button>
-            ))}
-          </div>
+
         </section>
 
         <section className="rounded-xl bg-white p-4 shadow-sm border border-slate-100">

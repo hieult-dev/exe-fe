@@ -30,8 +30,6 @@ const menuCategories = [
   "Tất cả sản phẩm",
   "Spa",
   "Thú y",
-  "Chó",
-  "Mèo",
   "Đồ chơi",
   "Thức ăn",
   "Phụ kiện",
@@ -113,7 +111,7 @@ export function Navigation({ onUseLocation }: NavigationProps) {
       <header className="sticky top-0 z-50 border-b border-[#efefef] shadow-sm">
         <div className="bg-gradient-to-b from-[#fc5c88] to-[#ff7ca3] text-white">
           <div className="mx-auto max-w-7xl px-3 md:px-4">
-            <div className="hidden h-9 items-center justify-between text-xs md:flex">
+            <div className="hidden h-9 items-center justify-between text-xs md:flex relative z-50">
               <div className="flex items-center gap-4">
                 <button onClick={() => navigate("/")} className="hover:opacity-85 transition">
                   Kênh Spa/Shop
@@ -169,7 +167,7 @@ export function Navigation({ onUseLocation }: NavigationProps) {
                     </button>
                   </>
                 ) : (
-                  <div ref={accountMenuRef} className="relative">
+                  <div ref={accountMenuRef} className="relative z-50">
                     <button
                       type="button"
                       onClick={() => setOpenAccountDropdown((prev) => !prev)}
@@ -208,6 +206,15 @@ export function Navigation({ onUseLocation }: NavigationProps) {
                           className="w-full px-4 py-2 text-left hover:bg-[#fff0f5] hover:text-[#fc5c88]"
                         >
                           Kênh shop owner
+                        </button>
+                        <button
+                          onClick={() => {
+                            setOpenAccountDropdown(false)
+                            navigate("/shop/1")
+                          }}
+                          className="w-full px-4 py-2 text-left hover:bg-[#fff0f5] hover:text-[#fc5c88]"
+                        >
+                          Trang shop của tôi
                         </button>
                         <button
                           onClick={() => {
@@ -326,6 +333,12 @@ export function Navigation({ onUseLocation }: NavigationProps) {
                   >
                     Kênh shop owner
                   </button>
+                  <button
+                    onClick={() => navigate("/shop/1")}
+                    className="rounded-sm bg-white/10 px-3 py-2 text-left"
+                  >
+                    Trang shop của tôi
+                  </button>
                 </div>
 
                 <button
@@ -368,6 +381,13 @@ export function Navigation({ onUseLocation }: NavigationProps) {
                     >
                       <Store className="h-4 w-4" />
                       Kênh shop owner
+                    </button>
+                    <button
+                      onClick={() => navigate("/shop/1")}
+                      className="flex w-full items-center gap-2 rounded-sm bg-white/10 px-3 py-2"
+                    >
+                      <Store className="h-4 w-4" />
+                      Trang shop của tôi
                     </button>
                     <button
                       onClick={() => setShowLogoutModal(true)}

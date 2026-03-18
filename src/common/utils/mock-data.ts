@@ -62,16 +62,7 @@ export const serviceCategoriesWithImages: ServiceCategory[] = [
     name: "Thú y",
     image: "/image/vet.jpg",
   },
-  {
-    id: "dog",
-    name: "Chó",
-    image: "/image/dog.jpg",
-  },
-  {
-    id: "cat",
-    name: "Mèo",
-    image: "/image/cat.png",
-  },
+
   {
     id: "cleaning",
     name: "Cát Vệ sinh",

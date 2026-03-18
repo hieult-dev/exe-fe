@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom"
-import { Phone, Clock, MapPin, Star, MessageSquare, ThumbsUp, Plus, Bolt, ShieldCheck, ShoppingCart } from "lucide-react"
+import { Phone, Clock, MapPin, Star, MessageSquare, ThumbsUp, Plus, Bolt, ShieldCheck, ShoppingCart, CheckCircle2, ArrowRight } from "lucide-react"
 import { mockSpas, mockProducts, mockReviews, mockUserPets, UserPet } from "@/common/utils/mock-data"
 import { AppDialog } from "@/common/component/AppDialog"
 
@@ -30,6 +30,12 @@ export function BookService() {
   const selectedService = initialProduct?.name || ""
   const [selectedDate, setSelectedDate] = useState("")
   const [selectedTime, setSelectedTime] = useState("")
+  const [isConfirmed, setIsConfirmed] = useState(false)
+
+  const handleConfirm = () => {
+    setIsConfirmed(true)
+    window.scrollTo(0, 0)
+  }
 
   // Pet info
 
@@ -60,6 +66,143 @@ export function BookService() {
     p.id !== productId &&
     (p.category === "Spa" || p.category === "Thú y")
   )
+
+  if (isConfirmed) {
+    return (
+      <section className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-10 space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-6 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mb-8 animate-in fade-in slide-in-from-top-4">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-500">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Đặt lịch thành công</h2>
+                <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest mt-0.5">
+                  <span>Thông tin</span>
+                  <span className="h-1 w-1 rounded-full bg-slate-300"></span>
+                  <span>Dịch vụ</span>
+                  <span className="h-1 w-1 rounded-full bg-slate-300"></span>
+                  <span className="text-emerald-500">Hoàn tất</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-2.5 w-2.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+              </span>
+              <span className="text-sm font-bold text-amber-600">Đang chờ shop xác nhận</span>
+            </div>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-8 animate-in fade-in slide-in-from-bottom-8">
+              <div className="bg-card rounded-2xl border border-border p-8 md:p-10 space-y-8 shadow-sm">
+                
+                <div className="flex flex-col md:flex-row items-center md:items-start gap-8 text-center md:text-left">
+                  <div className="relative w-32 h-32 shrink-0">
+                    <div className="absolute inset-0 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 shadow-inner">
+                      <CheckCircle2 className="h-16 w-16" strokeWidth={2.5} />
+                    </div>
+                    {/* Status Badge */}
+                    <div className="absolute -bottom-2 -right-2 bg-amber-50 text-amber-500 p-3 rounded-full border-4 border-white shadow-sm flex items-center justify-center">
+                      <Clock className="h-6 w-6" strokeWidth={2.5} />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4 pt-2 flex-1">
+                    <h2 className="text-3xl font-black text-slate-800 tracking-tight">Yêu cầu đặt lịch <span className="text-primary">đã được gửi!</span></h2>
+                    <p className="text-slate-500 font-medium leading-relaxed mt-2">
+                      Đơn hàng <span className="text-slate-800 font-bold">#PET-{Math.floor(100000 + Math.random() * 900000)}</span> đã được chuyển đến <span className="font-bold">{spa.name}</span>. Yêu cầu của bạn đang trong trạng thái chờ xử lý. Cửa hàng sẽ sớm gửi phản hồi để xác nhận lịch hẹn chính thức.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100 pt-8 mt-8">
+                  <h3 className="font-bold text-slate-800 text-lg mb-4">Các bước tiếp theo</h3>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="p-5 rounded-2xl bg-amber-50/50 border border-amber-100/50 space-y-3">
+                      <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold">1</div>
+                      <p className="font-bold text-sm text-amber-900">Chờ xác nhận</p>
+                      <p className="text-xs text-amber-700/80">Shop đang kiểm tra lịch trống và sẽ phản hồi sớm nhất.</p>
+                    </div>
+                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-3 opacity-50 grayscale">
+                      <div className="h-10 w-10 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold">2</div>
+                      <p className="font-bold text-sm text-slate-700">Đến cửa hàng</p>
+                      <p className="text-xs text-slate-500">Mang thú cưng đến đúng giờ đã đặt theo lịch hẹn.</p>
+                    </div>
+                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-3 opacity-50 grayscale">
+                      <div className="h-10 w-10 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold">3</div>
+                      <p className="font-bold text-sm text-slate-700">Trải nghiệm</p>
+                      <p className="text-xs text-slate-500">Thú cưng được chăm sóc tận tình bởi các chuyên gia.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-4 border-t border-slate-100 flex-wrap">
+                  <button 
+                      onClick={() => navigate('/')}
+                      className="px-6 py-3 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition-all flex-1 md:flex-none text-center justify-center"
+                  >
+                      Về trang chủ
+                  </button>
+                  <button 
+                      onClick={() => navigate('/my-bookings')}
+                      className="px-6 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2 flex-1 md:flex-none"
+                  >
+                      Theo dõi đơn <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+
+              </div>
+            </div>
+
+            <div className="space-y-6 lg:col-span-1 animate-in fade-in slide-in-from-bottom-12">
+              {/* Receipt Card */}
+              <div className="bg-white rounded-2xl border-2 border-primary/10 p-6 space-y-5 sticky top-6 shadow-xl shadow-primary/5">
+                <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <ShoppingCart className="h-5 w-5 text-primary" />
+                  </div>
+                  <h4 className="font-bold text-slate-800 text-lg">Chi tiết lịch hẹn</h4>
+                </div>
+                 
+                <div className="space-y-4 text-sm mt-4">
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="font-bold text-slate-400 flex items-center gap-2 shrink-0">Dịch vụ</span>
+                    <span className="font-bold text-slate-800 text-right">{selectedService}</span>
+                  </div>
+                  {selectedUserPet && (
+                    <div className="flex justify-between items-center gap-4">
+                      <span className="font-bold text-slate-400 flex items-center gap-2 shrink-0">Thú cưng</span>
+                      <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg shrink-0">
+                        <img src={selectedUserPet.image} className="h-5 w-5 rounded-full object-cover" alt="" />
+                        <span className="font-bold text-slate-700 text-xs">{selectedUserPet.name}</span>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="font-bold text-slate-400 flex items-center gap-2 shrink-0">Tại cửa hàng</span>
+                    <span className="font-bold text-slate-800 text-right">{spa.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center gap-4 pb-4 border-b border-slate-100 border-dashed">
+                    <span className="font-bold text-slate-400 flex items-center gap-2 shrink-0">Thời gian</span>
+                    <span className="font-bold text-primary bg-primary/5 px-3 py-1.5 rounded-lg">{selectedTime} • {selectedDate}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center pt-2">
+                    <span className="font-black text-slate-500 uppercase tracking-widest text-xs">Thành tiền</span>
+                    <span className="text-2xl font-black text-primary">{totalPrice.toLocaleString()}đ</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="min-h-screen bg-background">
@@ -404,7 +547,10 @@ export function BookService() {
                     </span>
                   </div>
 
-                  <button className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 transition-all hover:-translate-y-1 active:scale-[0.98] flex items-center justify-center gap-3 group mt-4">
+                  <button 
+                    onClick={handleConfirm}
+                    className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 transition-all hover:-translate-y-1 active:scale-[0.98] flex items-center justify-center gap-3 group mt-4"
+                  >
                     <ShoppingCart className="h-5 w-5 transition-transform group-hover:rotate-12" />
                     Xác nhận đặt lịch ngay
                   </button>

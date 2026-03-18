@@ -21,94 +21,113 @@ export function ShopDetail() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20">
-      {/* Shop Header Banner */}
-      <div className="bg-white border-b border-slate-100">
-        <div className="container mx-auto px-4 py-8">
-           <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
-             {/* Shop Profile Card */}
-             <div className="relative w-full md:w-[400px] shrink-0">
-                <div className="bg-slate-900 rounded-2xl overflow-hidden relative h-48 shadow-xl">
-                  <img src={shop.image} alt={shop.name} className="w-full h-full object-cover opacity-60 blur-[2px]" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
-                  
-                  <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                    <div className="flex items-center gap-4">
-                      <div className="h-16 w-16 rounded-full border-2 border-white/30 p-1 bg-white shrink-0 shadow-lg">
-                        <img src={shop.image} alt={shop.name} className="h-full w-full object-cover rounded-full" />
-                      </div>
-                      <div>
-                        <h1 className="text-xl font-black text-white flex items-center gap-1.5">
-                          {shop.name} 
-                          <ShieldCheck className="h-4 w-4 text-emerald-400 fill-emerald-400/20" />
-                        </h1>
-                        <p className="text-white/70 text-[10px] font-bold uppercase tracking-wider">Hoạt động 5 phút trước</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 mt-4">
-                       <button className="flex-1 bg-white/10 backdrop-blur-md border border-white/20 text-white text-[12px] font-bold py-2 rounded-lg hover:bg-white/20 transition flex items-center justify-center gap-1.5">
-                         <MessageSquare className="h-3.5 w-3.5" /> Chát ngay
-                       </button>
-                       <button className="flex-1 bg-primary text-white text-[12px] font-bold py-2 rounded-lg hover:bg-primary/90 transition shadow-lg shadow-primary/20 flex items-center justify-center gap-1.5">
-                         Theo dõi
-                       </button>
-                    </div>
-                  </div>
-                </div>
-             </div>
+      {/* Shop Header Banner - Full Width */}
+      <div className="relative h-[300px] md:h-[500px] bg-slate-900 overflow-hidden">
+        <img src={shop.image} alt={shop.name} className="w-full h-full object-cover opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+      </div>
 
-             {/* Shop Stats Grid */}
-             <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 flex-1 w-full pt-4 md:pt-0">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center">
-                    <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Đánh giá shop</div>
-                    <div className="text-sm font-black text-slate-700">{shop.rating} <span className="text-slate-400 font-medium font-sans">({shop.reviews})</span></div>
-                  </div>
-                </div>
+      {/* Shop Info Section */}
+      <div className="bg-white border-b border-slate-100 shadow-sm relative z-10">
+        <div className="container mx-auto px-4">
+          <div className="relative flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-10 -mt-20 md:-mt-32 pb-8">
+            {/* Shop Avatar */}
+            <div className="h-32 w-32 md:h-48 md:w-48 rounded-[2.5rem] border-[6px] border-white p-1 bg-white shrink-0 shadow-2xl overflow-hidden group">
+              <img src={shop.image} alt={shop.name} className="h-full w-full object-cover rounded-[2rem] transition-transform duration-700 group-hover:scale-110" />
+            </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                    <ShoppingCart className="h-5 w-5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Sản phẩm</div>
-                    <div className="text-sm font-black text-slate-700">{shopProducts.length}</div>
-                  </div>
+            {/* Shop Profile Detail */}
+            <div className="flex-1 space-y-5 text-center md:text-left pb-2">
+              <div className="space-y-1">
+                <h1 className="text-3xl md:text-4xl font-black text-slate-800 flex items-center justify-center md:justify-start gap-3 tracking-tight">
+                  {shop.name}
+                  <ShieldCheck className="h-7 w-7 text-emerald-500 fill-emerald-500/10" />
+                </h1>
+                <div className="flex items-center justify-center md:justify-start gap-4">
+                  <p className="text-slate-400 text-[11px] font-black uppercase tracking-[0.2em]">Hoạt động 5 phút trước</p>
+                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
                 </div>
+              </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Giờ mở cửa</div>
-                    <div className="text-sm font-black text-slate-700">{shop.hours}</div>
-                  </div>
-                </div>
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                <button 
+                  onClick={() => navigate('/messages')}
+                  className="px-8 py-3 bg-slate-900 text-white text-[13px] font-black rounded-2xl hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-slate-200 flex items-center gap-2 group"
+                >
+                  <MessageSquare className="h-4 w-4 transition-transform group-hover:-rotate-12" /> Chát ngay
+                </button>
+                <button className="px-8 py-3 bg-primary text-white text-[13px] font-black rounded-2xl hover:bg-primary/90 transition-all active:scale-95 shadow-xl shadow-primary/20 flex items-center gap-2 group">
+                  Theo dõi
+                </button>
+              </div>
+            </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                    <Phone className="h-5 w-5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Hotline</div>
-                    <div className="text-sm font-black text-slate-700">{shop.phone}</div>
-                  </div>
+            {/* Shop Stats Grid - Desktop Right side */}
+            <div className="hidden lg:grid grid-cols-2 gap-x-12 gap-y-4 pb-2 border-l border-slate-100 pl-10">
+              <div className="flex items-center gap-3">
+                <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Đánh giá shop</div>
+                  <div className="text-sm font-black text-slate-700">{shop.rating} <span className="text-slate-400 font-medium font-sans">({shop.reviews})</span></div>
                 </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Clock className="h-4 w-4 text-blue-500" />
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Giờ mở cửa</div>
+                  <div className="text-sm font-black text-slate-700">{shop.hours}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <ShoppingCart className="h-4 w-4 text-emerald-500" />
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Sản phẩm</div>
+                  <div className="text-sm font-black text-slate-700">{shopProducts.length}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Phone className="h-4 w-4 text-rose-500" />
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Hotline</div>
+                  <div className="text-sm font-black text-slate-700">{shop.phone}</div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-                <div className="col-span-2 lg:col-span-3 flex items-start gap-3 pt-4 border-t border-slate-50">
-                  <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
-                    <MapPin className="h-5 w-5 text-slate-400" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Địa chỉ chi tiết</div>
-                    <div className="text-sm font-bold text-slate-600 leading-snug">{shop.address}</div>
-                  </div>
-                </div>
-             </div>
-           </div>
+          {/* Location Bar & Mobile Stats Grid */}
+          <div className="py-5 border-t border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-start gap-3 max-w-2xl px-2">
+              <div className="h-9 w-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
+                <MapPin className="h-4.5 w-4.5 text-slate-400" />
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Địa chỉ chi tiết</div>
+                <div className="text-sm font-bold text-slate-600 leading-snug">{shop.address}</div>
+              </div>
+            </div>
+
+            {/* Mobile/Tablet Stats Grid */}
+            <div className="lg:hidden grid grid-cols-2 sm:grid-cols-4 gap-6 px-2">
+              {/* Symmetrical to Desktop version but for smaller screens */}
+              <div className="space-y-1">
+                <div className="text-[10px] font-bold text-slate-400 uppercase">Đánh giá</div>
+                <div className="text-xs font-black text-slate-700">{shop.rating} ({shop.reviews})</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-[10px] font-bold text-slate-400 uppercase">Sản phẩm</div>
+                <div className="text-xs font-black text-slate-700">{shopProducts.length}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-[10px] font-bold text-slate-400 uppercase">Mở cửa</div>
+                <div className="text-xs font-black text-slate-700">{shop.hours}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-[10px] font-bold text-slate-400 uppercase">Hotline</div>
+                <div className="text-xs font-black text-slate-700">{shop.phone}</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -117,46 +136,46 @@ export function ShopDetail() {
         <div className="flex flex-col lg:flex-row gap-10">
           {/* Sidebar Filters */}
           <div className="w-full lg:w-72 shrink-0 space-y-6">
-             <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-5 shadow-sm sticky top-24">
-               <h3 className="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-50 pb-3">
-                 <Filter className="h-4 w-4 text-primary" /> Danh mục dịch vụ
-               </h3>
-               <div className="space-y-1.5">
-                 <button 
-                   onClick={() => setActiveTab("all")}
-                   className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-between group ${activeTab === 'all' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-600 hover:bg-slate-50'}`}
-                 >
-                   Tất cả sản phẩm
-                   {activeTab === 'all' && <ShieldCheck className="h-3.5 w-3.5" />}
-                 </button>
-                 <button 
+            <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-5 shadow-sm sticky top-24">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-50 pb-3">
+                <Filter className="h-4 w-4 text-primary" /> Danh mục dịch vụ
+              </h3>
+              <div className="space-y-1.5">
+                <button
+                  onClick={() => setActiveTab("all")}
+                  className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-between group ${activeTab === 'all' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-600 hover:bg-slate-50'}`}
+                >
+                  Tất cả sản phẩm
+                  {activeTab === 'all' && <ShieldCheck className="h-3.5 w-3.5" />}
+                </button>
+                <button
                   onClick={() => setActiveTab("service")}
                   className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-between group ${activeTab === 'service' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-600 hover:bg-slate-50'}`}
-                 >
-                   Spa & Thú y
-                   {activeTab === 'service' && <ShieldCheck className="h-3.5 w-3.5" />}
-                 </button>
-                 <button 
+                >
+                  Spa & Thú y
+                  {activeTab === 'service' && <ShieldCheck className="h-3.5 w-3.5" />}
+                </button>
+                <button
                   onClick={() => setActiveTab("product")}
                   className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-between group ${activeTab === 'product' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-600 hover:bg-slate-50'}`}
-                 >
-                   Hàng tiêu dùng
-                   {activeTab === 'product' && <ShieldCheck className="h-3.5 w-3.5" />}
-                 </button>
-               </div>
-               
-               <div className="pt-4 mt-4 border-t border-slate-50">
-                 <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 mb-2 px-1">TÌM KIẾM TRONG SHOP</div>
-                 <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 focus-within:bg-white focus-within:border-primary transition group">
-                   <Search className="h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-                   <input 
-                     type="text" 
-                     placeholder="Ví dụ: Cát vệ sinh..." 
-                     className="bg-transparent border-none text-xs focus:ring-0 w-full p-0 font-medium placeholder:text-slate-400" 
-                   />
-                 </div>
-               </div>
-             </div>
+                >
+                  Hàng tiêu dùng
+                  {activeTab === 'product' && <ShieldCheck className="h-3.5 w-3.5" />}
+                </button>
+              </div>
+
+              <div className="pt-4 mt-4 border-t border-slate-50">
+                <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 mb-2 px-1">TÌM KIẾM TRONG SHOP</div>
+                <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 focus-within:bg-white focus-within:border-primary transition group">
+                  <Search className="h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: Cát vệ sinh..."
+                    className="bg-transparent border-none text-xs focus:ring-0 w-full p-0 font-medium placeholder:text-slate-400"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Product Grid */}
@@ -175,10 +194,10 @@ export function ShopDetail() {
             {filteredProducts.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredProducts.map(p => (
-                  <ProductCard 
-                    key={p.id} 
-                    product={p} 
-                    onAction={() => {}} 
+                  <ProductCard
+                    key={p.id}
+                    product={p}
+                    onAction={() => { }}
                     onCardClick={(item) => {
                       if (item.category === 'Spa' || item.category === 'Thú y') {
                         navigate(`/booking?productId=${item.id}`)
@@ -192,7 +211,7 @@ export function ShopDetail() {
             ) : (
               <div className="bg-white rounded-[2rem] border-2 border-dashed border-slate-100 py-32 text-center shadow-sm">
                 <div className="mx-auto h-20 w-20 rounded-full bg-slate-50 flex items-center justify-center mb-4">
-                   <Search className="h-10 w-10 text-slate-200" />
+                  <Search className="h-10 w-10 text-slate-200" />
                 </div>
                 <p className="text-slate-600 font-black text-lg">Chưa có kết quả!</p>
                 <p className="text-slate-400 text-sm mt-1">Danh mục này hiện đang được cập nhật thêm hàng mới.</p>

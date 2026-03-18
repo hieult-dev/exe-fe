@@ -216,17 +216,28 @@ export function ProductDetail() {
                 </div>
               </div>
 
-              <button
-                onClick={handleAddToCart}
-                className={`w-full py-3 rounded-full font-semibold transition flex items-center justify-center gap-2 ${
-                  addedToCart
-                    ? "bg-green-500 text-white"
-                    : "bg-primary text-primary-foreground hover:bg-primary/90"
-                }`}
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {addedToCart ? "Đã thêm vào giỏ hàng" : "Thêm vào giỏ hàng"}
-              </button>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleAddToCart}
+                  className={`flex-1 py-3 px-2 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 border-2 ${
+                    addedToCart
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-600"
+                      : "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 active:scale-95"
+                  }`}
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                  {addedToCart ? "Đã thêm" : "Thêm giỏ hàng"}
+                </button>
+                <button
+                  onClick={() => {
+                    handleAddToCart();
+                    navigate("/cart");
+                  }}
+                  className="flex-[1.2] py-3 px-2 rounded-2xl font-black transition-all flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
+                >
+                  Mua ngay
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -26,7 +26,9 @@ import { ProductCart } from "@/common/home/page/features/shop/ProductCart"
 import { CartPage } from "@/common/home/page/features/cart/CartPage"
 import { OrdersPage } from "@/common/home/page/features/order/OrdersPage"
 import { MyBookingsPage } from "@/common/home/page/features/order/MyBookingsPage"
+import { MessagesPage } from "@/common/home/page/features/messages/MessagesPage"
 import ToastProvider from "@/common/toast/ToastProvider"
+import { AIChatPopup } from "@/common/home/components/AIChatPopup"
 
 function App() {
   const location = useLocation()
@@ -81,6 +83,7 @@ function App() {
             <Route path="/shop/:shopId" element={<ShopDetail />} />
             <Route path="/booking" element={<BookService />} />
             <Route path="/cart" element={<CartPage />} />
+            <Route path="/messages" element={<MessagesPage />} />
 
             <Route element={<AccountLayout />}>
               <Route path="/profile" element={<ProfilePage />} />
@@ -112,6 +115,7 @@ function App() {
         </main>
 
         {!isShopOwnerRoute && <HomeFooter />}
+        <AIChatPopup />
       </div>
     </>
   )
