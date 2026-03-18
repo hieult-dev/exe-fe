@@ -148,9 +148,31 @@ export const mockProducts: Product[] = [
     spaId: "2",
   },
   {
+    id: "p15",
+    name: "Cắt tỉa lông thú cưng",
+    image: "/image/1.png",
+    rating: 4.8,
+    reviews: 135,
+    price: "220,000 VND",
+    category: "Spa",
+    description: "Cắt tỉa lông chuyên nghiệp, tạo kiểu thời trang cho bé.",
+    spaId: "1",
+  },
+  {
+    id: "p16",
+    name: "Lấy cao răng thú y",
+    image: "/image/2.png",
+    rating: 4.7,
+    reviews: 89,
+    price: "150,000 VND",
+    category: "Thú y",
+    description: "Làm sạch mảng bám, giúp răng miệng thú cưng sạch sẽ và khỏe mạnh.",
+    spaId: "2",
+  },
+  {
     id: "p5",
     name: "Thức ăn chó",
-    image: "/image/1.png",
+    image: "/image.png",
     rating: 4.9,
     reviews: 210,
     price: "129,000 VND",
@@ -163,7 +185,7 @@ export const mockProducts: Product[] = [
   {
     id: "p6",
     name: "Thức ăn mèo premium",
-    image: "/image/2.png",
+    image: "/image copy.png",
     rating: 4.8,
     reviews: 176,
     price: "149,000 VND",
@@ -176,7 +198,7 @@ export const mockProducts: Product[] = [
   {
     id: "p7",
     name: "Cát vệ sinh mèo",
-    image: "/image/1.png",
+    image: "/image copy 2.png",
     rating: 4.4,
     reviews: 52,
     price: "99,000 VND",
@@ -188,7 +210,7 @@ export const mockProducts: Product[] = [
   {
     id: "p8",
     name: "Sữa tắm khử mùi cho chó",
-    image: "/image/2.png",
+    image: "/image copy 3.png",
     rating: 4.6,
     reviews: 88,
     price: "79,000 VND",
@@ -200,7 +222,7 @@ export const mockProducts: Product[] = [
   {
     id: "p9",
     name: "Gấu bông đồ chơi cho mèo (cần câu lông)",
-    image: "/image/1.png",
+    image: "/image copy 4.png",
     rating: 4.3,
     reviews: 34,
     price: "59,000 VND",
@@ -228,7 +250,7 @@ Nhựa, thép dẻo và lông nhân tạo
   {
     id: "p10",
     name: "Snack thưởng cho chó",
-    image: "/image/2.png",
+    image: "/image copy 5.png",
     rating: 4.7,
     reviews: 142,
     price: "39,000 VND",
@@ -241,7 +263,7 @@ Nhựa, thép dẻo và lông nhân tạo
   {
     id: "p11",
     name: "Súp thưởng Ciao cho mèo",
-    image: "/image/1.png",
+    image: "/image copy 6.png",
     rating: 4.9,
     reviews: 512,
     price: "45,000 VND",
@@ -253,7 +275,7 @@ Nhựa, thép dẻo và lông nhân tạo
   {
     id: "p12",
     name: "Xương gặm sạch răng cho chó",
-    image: "/image/2.png",
+    image: "/image copy 7.png",
     rating: 4.8,
     reviews: 89,
     price: "25,000 VND",
@@ -264,7 +286,7 @@ Nhựa, thép dẻo và lông nhân tạo
   {
     id: "p13",
     name: "Vòng cổ chuông cho mèo",
-    image: "/image/1.png",
+    image: "/image copy 8.png",
     rating: 4.5,
     reviews: 67,
     price: "15,000 VND",
@@ -275,7 +297,7 @@ Nhựa, thép dẻo và lông nhân tạo
   {
     id: "p14",
     name: "Bát ăn đôi chống kiến",
-    image: "/image/2.png",
+    image: "/image copy 9.png",
     rating: 4.6,
     reviews: 45,
     price: "85,000 VND",
@@ -334,6 +356,7 @@ export const mockSpas: Spa[] = [
     priceRange: "200,000 - 550,000 VND",
     phone: "0903 111 222",
     hours: "08:30 - 18:30",
+    featured: true,
   },
   {
     id: "4",
