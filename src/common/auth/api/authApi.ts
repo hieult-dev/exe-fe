@@ -20,7 +20,7 @@ type AuthenticationResponse = {
 
 function login(email: string, password: string) {
   assertGatewayConfigured()
-  return baseApi.post<AuthenticationResponse>(`${AUTH_URL}/authenticate`, {
+  return baseApi.post<AuthenticationResponse>(`${AUTH_URL}/shop/login`, {
     email,
     password,
   })
@@ -28,7 +28,7 @@ function login(email: string, password: string) {
 
 function register(data: FormData) {
   assertGatewayConfigured()
-  return baseApi.postWithFile<AuthenticationResponse>(`${AUTH_URL}/register`, data)
+  return baseApi.postWithFile<AuthenticationResponse>(`${AUTH_URL}/shop-owner/register`, data)
 }
 
 function logout() {

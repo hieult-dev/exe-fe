@@ -7,8 +7,11 @@ import "primereact/resources/primereact.min.css"
 import "primeicons/primeicons.css"
 import "@/common/style/global.css"
 import "ol/ol.css"
+import { PrimeReactProvider } from 'primereact/api'
 ReactDOM.createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
-        <App />
+        <PrimeReactProvider>
+            <App />
+        </PrimeReactProvider>
     </BrowserRouter>
 )

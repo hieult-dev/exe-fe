@@ -2,7 +2,6 @@ import { useMemo, useState, type FormEvent } from "react"
 import { DataTable } from "primereact/datatable"
 import { Column } from "primereact/column"
 import type { ColumnBodyOptions } from "primereact/column"
-import { ListFilter, Package, PencilLine, Plus, RefreshCw, Search, Trash2, Wrench } from "lucide-react"
 import { AppDialog } from "@/common/component/AppDialog"
 import { useShopOwnerContext } from "@/common/home/page/features/shop-owner/store/ShopOwnerContext"
 import {
@@ -423,7 +422,7 @@ export function ShopInventoryPage() {
           aria-label="Sửa sản phẩm"
           className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d7dfe9] bg-white text-slate-600 transition hover:bg-slate-50"
         >
-          <PencilLine className="h-4 w-4" />
+          <i className="pi pi-pencil h-4 w-4" />
         </button>
         <button
           onClick={() => requestDelete(product.id)}
@@ -431,7 +430,7 @@ export function ShopInventoryPage() {
           aria-label="Xóa sản phẩm"
           className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#f0c2b7] bg-white text-[#c73d1e] transition hover:bg-[#fff4f1]"
         >
-          <Trash2 className="h-4 w-4" />
+          <i className="pi pi-trash h-4 w-4" />
         </button>
       </div>
     )
@@ -446,7 +445,7 @@ export function ShopInventoryPage() {
           aria-label="Sửa vật tư"
           className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d7dfe9] bg-white text-slate-600 transition hover:bg-slate-50"
         >
-          <PencilLine className="h-4 w-4" />
+          <i className="pi pi-pencil h-4 w-4" />
         </button>
         <button
           onClick={() => requestDelete(material.id)}
@@ -454,7 +453,7 @@ export function ShopInventoryPage() {
           aria-label="Xóa vật tư"
           className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#f0c2b7] bg-white text-[#c73d1e] transition hover:bg-[#fff4f1]"
         >
-          <Trash2 className="h-4 w-4" />
+          <i className="pi pi-trash h-4 w-4" />
         </button>
       </div>
     )
@@ -474,7 +473,7 @@ export function ShopInventoryPage() {
               onClick={openCreateDialog}
               className="inline-flex h-9 items-center gap-2 rounded-md bg-[#214388] px-4 text-sm font-semibold text-white transition hover:bg-[#19356a]"
             >
-              <Plus className="h-4 w-4" />
+              <i className="pi pi-plus h-4 w-4" />
               {isProductTab ? "Thêm sản phẩm" : "Thêm vật tư"}
             </button>
 
@@ -482,7 +481,7 @@ export function ShopInventoryPage() {
               onClick={handleRefreshView}
               className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d9e1eb] bg-white px-4 text-sm font-medium text-[#40526b] transition hover:bg-[#f8fafc]"
             >
-              <RefreshCw className="h-4 w-4" />
+              <i className="pi pi-refresh h-4 w-4" />
               Làm mới
             </button>
           </div>
@@ -493,21 +492,19 @@ export function ShopInventoryPage() {
             <button
               type="button"
               onClick={() => switchTab("PRODUCTS")}
-              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                isProductTab ? "bg-white text-[#214388] shadow-sm" : "text-[#5a6c84] hover:text-[#214388]"
-              }`}
+              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${isProductTab ? "bg-white text-[#214388] shadow-sm" : "text-[#5a6c84] hover:text-[#214388]"
+                }`}
             >
-              <Package className="h-4 w-4" />
+              <i className="pi pi-box h-4 w-4" />
               Sản phẩm
             </button>
             <button
               type="button"
               onClick={() => switchTab("MATERIALS")}
-              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                !isProductTab ? "bg-white text-[#214388] shadow-sm" : "text-[#5a6c84] hover:text-[#214388]"
-              }`}
+              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${!isProductTab ? "bg-white text-[#214388] shadow-sm" : "text-[#5a6c84] hover:text-[#214388]"
+                }`}
             >
-              <Wrench className="h-4 w-4" />
+              <i className="pi pi-cog h-4 w-4" />
               Vật tư
             </button>
           </div>
@@ -521,7 +518,7 @@ export function ShopInventoryPage() {
 
           <div className="flex flex-col gap-3 rounded-xl border border-[#e2e8f0] bg-white p-4 lg:flex-row lg:items-center lg:justify-between">
             <label className="flex min-h-10 flex-1 items-center gap-2 rounded-md border border-[#d9e1eb] bg-[#fbfcfe] px-3">
-              <Search className="h-4 w-4 text-[#70829a]" />
+              <i className="pi pi-search h-4 w-4 text-[#70829a]" />
               <input
                 type="text"
                 value={searchQuery}
@@ -533,7 +530,7 @@ export function ShopInventoryPage() {
 
             <div className="flex flex-wrap items-center gap-2">
               <label className="inline-flex h-10 items-center gap-2 rounded-md border border-[#d9e1eb] bg-white px-3 text-sm text-[#52657e]">
-                <ListFilter className="h-4 w-4 text-[#70829a]" />
+                <i className="pi pi-filter h-4 w-4 text-[#70829a]" />
                 <span>Trạng thái</span>
                 <select
                   value={activeFilter}
@@ -547,7 +544,7 @@ export function ShopInventoryPage() {
               </label>
 
               <label className="inline-flex h-10 items-center gap-2 rounded-md border border-[#d9e1eb] bg-white px-3 text-sm text-[#52657e]">
-                <ListFilter className="h-4 w-4 text-[#70829a]" />
+                <i className="pi pi-filter h-4 w-4 text-[#70829a]" />
                 <span>Tồn kho</span>
                 <select
                   value={stockFilter}
@@ -822,7 +819,6 @@ function InputField({ label, value, required = false, type = "text", onChange }:
       <input
         type={type}
         value={value}
-        required={required}
         min={type === "number" ? 0 : undefined}
         onChange={(event) => onChange(event.target.value)}
         className="w-full rounded-lg bg-[#f8fafc] px-3 py-2 text-sm outline-none focus:bg-white"

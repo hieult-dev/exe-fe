@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from "react"
-import { PencilLine, Plus, Trash2 } from "lucide-react"
 import { DataTable } from "primereact/datatable"
 import { Column } from "primereact/column"
 import type { ColumnBodyOptions } from "primereact/column"
@@ -206,7 +205,7 @@ export function ShopMembersPage() {
           aria-label="Sửa thành viên"
           className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d8e0ea] text-slate-600 hover:bg-slate-100"
         >
-          <PencilLine className="h-4 w-4" />
+          <i className="pi pi-pencil h-4 w-4" />
         </button>
 
         <button
@@ -215,7 +214,7 @@ export function ShopMembersPage() {
           aria-label="Xóa thành viên"
           className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#f0c2b7] text-[#c73d1e] hover:bg-[#fff4f1]"
         >
-          <Trash2 className="h-4 w-4" />
+          <i className="pi pi-trash h-4 w-4" />
         </button>
       </div>
     )
@@ -234,7 +233,7 @@ export function ShopMembersPage() {
             onClick={openCreateDialog}
             className="inline-flex items-center gap-2 rounded-sm bg-[#ee4d2d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#de4322]"
           >
-            <Plus className="h-4 w-4" />
+            <i className="pi pi-plus h-4 w-4" />
             Thêm thành viên
           </button>
         </div>
@@ -400,7 +399,6 @@ function InputField({ label, value, required = false, type = "text", onChange }:
       <input
         type={type}
         value={value}
-        required={required}
         onChange={(event) => onChange(event.target.value)}
         className="w-full rounded-sm border border-[#d9d9d9] bg-white px-3 py-2 text-sm outline-none focus:border-[#ee4d2d]"
       />

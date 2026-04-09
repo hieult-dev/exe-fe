@@ -1,90 +1,137 @@
 import type { ReactNode } from "react"
-import { ShieldCheck, Sparkles, Heart } from "lucide-react"
 
 interface AuthLayoutProps {
   title: string
   subtitle?: string
   children: ReactNode
   footer?: ReactNode
+  leftHeading?: ReactNode
+  leftDescription?: string
   badge?: string
   aside?: ReactNode
+  isWideForm?: boolean
 }
 
-export function AuthLayout({ title, subtitle, children, footer, badge, aside }: AuthLayoutProps) {
+export function AuthLayout({
+  title,
+  subtitle,
+  children,
+  footer,
+  leftHeading,
+  leftDescription,
+  badge,
+  aside,
+  isWideForm,
+}: AuthLayoutProps) {
   return (
-    <section className="relative min-h-screen overflow-hidden bg-gradient-to-b from-sky-50 via-white to-blue-50">
-      <div className="pointer-events-none absolute -top-32 -right-24 h-64 w-64 rounded-full bg-sky-200/60 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -left-24 h-64 w-64 rounded-full bg-blue-200/60 blur-3xl" />
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background image */}
+      <img
+        src="/image/img-background-home-page.png"
+        alt=""
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+      />
+      {/* Dark overlay */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{ background: "linear-gradient(135deg, rgba(10,20,50,0.82) 0%, rgba(15,30,65,0.75) 60%, rgba(10,20,50,0.88) 100%)" }}
+      />
 
-      <div className="container mx-auto px-4 py-10">
-        <div className="mx-auto w-full max-w-5xl">
-          <div className="grid gap-6 lg:grid-cols-[1fr,420px] items-stretch">
-            <div className="hidden lg:flex flex-col justify-between rounded-2xl border border-white/70 bg-white/70 p-8 shadow-lg backdrop-blur">
-              <div className="space-y-5">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
-                  {badge ?? "PETPEEs"}
-                </div>
-                <h1 className="text-3xl font-bold text-slate-900">
-                  Chăm sóc thú cưng nhanh hơn, an tâm hơn.
-                </h1>
-                <p className="text-sm text-slate-600">
-                  Đặt lịch spa, mua sắm và quản lý đơn hàng trong một nơi.
-                </p>
+      {/* Top navigation bar */}
+      <header
+        className="relative z-10 flex items-center justify-between px-8 py-3"
+        style={{
+          background: "rgba(15, 23, 42, 0.16)",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          backdropFilter: "blur(16px)",
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <img
+            src="/image/logo-petpees2.png"
+            alt="PetPees"
+            className="h-10 w-auto object-contain"
+          />
+          <span className="text-base font-semibold uppercase tracking-[0.18em] text-white/85">
+            PetPees
+          </span>
+        </div>
 
-                {aside ?? (
-                  <ul className="space-y-3 text-sm text-slate-700">
-                    <li className="flex items-center gap-2">
-                      <ShieldCheck className="h-4 w-4 text-sky-600" />
-                      Bảo mật thông tin tài khoản
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-sky-600" />
-                      Đặt dịch vụ nhanh chỉ 2 bước
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Heart className="h-4 w-4 text-sky-600" />
-                      Ưu đãi dành cho khách hàng thân thiết
-                    </li>
-                  </ul>
-                )}
-              </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-slate-100/70">
+            <i className="pi pi-phone" />
+            +84 989 762 355
+          </div>
+          {badge && (
+            <div className="rounded-full bg-blue-500/20 px-3 py-1 text-xs font-medium text-blue-200 border border-blue-400/30">
+              {badge}
+            </div>
+          )}
+        </div>
+      </header>
 
-              <div className="grid grid-cols-3 gap-3 text-center text-xs text-slate-600">
-                <div className="rounded-lg bg-white/80 p-3 border border-white/70">
-                  <div className="text-lg font-bold text-slate-900">2k+</div>
-                  Đơn hàng
-                </div>
-                <div className="rounded-lg bg-white/80 p-3 border border-white/70">
-                  <div className="text-lg font-bold text-slate-900">4.9</div>
-                  Đánh giá
-                </div>
-                <div className="rounded-lg bg-white/80 p-3 border border-white/70">
-                  <div className="text-lg font-bold text-slate-900">60m</div>
-                  Phản hồi
-                </div>
-              </div>
+      {/* Main content */}
+      <div className="relative z-10 flex min-h-[calc(100vh-64px)] items-center px-8 py-8 lg:px-16">
+        <div className={`mx-auto flex w-full items-center gap-12 lg:gap-20 ${isWideForm ? "max-w-3xl justify-center" : "max-w-6xl"}`}>
+
+          {/* Left — branding */}
+          {!isWideForm && (
+            <div className="hidden flex-1 lg:block">
+              {aside ?? (leftHeading ?? (
+                <>
+                  <p className="mb-3 text-sm font-bold uppercase tracking-[0.2em] text-yellow-400">
+                    Nền tảng
+                  </p>
+                  <h1 className="mb-4 text-4xl font-extrabold uppercase leading-tight text-white xl:text-5xl">
+                    Quản trị &amp; điều hành<br />cửa hàng thú cưng
+                  </h1>
+                  <p className="max-w-md text-base leading-relaxed text-blue-200/80">
+                    {leftDescription ??
+                      "Giải pháp toàn diện để quản lý dịch vụ, nhân viên, kho hàng và lịch hẹn cho cửa hàng thú cưng của bạn."}
+                  </p>
+                </>
+              ))}
+            </div>
+          )}
+
+          {/* Right — form card */}
+          <div
+            className={`shrink-0 rounded-2xl p-6 shadow-2xl ${isWideForm ? "w-full max-w-xl" : "w-full max-w-sm"}`}
+            style={{
+              background: "rgba(15, 28, 60, 0.85)",
+              border: "1px solid rgba(74, 144, 217, 0.25)",
+              backdropFilter: "blur(12px)",
+            }}
+          >
+            {/* Logo + title */}
+            <div className="mb-5 flex flex-col items-center gap-2">
+              <img
+                src="/image/logo-petpees2.png"
+                alt="PetPees"
+                className="h-20 w-auto object-contain"
+              />
+              <h2 className="text-lg font-semibold text-white">{title}</h2>
+              {subtitle && (
+                <p className="text-center text-xs text-blue-200/70">{subtitle}</p>
+              )}
             </div>
 
-            <div className="bg-card rounded-2xl border border-border p-6 shadow-xl">
-              <div className="space-y-2">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-                  PETPEEs ACCESS
-                </div>
-                <h2 className="text-2xl font-bold">{title}</h2>
-                {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
+            {/* Form */}
+            <div className="space-y-4">{children}</div>
+
+            {/* Footer */}
+            {footer && (
+              <div className="mt-5 border-t border-white/10 pt-4 text-center text-xs text-blue-200/60">
+                {footer}
               </div>
+            )}
 
-              <div className="pt-5">{children}</div>
-
-              {footer ? (
-                <div className="border-t border-border pt-4 text-sm text-muted-foreground">
-                  {footer}
-                </div>
-              ) : null}
-            </div>
+            <p className="mt-5 text-center text-[11px] text-blue-300/40">
+              Copyright @PetPees 2024
+            </p>
           </div>
         </div>
       </div>
-    </section>
+    </div>
   )
 }

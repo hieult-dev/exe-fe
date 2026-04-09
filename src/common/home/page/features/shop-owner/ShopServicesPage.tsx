@@ -1,5 +1,4 @@
 ﻿import { useMemo, useState, type FormEvent } from "react"
-import { ListFilter, PencilLine, Plus, Power, PowerOff, RefreshCw, Trash2 } from "lucide-react"
 import { DataTable } from "primereact/datatable"
 import { Column } from "primereact/column"
 import type { ColumnBodyOptions } from "primereact/column"
@@ -120,14 +119,14 @@ export function ShopServicesPage() {
         data.services.map((item) =>
           item.id === editingServiceId
             ? {
-                ...item,
-                name,
-                category,
-                basePrice,
-                durationMin,
-                active: formState.active,
-                description: formState.description.trim() || undefined,
-              }
+              ...item,
+              name,
+              category,
+              basePrice,
+              durationMin,
+              active: formState.active,
+              description: formState.description.trim() || undefined,
+            }
             : item
         )
       )
@@ -152,9 +151,9 @@ export function ShopServicesPage() {
       data.services.map((item) =>
         item.id === serviceId
           ? {
-              ...item,
-              active: !item.active,
-            }
+            ...item,
+            active: !item.active,
+          }
           : item
       )
     )
@@ -230,7 +229,7 @@ export function ShopServicesPage() {
           aria-label={service.active ? "Tạm dừng dịch vụ" : "Kích hoạt dịch vụ"}
           className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d7dfe9] bg-white text-slate-600 transition hover:bg-slate-50"
         >
-          {service.active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+          {service.active ? <i className="pi pi-times-circle h-4 w-4" /> : <i className="pi pi-check-circle h-4 w-4" />}
         </button>
 
         <button
@@ -239,7 +238,7 @@ export function ShopServicesPage() {
           aria-label="Sửa dịch vụ"
           className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d7dfe9] bg-white text-slate-600 transition hover:bg-slate-50"
         >
-          <PencilLine className="h-4 w-4" />
+          <i className="pi pi-pencil h-4 w-4" />
         </button>
 
         <button
@@ -248,7 +247,7 @@ export function ShopServicesPage() {
           aria-label="Xóa dịch vụ"
           className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#f0c2b7] bg-white text-[#c73d1e] transition hover:bg-[#fff4f1]"
         >
-          <Trash2 className="h-4 w-4" />
+          <i className="pi pi-trash h-4 w-4" />
         </button>
       </div>
     )
@@ -265,12 +264,12 @@ export function ShopServicesPage() {
               onClick={openCreateDialog}
               className="inline-flex h-9 items-center gap-2 rounded-md bg-[#214388] px-4 text-sm font-semibold text-white transition hover:bg-[#19356a]"
             >
-              <Plus className="h-4 w-4" />
+              <i className="pi pi-plus h-4 w-4" />
               Thêm mới
             </button>
 
             <label className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d9e1eb] bg-white px-3 text-sm text-[#52657e]">
-              <ListFilter className="h-4 w-4 text-[#70829a]" />
+              <i className="pi pi-filter h-4 w-4 text-[#70829a]" />
               <span>Xem theo</span>
               <select
                 value={statusFilter}
@@ -287,7 +286,7 @@ export function ShopServicesPage() {
               onClick={handleRefreshView}
               className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d9e1eb] bg-white px-4 text-sm font-medium text-[#40526b] transition hover:bg-[#f8fafc]"
             >
-              <RefreshCw className="h-4 w-4" />
+              <i className="pi pi-refresh h-4 w-4" />
               Refresh
             </button>
           </div>
@@ -496,8 +495,6 @@ function InputField({ label, value, required = false, type = "text", onChange }:
       <input
         type={type}
         value={value}
-        required={required}
-        min={type === "number" ? 0 : undefined}
         onChange={(event) => onChange(event.target.value)}
         className="w-full rounded-lg bg-[#f8fafc] px-3 py-2 text-sm outline-none focus:bg-white"
       />
