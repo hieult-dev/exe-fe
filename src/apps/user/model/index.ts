@@ -1,4 +1,4 @@
-export type UserStatus = "ACTIVE" | "INACTIVE" | "BANNED";
+﻿export type UserStatus = "ACTIVE" | "INACTIVE" | "BANNED";
 export type UserRole = "CUSTOMER" | "STAFF" | "ADMIN";
 
 export interface User {

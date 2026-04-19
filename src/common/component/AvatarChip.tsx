@@ -1,4 +1,4 @@
-interface AvatarChipProps {
+﻿interface AvatarChipProps {
   name: string
   avatarUrl?: string | null
   size?: number

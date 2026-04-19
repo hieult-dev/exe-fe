@@ -8,9 +8,9 @@ export function formatProfileValue(value: string | number | null | undefined, fa
   return String(value)
 }
 
-export function resolveAvatarUrl(avatarPath: string | null | undefined, fallback = "/placeholder-user.jpg") {
+export function resolveAvatarUrl(avatarPath: string | null | undefined) {
   if (!avatarPath) {
-    return fallback
+    return null
   }
 
   if (avatarPath.startsWith("http") || avatarPath.startsWith("/")) {

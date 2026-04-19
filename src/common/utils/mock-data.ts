@@ -1,4 +1,4 @@
-export type Spa = {
+﻿export type Spa = {
   id: string
   name: string
   description: string

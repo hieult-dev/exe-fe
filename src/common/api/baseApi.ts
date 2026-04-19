@@ -1,4 +1,4 @@
-import type { AxiosRequestConfig, AxiosResponse } from 'axios';
+﻿import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import axios from 'axios';
 import { GATEWAY_URL } from '@/common/config/api';
 import { useUserStore } from '@/apps/user/store/UserStore';

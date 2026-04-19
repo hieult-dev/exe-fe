@@ -1,4 +1,4 @@
-import type { User } from "@/apps/user/model"
+﻿import type { User } from "@/apps/user/model"
 import { useUserStore } from "@/apps/user/store/UserStore"
 
 type AuthSessionPayload = {

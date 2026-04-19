@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .p-menu .p-menuitem.table-action-menu__delete > .p-menuitem-content .p-menuitem-link,
+  .p-menu .p-menuitem.table-action-menu__delete > .p-menuitem-content .p-menuitem-link .p-menuitem-icon,
+  .p-menu .p-menuitem.table-action-menu__delete > .p-menuitem-content .p-menuitem-link .p-menuitem-text {
+    color: #dc2626;
+  }
+
+  .p-menu .p-menuitem.table-action-menu__delete:not(.p-disabled) > .p-menuitem-content:hover {
+    background: #fef2f2;
+  }
+
+  .p-menu .p-menuitem.table-action-menu__delete:not(.p-disabled) > .p-menuitem-content:hover .p-menuitem-link,
+  .p-menu .p-menuitem.table-action-menu__delete:not(.p-disabled) > .p-menuitem-content:hover .p-menuitem-icon,
+  .p-menu .p-menuitem.table-action-menu__delete:not(.p-disabled) > .p-menuitem-content:hover .p-menuitem-text {
+    color: #b91c1c;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;

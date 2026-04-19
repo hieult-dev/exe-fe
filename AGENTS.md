@@ -57,3 +57,42 @@ This file defines the working rules for AI agents in this repository.
 - Import these components back into the main file instead of keeping all the code in one file.
 
 - Avoid creating excessively large inline components within the same file.
+
+## Shop Owner Page Layout Convention
+
+All pages inside the **Shop Owner** section (`/shop-owner/*`) **MUST** follow this layout pattern:
+
+### Structure
+
+Each page returns **two separate blocks** stacked vertically with a small gap:
+
+1. **Toolbar** — PrimeReact `<Toolbar />` component (from `primereact/toolbar`)
+2. **Content Box** — A `<div>` with white background and rounded corners
+
+```tsx
+import { Toolbar } from "primereact/toolbar"
+
+return (
+  <div className="flex flex-1 flex-col gap-2">
+    {/* 1. Toolbar — nền trắng, tách biệt, nằm trên nền xám */}
+    <Toolbar
+      className="rounded-xl border-none bg-white shadow-[0_2px_12px_rgba(15,23,42,0.04)]"
+      start={<h1 className="text-lg font-semibold text-slate-800">Tiêu đề trang</h1>}
+      end={/* Optional: buttons, filters */}
+    />
+
+    {/* 2. Content — khung trắng bo góc chứa nội dung chính */}
+    <div className="flex-1 rounded-xl bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:p-4">
+      {/* Nội dung trang ở đây */}
+    </div>
+  </div>
+)
+```
+
+### Key Rules
+
+- **Toolbar và Content là 2 khối riêng biệt**, cách nhau bằng `gap-2`.
+- **Toolbar** dùng PrimeReact `<Toolbar />`, nền trắng (`bg-white`), bo góc `rounded-xl`, không border (`border-none`).
+- **Content box** nền trắng (`bg-white`), bo góc `rounded-xl`, có shadow nhẹ.
+- **Không bọc** cả 2 vào chung 1 khung trắng. Chúng phải nằm tách biệt trên nền xám `#eef2f6` của layout.
+- `ShopOwnerLayout.tsx` **không bọc** `<Outlet />` trong khung trắng — mỗi page tự quản lý layout riêng.

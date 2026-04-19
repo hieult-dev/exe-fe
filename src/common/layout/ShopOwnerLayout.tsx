@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from "react"
+﻿import { useState, useRef, useEffect } from "react"
 import { NavLink, Navigate, Outlet, useNavigate, useLocation } from "react-router-dom"
 import { useUserStore } from "@/apps/user/store/UserStore"
-import { ShopOwnerProvider } from "@/common/home/page/features/shop-owner/store/ShopOwnerContext"
+import { ShopOwnerProvider, useShopOwnerContext } from "@/common/store/ShopOwnerContext"
 import { formatProfileValue, resolveAvatarUrl } from "@/common/user/utils/profile"
 import { logout } from "@/common/auth/api/authApi"
 import { resetStoreAndRedirectToLogin } from "@/common/auth/store/ResetStore"
+import { AvatarChip } from "@/common/component/AvatarChip"
 
 /* ── Types ── */
 type NavChild = {
@@ -88,7 +89,7 @@ export function ShopOwnerLayout() {
     <ShopOwnerProvider ownerKey={ownerKey}>
       <div className="flex h-screen flex-col overflow-hidden bg-[#eef2f6]">
         <header className="z-30 shrink-0 bg-[#214388] text-white shadow-sm">
-          <div className="flex h-16 items-center gap-3 px-4 lg:px-6">
+          <div className="relative flex h-16 items-center justify-between px-4 lg:px-6">
             <button
               type="button"
               onClick={() => navigate("/shop-owner/dashboard")}
@@ -107,17 +108,11 @@ export function ShopOwnerLayout() {
               </div>
             </button>
 
-            <div className="mx-auto hidden max-w-[520px] flex-1 md:block">
-              <label className="flex h-10 items-center gap-3 rounded-lg bg-white px-4 text-slate-500">
-                <i className="pi pi-search"></i>
-                <input
-                  type="text"
-                  className="w-full border-0 bg-transparent text-sm text-slate-700 outline-none"
-                />
-              </label>
+            <div className="absolute left-1/2 top-1/2 hidden w-full max-w-[520px] -translate-x-1/2 -translate-y-1/2 md:block">
+              <GlobalSearchBar />
             </div>
 
-            <div className="ml-auto flex items-center gap-2 lg:gap-3">
+            <div className="flex items-center gap-2 lg:gap-3">
               <HeaderIconButton icon="pi pi-search" className="md:hidden" />
               <HeaderIconButton icon="pi pi-bell" />
               <HeaderIconButton icon="pi pi-th-large" />
@@ -131,26 +126,32 @@ export function ShopOwnerLayout() {
           <aside className="flex h-full flex-col border-r border-[#dfe5ee] bg-[#f7f8fb]">
             <SidebarNav />
 
-            <div className="mt-auto px-3 py-4">
-              <button
-                onClick={() => navigate("/")}
-                className="w-full rounded-xl bg-white px-3 py-2.5 text-[12px] font-semibold text-[#214388] shadow-sm hover:bg-[#f5f8fc]"
-              >
-                Về chợ
-              </button>
-            </div>
           </aside>
 
           <section className="flex h-full min-w-0 flex-col overflow-y-auto">
-            <main className="flex flex-1 flex-col px-4 py-6 lg:px-8 lg:pb-8">
-              <div className="flex flex-1 flex-col rounded-[24px] bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:p-5">
-                <Outlet />
-              </div>
+            <main className="flex flex-1 flex-col px-2 py-2 lg:px-3 lg:pb-3">
+              <Outlet />
             </main>
           </section>
         </div>
       </div>
     </ShopOwnerProvider>
+  )
+}
+
+function GlobalSearchBar() {
+  const { globalSearchQuery, setGlobalSearchQuery } = useShopOwnerContext()
+  
+  return (
+    <label className="flex h-10 items-center gap-3 rounded-lg bg-white px-4 text-slate-500">
+      <i className="pi pi-search"></i>
+      <input
+        type="text"
+        value={globalSearchQuery}
+        onChange={(e) => setGlobalSearchQuery(e.target.value)}
+        className="w-full border-0 bg-transparent text-sm text-slate-700 outline-none"
+      />
+    </label>
   )
 }
 
@@ -301,7 +302,7 @@ function HeaderIconButton({ icon, className = "" }: { icon: string; className?: 
 
 type UserDropdownProps = {
   user: { fullName?: string | null; email?: string | null; avatarUrlPreview?: string | null }
-  avatarUrl: string
+  avatarUrl: string | null
 }
 
 function UserDropdown({ user, avatarUrl }: UserDropdownProps) {
@@ -331,7 +332,7 @@ function UserDropdown({ user, avatarUrl }: UserDropdownProps) {
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-2 rounded-full bg-white/10 px-2 py-1.5 transition hover:bg-white/20"
       >
-        <img src={avatarUrl} alt={user.fullName || "Avatar"} className="h-9 w-9 rounded-full object-cover" />
+        <AvatarChip name={user.fullName || user.email || "User"} avatarUrl={avatarUrl} size={36} />
         <div className="hidden min-w-0 pr-1 sm:block">
           <p className="truncate text-sm font-semibold text-white">{formatProfileValue(user.fullName)}</p>
           <p className="truncate text-xs text-white/75">{formatProfileValue(user.email)}</p>

@@ -6,8 +6,8 @@ import { useNavigate } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { AuthLayout } from "./AuthLayout"
-import { AppDialog } from "@/common/component/AppDialog"
+import { AuthLayout } from "@/common/auth/page/AuthLayout"
+import { Dialog } from "primereact/dialog"
 import { notify } from "@/common/toast/ToastHelper"
 import { register as registerApi } from "@/common/auth/api/authApi"
 import { applyAuthSession } from "@/common/auth/utils/session"
@@ -153,7 +153,7 @@ export function ShopRegisterPage() {
     }
 
     const inputBase =
-        "w-full rounded-lg px-4 py-2.5 text-sm text-white outline-none transition placeholder:text-blue-300/40 focus:ring-2 focus:ring-blue-500/60"
+        "w-full rounded-lg px-4 py-2.5 text-sm text-white outline-none transition focus:ring-2 focus:ring-blue-500/60"
     const inputStyle: React.CSSProperties = {
         background: "rgba(255,255,255,0.06)",
         border: "1px solid rgba(74, 144, 217, 0.3)",
@@ -642,18 +642,15 @@ export function ShopRegisterPage() {
                 </div>
             </form>
 
-            <AppDialog
-                open={isTermsOpen}
-                onClose={() => setIsTermsOpen(false)}
-                title="Điều khoản sử dụng"
-                description="Vui lòng đọc kỹ điều khoản trước khi đăng ký."
-                size="lg"
-                panelClassName="bg-[#0A1A44] text-white border border-slate-800"
-                titleClassName="text-white"
-                descriptionClassName="text-slate-300"
-                contentClassName="text-slate-200"
-                footerClassName="border-slate-800"
+            <Dialog
+                visible={isTermsOpen}
+                onHide={() => setIsTermsOpen(false)}
+                header="Điều khoản sử dụng"
+                style={{ width: '100%', maxWidth: '48rem' }}
+                contentClassName="bg-[#0A1A44] text-slate-200 border-none"
+                headerClassName="bg-[#0A1A44] text-white border-b border-slate-800"
             >
+                <div className="mb-4 text-sm text-slate-400 mt-2">Vui lòng đọc kỹ điều khoản trước khi đăng ký.</div>
                 <div className="space-y-4 text-sm leading-6 text-slate-200">
                     <p>
                         Đây là điều khoản mẫu cho việc đăng ký Shop Owner. Bạn đồng ý cung cấp thông tin chính xác và tuân thủ chính sách sử dụng dịch vụ.
@@ -671,7 +668,7 @@ export function ShopRegisterPage() {
                         4. Bạn cam kết không sử dụng dịch vụ vào mục đích trái pháp luật.
                     </p>
                 </div>
-                <div className="flex justify-center pt-4">
+                <div className="flex justify-center pt-4 mt-4 border-t border-slate-800">
                     <button
                         type="button"
                         onClick={() => setIsTermsOpen(false)}
@@ -680,7 +677,7 @@ export function ShopRegisterPage() {
                         Đóng
                     </button>
                 </div>
-            </AppDialog>
+            </Dialog>
         </AuthLayout>
     )
 }

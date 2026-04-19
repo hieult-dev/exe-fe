@@ -1,4 +1,4 @@
-import { useUserStore } from '@/apps/user/store/UserStore';
+﻿import { useUserStore } from '@/apps/user/store/UserStore';
 
 export function resetStoreAndRedirectToLogin() {
     resetStore();

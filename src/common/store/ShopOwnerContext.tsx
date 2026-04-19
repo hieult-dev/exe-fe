@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
+﻿import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
 import {
   loadShopOwnerData,
   saveShopOwnerData,
@@ -8,9 +8,11 @@ import {
   type ShopMember,
   type ShopOwnerData,
   type ShopService,
-} from "@/common/home/page/features/shop-owner/store/shopOwnerStore"
+} from "@/common/store/shopOwnerStore"
 
 type ShopOwnerContextValue = {
+  globalSearchQuery: string
+  setGlobalSearchQuery: (query: string) => void
   data: ShopOwnerData
   setShop: (shop: ShopInfo) => void
   setServices: (services: ShopService[]) => void
@@ -28,6 +30,7 @@ type ShopOwnerProviderProps = {
 
 export function ShopOwnerProvider({ ownerKey, children }: ShopOwnerProviderProps) {
   const [data, setData] = useState<ShopOwnerData>(() => loadShopOwnerData(ownerKey))
+  const [globalSearchQuery, setGlobalSearchQuery] = useState("")
 
   useEffect(() => {
     setData(loadShopOwnerData(ownerKey))
@@ -39,6 +42,8 @@ export function ShopOwnerProvider({ ownerKey, children }: ShopOwnerProviderProps
 
   const value = useMemo<ShopOwnerContextValue>(
     () => ({
+      globalSearchQuery,
+      setGlobalSearchQuery,
       data,
       setShop: (shop) => setData((prev) => ({ ...prev, shop })),
       setServices: (services) => setData((prev) => ({ ...prev, services })),
@@ -60,7 +65,7 @@ export function ShopOwnerProvider({ ownerKey, children }: ShopOwnerProviderProps
           },
         })),
     }),
-    [data]
+    [data, globalSearchQuery]
   )
 
   return <ShopOwnerContext.Provider value={value}>{children}</ShopOwnerContext.Provider>

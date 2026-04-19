@@ -1,15 +1,17 @@
 import { useState, type FormEvent } from "react"
 import { DataTable } from "primereact/datatable"
 import { Column } from "primereact/column"
+import { Toolbar } from "primereact/toolbar"
+import { TableActionMenu } from "@/common/component/TableActionMenu"
 import type { ColumnBodyOptions } from "primereact/column"
-import { AppDialog } from "@/common/component/AppDialog"
-import { useShopOwnerContext } from "@/common/home/page/features/shop-owner/store/ShopOwnerContext"
+import { Dialog } from "primereact/dialog"
+import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
 import {
   createLocalId,
   type ShopMember,
   type ShopMemberRole,
   type ShopMemberStatus,
-} from "@/common/home/page/features/shop-owner/store/shopOwnerStore"
+} from "@/common/store/shopOwnerStore"
 
 type MemberFormState = {
   fullName: string
@@ -197,47 +199,46 @@ export function ShopMembersPage() {
   }
 
   const actionsBody = (member: ShopMember) => {
-    return (
-      <div className="flex items-center justify-center gap-1">
-        <button
-          onClick={() => openEditDialog(member)}
-          title="Sửa thành viên"
-          aria-label="Sửa thành viên"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d8e0ea] text-slate-600 hover:bg-slate-100"
-        >
-          <i className="pi pi-pencil h-4 w-4" />
-        </button>
+    const actionItems = [
+      {
+        label: "Chỉnh sửa",
+        icon: "pi pi-pencil",
+        command: () => openEditDialog(member),
+      },
+      {
+        label: "Xóa",
+        icon: "pi pi-trash",
+        className: "text-red-500",
+        command: () => requestDelete(member.id),
+      },
+    ]
 
-        <button
-          onClick={() => requestDelete(member.id)}
-          title="Xóa thành viên"
-          aria-label="Xóa thành viên"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#f0c2b7] text-[#c73d1e] hover:bg-[#fff4f1]"
-        >
-          <i className="pi pi-trash h-4 w-4" />
-        </button>
-      </div>
-    )
+    return <TableActionMenu items={actionItems} />
   }
 
   return (
     <>
-      <div className="border-b border-[#f2f2f2] pb-4">
-        <h1 className="text-2xl font-semibold text-slate-800">Quản lý thành viên</h1>
-        <p className="mt-1 text-sm text-slate-500">Thêm, sửa, xóa hội viên, quản lý, nhân viên của shop.</p>
-      </div>
-
-      <div className="pt-5">
-        <div className="mb-4 flex justify-end">
+    <div className="flex flex-1 flex-col gap-2">
+      <Toolbar
+        className="rounded-xl border-none bg-white shadow-[0_2px_12px_rgba(15,23,42,0.04)]"
+        start={
+          <div>
+            <h1 className="text-lg font-semibold text-slate-800">Quản lý thành viên</h1>
+            <p className="mt-0.5 text-sm text-slate-500">Thêm, sửa, xóa hội viên, quản lý, nhân viên của shop.</p>
+          </div>
+        }
+        end={
           <button
             onClick={openCreateDialog}
-            className="inline-flex items-center gap-2 rounded-sm bg-[#ee4d2d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#de4322]"
+            className="inline-flex items-center gap-2 rounded-md bg-[#ee4d2d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#de4322]"
           >
             <i className="pi pi-plus h-4 w-4" />
             Thêm thành viên
           </button>
-        </div>
+        }
+      />
 
+      <div className="flex-1 rounded-xl bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:p-4">
         <div className="rounded-sm border border-[#d9e1ec] bg-white">
           <DataTable
             value={data.members}
@@ -289,14 +290,15 @@ export function ShopMembersPage() {
           </DataTable>
         </div>
       </div>
+    </div>
 
-      <AppDialog
-        open={isFormOpen}
-        onClose={closeFormDialog}
-        title={editingMemberId ? "Cập nhật thành viên" : "Thêm thành viên mới"}
-        description="Quản lý hội viên, quản lý và nhân viên làm việc trong shop."
+      <Dialog
+        visible={isFormOpen}
+        onHide={closeFormDialog}
+        header={editingMemberId ? "Cập nhật thành viên" : "Thêm thành viên mới"}
+        style={{ width: '100%', maxWidth: '32rem' }}
         footer={
-          <>
+          <div className="flex justify-end gap-2 mt-4">
             <button
               type="button"
               onClick={closeFormDialog}
@@ -311,9 +313,10 @@ export function ShopMembersPage() {
             >
               {editingMemberId ? "Lưu thay đổi" : "Tạo thành viên"}
             </button>
-          </>
+          </div>
         }
       >
+        <p className="mb-4 mt-0 text-sm text-[#73849b]">Quản lý hội viên, quản lý và nhân viên làm việc trong shop.</p>
         <form id="shop-member-form" onSubmit={handleSave} className="space-y-3">
           {formError && (
             <div className="rounded-sm border border-[#f0c2b7] bg-[#fff4f1] px-3 py-2 text-sm text-[#c73d1e]">{formError}</div>
@@ -352,15 +355,14 @@ export function ShopMembersPage() {
             />
           </div>
         </form>
-      </AppDialog>
-
-      <AppDialog
-        open={isDeleteOpen}
-        onClose={closeDeleteDialog}
-        title="Xác nhận xóa thành viên"
-        description="Thành viên bị xóa sẽ không còn quyền quản lý trong shop."
+      </Dialog>
+      <Dialog
+        visible={isDeleteOpen}
+        onHide={closeDeleteDialog}
+        header="Xác nhận xóa thành viên"
+        style={{ width: '100%', maxWidth: '30rem' }}
         footer={
-          <>
+          <div className="flex justify-end gap-2 mt-4">
             <button
               type="button"
               onClick={closeDeleteDialog}
@@ -375,11 +377,12 @@ export function ShopMembersPage() {
             >
               Xóa thành viên
             </button>
-          </>
+          </div>
         }
       >
+        <p className="mb-2 mt-0 text-sm text-[#73849b]">Thành viên bị xóa sẽ không còn quyền quản lý trong shop.</p>
         <p className="text-sm text-slate-600">Bạn chắc chắn muốn xóa thành viên này?</p>
-      </AppDialog>
+      </Dialog>
     </>
   )
 }
@@ -392,7 +395,7 @@ type InputFieldProps = {
   onChange: (value: string) => void
 }
 
-function InputField({ label, value, required = false, type = "text", onChange }: InputFieldProps) {
+function InputField({ label, value, type = "text", onChange }: InputFieldProps) {
   return (
     <label className="text-sm text-slate-700">
       <div className="mb-1">{label}</div>

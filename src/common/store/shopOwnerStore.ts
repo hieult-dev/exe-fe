@@ -1,4 +1,4 @@
-export type ShopStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED"
+﻿export type ShopStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED"
 export type ShopMemberRole = "OWNER" | "MANAGER" | "STAFF"
 export type ShopMemberStatus = "ACTIVE" | "INACTIVE" | "INVITED" | "REMOVED"
 export type InventoryStockState = "OUT" | "LOW" | "OK"
@@ -15,13 +15,13 @@ export type ShopInfo = {
 }
 
 export type ShopService = {
-  id: string
+  id: string | number
   name: string
   category: string
+  categoryId?: number | null
   basePrice: number
   durationMin: number
   active: boolean
-  description?: string
 }
 
 export type ShopMember = {
@@ -163,7 +163,6 @@ const defaultSeed: ShopOwnerData = {
       basePrice: 180000,
       durationMin: 30,
       active: true,
-      description: "Khám sức khỏe cơ bản cho thú cưng.",
     },
     {
       id: "svc-02",
@@ -172,7 +171,6 @@ const defaultSeed: ShopOwnerData = {
       basePrice: 220000,
       durationMin: 20,
       active: true,
-      description: "Tiêm phòng theo lịch và tư vấn sau tiêm.",
     },
     {
       id: "svc-03",
@@ -181,7 +179,6 @@ const defaultSeed: ShopOwnerData = {
       basePrice: 350000,
       durationMin: 90,
       active: false,
-      description: "Tắm, cắt tỉa, vệ sinh tai và móng.",
     },
   ],
   members: [

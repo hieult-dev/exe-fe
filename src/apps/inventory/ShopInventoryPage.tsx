@@ -2,8 +2,10 @@ import { useMemo, useState, type FormEvent } from "react"
 import { DataTable } from "primereact/datatable"
 import { Column } from "primereact/column"
 import type { ColumnBodyOptions } from "primereact/column"
-import { AppDialog } from "@/common/component/AppDialog"
-import { useShopOwnerContext } from "@/common/home/page/features/shop-owner/store/ShopOwnerContext"
+import { Dialog } from "primereact/dialog"
+import { Toolbar } from "primereact/toolbar"
+import { TableActionMenu } from "@/common/component/TableActionMenu"
+import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
 import {
   createLocalId,
   formatCurrencyVND,
@@ -11,7 +13,7 @@ import {
   type InventoryStockState,
   type ShopInventoryMaterial,
   type ShopInventoryProduct,
-} from "@/common/home/page/features/shop-owner/store/shopOwnerStore"
+} from "@/common/store/shopOwnerStore"
 
 type InventoryTab = "PRODUCTS" | "MATERIALS"
 type ActiveFilter = "ALL" | "ACTIVE" | "INACTIVE"
@@ -133,9 +135,8 @@ function buildSummary(items: { active: boolean; stockQty: number; reorderLevel: 
 }
 
 export function ShopInventoryPage() {
-  const { data, setInventoryMaterials, setInventoryProducts } = useShopOwnerContext()
+  const { data, setInventoryMaterials, setInventoryProducts, globalSearchQuery } = useShopOwnerContext()
   const [activeTab, setActiveTab] = useState<InventoryTab>("PRODUCTS")
-  const [searchQuery, setSearchQuery] = useState("")
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("ALL")
   const [stockFilter, setStockFilter] = useState<StockFilter>("ALL")
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -151,7 +152,7 @@ export function ShopInventoryPage() {
   const materialSummary = useMemo(() => buildSummary(data.inventory.materials), [data.inventory.materials])
 
   const visibleProducts = useMemo(() => {
-    const keyword = searchQuery.trim().toLowerCase()
+    const keyword = globalSearchQuery.trim().toLowerCase()
 
     return data.inventory.products.filter((item) => {
       const stockState = resolveInventoryStockState(item.stockQty, item.reorderLevel)
@@ -162,10 +163,10 @@ export function ShopInventoryPage() {
 
       return matchesKeyword && matchesActiveFilter(item.active, activeFilter) && matchesStockFilter(stockState, stockFilter)
     })
-  }, [activeFilter, data.inventory.products, searchQuery, stockFilter])
+  }, [activeFilter, data.inventory.products, globalSearchQuery, stockFilter])
 
   const visibleMaterials = useMemo(() => {
-    const keyword = searchQuery.trim().toLowerCase()
+    const keyword = globalSearchQuery.trim().toLowerCase()
 
     return data.inventory.materials.filter((item) => {
       const stockState = resolveInventoryStockState(item.stockQty, item.reorderLevel)
@@ -176,7 +177,7 @@ export function ShopInventoryPage() {
 
       return matchesKeyword && matchesActiveFilter(item.active, activeFilter) && matchesStockFilter(stockState, stockFilter)
     })
-  }, [activeFilter, data.inventory.materials, searchQuery, stockFilter])
+  }, [activeFilter, data.inventory.materials, globalSearchQuery, stockFilter])
 
   const summary = isProductTab ? productSummary : materialSummary
   const totalItems = isProductTab ? data.inventory.products.length : data.inventory.materials.length
@@ -205,7 +206,6 @@ export function ShopInventoryPage() {
 
   const switchTab = (tab: InventoryTab) => {
     setActiveTab(tab)
-    setSearchQuery("")
     setActiveFilter("ALL")
     setStockFilter("ALL")
     setFormError("")
@@ -242,7 +242,6 @@ export function ShopInventoryPage() {
   }
 
   const handleRefreshView = () => {
-    setSearchQuery("")
     setActiveFilter("ALL")
     setStockFilter("ALL")
     closeFormDialog()
@@ -414,61 +413,54 @@ export function ShopInventoryPage() {
   }
 
   const productActionsBody = (product: ShopInventoryProduct) => {
-    return (
-      <div className="flex items-center justify-center gap-1.5">
-        <button
-          onClick={() => openEditProductDialog(product)}
-          title="Sửa sản phẩm"
-          aria-label="Sửa sản phẩm"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d7dfe9] bg-white text-slate-600 transition hover:bg-slate-50"
-        >
-          <i className="pi pi-pencil h-4 w-4" />
-        </button>
-        <button
-          onClick={() => requestDelete(product.id)}
-          title="Xóa sản phẩm"
-          aria-label="Xóa sản phẩm"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#f0c2b7] bg-white text-[#c73d1e] transition hover:bg-[#fff4f1]"
-        >
-          <i className="pi pi-trash h-4 w-4" />
-        </button>
-      </div>
-    )
+    const actionItems = [
+      {
+        label: "Chỉnh sửa",
+        icon: "pi pi-pencil",
+        command: () => openEditProductDialog(product),
+      },
+      {
+        label: "Xóa",
+        icon: "pi pi-trash",
+        className: "text-red-500",
+        command: () => requestDelete(product.id),
+      },
+    ]
+
+    return <TableActionMenu items={actionItems} />
   }
 
   const materialActionsBody = (material: ShopInventoryMaterial) => {
-    return (
-      <div className="flex items-center justify-center gap-1.5">
-        <button
-          onClick={() => openEditMaterialDialog(material)}
-          title="Sửa vật tư"
-          aria-label="Sửa vật tư"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d7dfe9] bg-white text-slate-600 transition hover:bg-slate-50"
-        >
-          <i className="pi pi-pencil h-4 w-4" />
-        </button>
-        <button
-          onClick={() => requestDelete(material.id)}
-          title="Xóa vật tư"
-          aria-label="Xóa vật tư"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#f0c2b7] bg-white text-[#c73d1e] transition hover:bg-[#fff4f1]"
-        >
-          <i className="pi pi-trash h-4 w-4" />
-        </button>
-      </div>
-    )
+    const actionItems = [
+      {
+        label: "Chỉnh sửa",
+        icon: "pi pi-pencil",
+        command: () => openEditMaterialDialog(material),
+      },
+      {
+        label: "Xóa",
+        icon: "pi pi-trash",
+        className: "text-red-500",
+        command: () => requestDelete(material.id),
+      },
+    ]
+
+    return <TableActionMenu items={actionItems} />
   }
 
   return (
     <>
-      <section className="overflow-hidden rounded-2xl border border-[#dbe3ed] bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-[#e7edf4] bg-[#fbfcfe] px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-5">
+    <div className="flex flex-1 flex-col gap-2">
+      <Toolbar
+        className="rounded-xl border-none bg-white shadow-[0_2px_12px_rgba(15,23,42,0.04)]"
+        start={
           <div>
-            <h1 className="text-lg font-semibold text-[#24364d]">Quản lý kho</h1>
-            <p className="mt-1 text-sm text-[#74849a]">Quản lý sản phẩm bán ra và vật tư phục vụ cho các gói dịch vụ.</p>
+            <h1 className="text-lg font-semibold text-slate-800">Quản lý kho</h1>
+            <p className="mt-0.5 text-sm text-slate-500">Quản lý sản phẩm bán ra và vật tư phục vụ cho các gói dịch vụ.</p>
           </div>
-
-          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+        }
+        end={
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={openCreateDialog}
               className="inline-flex h-9 items-center gap-2 rounded-md bg-[#214388] px-4 text-sm font-semibold text-white transition hover:bg-[#19356a]"
@@ -476,7 +468,6 @@ export function ShopInventoryPage() {
               <i className="pi pi-plus h-4 w-4" />
               {isProductTab ? "Thêm sản phẩm" : "Thêm vật tư"}
             </button>
-
             <button
               onClick={handleRefreshView}
               className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d9e1eb] bg-white px-4 text-sm font-medium text-[#40526b] transition hover:bg-[#f8fafc]"
@@ -485,9 +476,11 @@ export function ShopInventoryPage() {
               Làm mới
             </button>
           </div>
-        </div>
+        }
+      />
 
-        <div className="space-y-5 px-4 py-4 lg:px-5 lg:py-5">
+      <div className="flex-1 rounded-xl bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:p-4">
+        <div className="space-y-5">
           <div className="inline-flex rounded-xl border border-[#d9e1eb] bg-[#f8fafc] p-1">
             <button
               type="button"
@@ -509,24 +502,17 @@ export function ShopInventoryPage() {
             </button>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <SummaryCard label={isProductTab ? "Tổng sản phẩm" : "Tổng vật tư"} value={String(summary.total)} />
-            <SummaryCard label="Đang kích hoạt" value={String(summary.active)} />
-            <SummaryCard label="Sắp hết" value={String(summary.low)} />
-            <SummaryCard label="Hết hàng" value={String(summary.out)} />
+          <div className="grid gap-3 pt-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard icon="pi pi-box" label="Tổng mặt hàng" value={summary.total.toString()} color="blue" />
+            <StatCard icon="pi pi-check-circle" label="Đang kinh doanh" value={summary.active.toString()} color="emerald" />
+            <StatCard icon="pi pi-exclamation-triangle" label="Sắp hết hàng" value={summary.low.toString()} color="amber" />
+            <StatCard icon="pi pi-times-circle" label="Hết hàng" value={summary.out.toString()} color="red" />
           </div>
 
           <div className="flex flex-col gap-3 rounded-xl border border-[#e2e8f0] bg-white p-4 lg:flex-row lg:items-center lg:justify-between">
-            <label className="flex min-h-10 flex-1 items-center gap-2 rounded-md border border-[#d9e1eb] bg-[#fbfcfe] px-3">
-              <i className="pi pi-search h-4 w-4 text-[#70829a]" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder={isProductTab ? "Tìm theo tên sản phẩm hoặc SKU..." : "Tìm theo tên vật tư hoặc mã vật tư..."}
-                className="w-full border-0 bg-transparent text-sm text-[#24364d] outline-none placeholder:text-[#8ca0b8]"
-              />
-            </label>
+            <div className="text-sm text-[#73849b]">
+              Đang tìm kiếm: <span className="font-semibold text-[#214388]">"{globalSearchQuery}"</span>
+            </div>
 
             <div className="flex flex-wrap items-center gap-2">
               <label className="inline-flex h-10 items-center gap-2 rounded-md border border-[#d9e1eb] bg-white px-3 text-sm text-[#52657e]">
@@ -618,16 +604,16 @@ export function ShopInventoryPage() {
             )}
           </div>
         </div>
-      </section>
+      </div>
+    </div>
 
-      <AppDialog
-        open={isFormOpen}
-        onClose={closeFormDialog}
-        title={isProductTab ? (editingId ? "Cập nhật sản phẩm" : "Thêm sản phẩm mới") : editingId ? "Cập nhật vật tư" : "Thêm vật tư mới"}
-        description={isProductTab ? "Quản lý sản phẩm bán ra và tồn kho hiện tại của shop." : "Quản lý vật tư sử dụng trong quá trình vận hành và dịch vụ."}
-        size="lg"
+      <Dialog
+        visible={isFormOpen}
+        onHide={closeFormDialog}
+        header={isProductTab ? (editingId ? "Cập nhật sản phẩm" : "Thêm sản phẩm mới") : editingId ? "Cập nhật vật tư" : "Thêm vật tư mới"}
+        style={{ width: '100%', maxWidth: '48rem' }}
         footer={
-          <>
+          <div className="flex justify-end gap-2 mt-4">
             <button
               type="button"
               onClick={closeFormDialog}
@@ -642,9 +628,10 @@ export function ShopInventoryPage() {
             >
               {editingId ? "Lưu thay đổi" : isProductTab ? "Tạo sản phẩm" : "Tạo vật tư"}
             </button>
-          </>
+          </div>
         }
       >
+        <p className="mb-4 mt-0 text-sm text-[#73849b]">{isProductTab ? "Quản lý sản phẩm bán ra và tồn kho hiện tại của shop." : "Quản lý vật tư sử dụng trong quá trình vận hành và dịch vụ."}</p>
         <form id="shop-inventory-form" onSubmit={handleSave} className="space-y-3">
           {formError && <div className="rounded-lg bg-[#fff4f1] px-3 py-2 text-sm text-[#c73d1e]">{formError}</div>}
 
@@ -763,15 +750,15 @@ export function ShopInventoryPage() {
             </div>
           )}
         </form>
-      </AppDialog>
+      </Dialog>
 
-      <AppDialog
-        open={isDeleteOpen}
-        onClose={closeDeleteDialog}
-        title={isProductTab ? "Xác nhận xóa sản phẩm" : "Xác nhận xóa vật tư"}
-        description={isProductTab ? "Sản phẩm bị xóa sẽ không còn xuất hiện trong kho nội bộ." : "Vật tư bị xóa sẽ không còn được theo dõi trong kho."}
+      <Dialog
+        visible={isDeleteOpen}
+        onHide={closeDeleteDialog}
+        header={isProductTab ? "Xác nhận xóa sản phẩm" : "Xác nhận xóa vật tư"}
+        style={{ width: '100%', maxWidth: '30rem' }}
         footer={
-          <>
+          <div className="flex justify-end gap-2 mt-4">
             <button
               type="button"
               onClick={closeDeleteDialog}
@@ -786,23 +773,55 @@ export function ShopInventoryPage() {
             >
               {isProductTab ? "Xóa sản phẩm" : "Xóa vật tư"}
             </button>
-          </>
+          </div>
         }
       >
+        <p className="mb-2 mt-0 text-sm text-[#73849b]">{isProductTab ? "Sản phẩm bị xóa sẽ không còn xuất hiện trong kho nội bộ." : "Vật tư bị xóa sẽ không còn được theo dõi trong kho."}</p>
         <p className="text-sm text-slate-600">{isProductTab ? "Bạn chắc chắn muốn xóa sản phẩm này?" : "Bạn chắc chắn muốn xóa vật tư này?"}</p>
-      </AppDialog>
+      </Dialog>
     </>
   )
 }
 
-function SummaryCard({ label, value }: { label: string; value: string }) {
+
+type StatCardProps = {
+  icon: string
+  label: string
+  value: string
+  color: "blue" | "emerald" | "amber" | "red"
+}
+
+function StatCard({ icon, label, value, color }: StatCardProps) {
+  const borderMap = {
+    blue: "border-sky-200",
+    emerald: "border-emerald-200",
+    amber: "border-amber-200",
+    red: "border-rose-200",
+  }
+  const bgMap = {
+    blue: "bg-sky-50",
+    emerald: "bg-emerald-50",
+    amber: "bg-amber-50",
+    red: "bg-rose-50",
+  }
+  const iconColorMap = {
+    blue: "text-sky-500",
+    emerald: "text-emerald-500",
+    amber: "text-amber-500",
+    red: "text-rose-500",
+  }
+
   return (
-    <div className="rounded-xl border border-[#e5ebf3] bg-white p-4">
-      <p className="text-sm text-[#70829a]">{label}</p>
-      <p className="mt-2 text-[1.8rem] font-semibold leading-none text-[#24364d]">{value}</p>
+    <div className={`rounded-xl border ${borderMap[color]} ${bgMap[color]} p-4`}>
+      <div className="mb-2 flex items-center gap-2">
+        <i className={`${icon} h-5 w-5 ${iconColorMap[color]}`} />
+        <p className="text-sm text-slate-600">{label}</p>
+      </div>
+      <p className="text-3xl font-bold leading-none text-[#24364d]">{value}</p>
     </div>
   )
 }
+
 
 type InputFieldProps = {
   label: string
@@ -812,7 +831,7 @@ type InputFieldProps = {
   onChange: (value: string) => void
 }
 
-function InputField({ label, value, required = false, type = "text", onChange }: InputFieldProps) {
+function InputField({ label, value, type = "text", onChange }: InputFieldProps) {
   return (
     <label className="text-sm text-slate-700">
       <div className="mb-1">{label}</div>

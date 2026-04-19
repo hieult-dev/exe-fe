@@ -1,8 +1,12 @@
 import { useMemo, useState } from "react"
-import { AppDialog } from "@/common/component/AppDialog"
+import { Dialog } from "primereact/dialog"
 import { DataTable } from "primereact/datatable"
+import { Toolbar } from "primereact/toolbar"
+import { TableActionMenu } from "@/common/component/TableActionMenu"
+import type { MenuItem } from "primereact/menuitem"
 import { Column } from "primereact/column"
 import type { ColumnBodyOptions } from "primereact/column"
+import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -163,8 +167,8 @@ const STATUS_FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function ShopBookingsPage() {
+  const { globalSearchQuery } = useShopOwnerContext()
   const [bookings, setBookings] = useState<ShopBooking[]>(mockBookings)
-  const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
   const [selectedBooking, setSelectedBooking] = useState<ShopBooking | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
@@ -183,7 +187,7 @@ export function ShopBookingsPage() {
 
   // ── Filtered ──────────────────────────────────────────────────────────────────
   const visibleBookings = useMemo(() => {
-    const keyword = searchQuery.trim().toLowerCase()
+    const keyword = globalSearchQuery.trim().toLowerCase()
     return bookings
       .filter((b) => {
         if (statusFilter !== "ALL" && b.status !== statusFilter) return false
@@ -204,7 +208,7 @@ export function ShopBookingsPage() {
         if (a.status === "PENDING" || a.status === "ACCEPTED") return tA - tB
         return tB - tA // Others sort descending
       })
-  }, [bookings, searchQuery, statusFilter])
+  }, [bookings, globalSearchQuery, statusFilter])
 
   // ── Actions ───────────────────────────────────────────────────────────────────
   const updateBooking = (id: string, patch: Partial<ShopBooking>) => {
@@ -292,88 +296,79 @@ export function ShopBookingsPage() {
     </div>
   )
 
-  const actionsBody = (booking: ShopBooking) => (
-    <div className="flex items-center justify-center gap-1">
-      <button
-        onClick={() => openDetail(booking)}
-        title="Xem chi tiết"
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d7dfe9] bg-white text-[#214388] hover:bg-[#eef3fb]"
-      >
-        <i className="pi pi-eye h-3.5 w-3.5" />
-      </button>
+  const actionsBody = (booking: ShopBooking) => {
+    const actionItems: MenuItem[] = [
+      {
+        label: "Xem chi tiết",
+        icon: "pi pi-eye",
+        command: () => openDetail(booking),
+      },
+    ]
 
-      {booking.status === "PENDING" && (
-        <>
-          <button
-            onClick={() => handleAccept(booking.id)}
-            title="Chấp nhận hẹn"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-emerald-200 bg-white text-emerald-600 hover:bg-emerald-50"
-          >
-            <i className="pi pi-check-circle h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => openReject(booking.id)}
-            title="Từ chối hẹn"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 bg-white text-rose-500 hover:bg-rose-50"
-          >
-            <i className="pi pi-times-circle h-3.5 w-3.5" />
-          </button>
-        </>
-      )}
+    if (booking.status === "PENDING") {
+      actionItems.push(
+        {
+          label: "Chấp nhận hẹn",
+          icon: "pi pi-check-circle",
+          className: "text-emerald-600",
+          command: () => handleAccept(booking.id),
+        },
+        {
+          label: "Từ chối hẹn",
+          icon: "pi pi-times-circle",
+          className: "text-rose-500",
+          command: () => openReject(booking.id),
+        }
+      )
+    }
 
-      {STATUS_FLOW[booking.status] && (
-        <button
-          onClick={() => handleNextStatus(booking)}
-          title="Cập nhật tiến độ"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-violet-200 bg-white text-violet-600 hover:bg-violet-50"
-        >
-          {booking.status === "ACCEPTED" ? <i className="pi pi-play-circle h-3.5 w-3.5" /> : <i className="pi pi-check-circle h-3.5 w-3.5" />}
-        </button>
-      )}
-    </div>
-  )
+    if (STATUS_FLOW[booking.status]) {
+      actionItems.push({
+        label: "Cập nhật tiến độ",
+        icon: booking.status === "ACCEPTED" ? "pi pi-play-circle" : "pi pi-check-circle",
+        className: "text-violet-600",
+        command: () => handleNextStatus(booking),
+      })
+    }
+
+    return <TableActionMenu items={actionItems} />
+  }
 
   return (
     <>
-      {/* ── Stats ─────────────────────────────────────────────────────────────── */}
-      <div className="border-b border-[#f2f2f2] pb-4">
-        <h1 className="text-2xl font-semibold text-slate-800">Lịch dịch vụ (Bookings)</h1>
-        <p className="mt-1 text-sm text-slate-500">Quản lý các lượt đặt lịch spa, grooming, khám chữa bệnh cho thú cưng.</p>
-      </div>
+    <div className="flex flex-1 flex-col gap-2">
+      <Toolbar
+        className="rounded-xl border-none bg-white shadow-[0_2px_12px_rgba(15,23,42,0.04)]"
+        start={
+          <div>
+            <h1 className="text-lg font-semibold text-slate-800">Lịch dịch vụ (Bookings)</h1>
+            <p className="mt-0.5 text-sm text-slate-500">Quản lý lịch hẹn dịch vụ — sắp xếp thời gian và phân bổ nhân viên.</p>
+          </div>
+        }
+        end={
+          <label className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d9e1eb] bg-white px-3 text-sm text-[#52657e]">
+            <i className="pi pi-filter h-4 w-4 text-[#70829a]" />
+            <span>Trạng thái</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+              className="border-0 bg-transparent font-medium text-[#24364d] outline-none"
+            >
+              {STATUS_FILTER_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </label>
+        }
+      />
+
+      <div className="flex-1 rounded-xl bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:p-4">
 
       <div className="grid gap-3 pt-5 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={<i className="pi pi-clock h-5 w-5 text-amber-500" />} label="Chờ xác nhận" value={stats.pending} color="amber" />
         <StatCard icon={<i className="pi pi-calendar h-5 w-5 text-sky-500" />} label="Sắp tới" value={stats.incoming} color="blue" />
         <StatCard icon={<i className="pi pi-cut h-5 w-5 text-violet-500" />} label="Đang thực hiện" value={stats.active} color="violet" />
         <StatCard icon={<i className="pi pi-check-circle h-5 w-5 text-emerald-500" />} label="Hoàn thành" value={stats.completed} color="emerald" />
-      </div>
-
-      {/* ── Filter bar ────────────────────────────────────────────────────────── */}
-      <div className="mt-5 flex flex-col gap-3 rounded-xl border border-[#e2e8f0] bg-white p-4 lg:flex-row lg:items-center">
-        <label className="flex flex-1 items-center gap-2 rounded-lg border border-[#d9e1eb] bg-[#fbfcfe] px-3 py-2">
-          <i className="pi pi-search h-4 w-4 text-[#70829a]" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-transparent text-sm text-[#24364d] outline-none"
-          />
-        </label>
-
-        <label className="inline-flex items-center gap-2 rounded-lg border border-[#d9e1eb] bg-white px-3 py-2 text-sm">
-          <i className="pi pi-filter h-4 w-4 text-[#70829a]" />
-          <span className="text-slate-500">Trạng thái</span>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="border-0 bg-transparent font-medium text-[#24364d] outline-none"
-          >
-            {STATUS_FILTER_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-          <i className="pi pi-chevron-down h-3.5 w-3.5 text-slate-400" />
-        </label>
       </div>
 
       <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
@@ -402,17 +397,17 @@ export function ShopBookingsPage() {
           <Column header="Thao tác" body={actionsBody} style={{ minWidth: "140px" }} alignHeader="center" bodyStyle={{ textAlign: "center" }} />
         </DataTable>
       </div>
+      </div>
 
       {/* ── Detail dialog ─────────────────────────────────────────────────────── */}
       {selectedBooking && (
-        <AppDialog
-          open={isDetailOpen}
-          onClose={() => setIsDetailOpen(false)}
-          title={`Chi tiết Lịch hẹn ${selectedBooking.id}`}
-          description="Xem thông tin và cập nhật tiến độ."
-          size="lg"
+        <Dialog
+          visible={isDetailOpen}
+          onHide={() => setIsDetailOpen(false)}
+          header={`Chi tiết Lịch hẹn ${selectedBooking.id}`}
+          style={{ width: '100%', maxWidth: '48rem' }}
           footer={
-            <>
+            <div className="flex justify-end gap-2 mt-4">
               <button
                 type="button"
                 onClick={() => setIsDetailOpen(false)}
@@ -444,9 +439,10 @@ export function ShopBookingsPage() {
                   Chuyển → {STATUS_CONFIG[STATUS_FLOW[selectedBooking.status]![0]].label}
                 </button>
               )}
-            </>
+            </div>
           }
         >
+          <p className="mb-4 mt-0 text-sm text-[#73849b]">Xem thông tin và cập nhật tiến độ.</p>
           <div className="space-y-4">
 
             {/* Thời gian */}
@@ -525,17 +521,17 @@ export function ShopBookingsPage() {
 
             <p className="text-xs text-right text-slate-400">Booked at: {fmtDate(selectedBooking.createdAt)}</p>
           </div>
-        </AppDialog>
+        </Dialog>
       )}
 
       {/* ── Reject dialog ─────────────────────────────────────────────────────── */}
-      <AppDialog
-        open={isRejectOpen}
-        onClose={() => setIsRejectOpen(false)}
-        title="Từ chối lịch hẹn"
-        description="Nhập lý do để thông báo qua email/sms cho khách."
+      <Dialog
+        visible={isRejectOpen}
+        onHide={() => setIsRejectOpen(false)}
+        header="Từ chối lịch hẹn"
+        style={{ width: '100%', maxWidth: '30rem' }}
         footer={
-          <>
+          <div className="flex justify-end gap-2 mt-4">
             <button
               type="button"
               onClick={() => setIsRejectOpen(false)}
@@ -549,9 +545,10 @@ export function ShopBookingsPage() {
             >
               Xác nhận từ chối
             </button>
-          </>
+          </div>
         }
       >
+        <p className="mb-4 mt-0 text-sm text-[#73849b]">Nhập lý do để thông báo qua email/sms cho khách.</p>
         <div className="space-y-3">
           <label className="block text-sm text-slate-700">
             <span className="mb-1 block font-medium">Lý do từ chối (bắt buộc)</span>
@@ -563,7 +560,8 @@ export function ShopBookingsPage() {
             />
           </label>
         </div>
-      </AppDialog>
+      </Dialog>
+    </div>
     </>
   )
 }

@@ -1,7 +1,8 @@
-import { useMemo } from "react"
+﻿import { useMemo } from "react"
 import { Chart } from "primereact/chart"
-import { useShopOwnerContext } from "@/common/home/page/features/shop-owner/store/ShopOwnerContext"
-import { formatCurrencyVND } from "@/common/home/page/features/shop-owner/store/shopOwnerStore"
+import { Toolbar } from "primereact/toolbar"
+import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
+import { formatCurrencyVND } from "@/common/store/shopOwnerStore"
 
 /* ─── colour tokens ─── */
 const C = {
@@ -79,20 +80,14 @@ export function ShopDashboardPage() {
   /* ── KPI cards ── */
   const totalRevenue = fakeRevenue.reduce((s, v) => s + v, 0)
   const totalOrders = fakeOrders.reduce((s, v) => s + v, 0)
-  const activeServices = data.services.filter((s) => s.active).length
-  const totalProducts = data.inventory.products.length
-  const totalMembers = data.members.filter((m) => m.status === "ACTIVE").length
-  const lowStockCount =
-    data.inventory.products.filter((p) => p.stockQty <= p.reorderLevel && p.stockQty > 0).length +
-    data.inventory.materials.filter((m) => m.stockQty <= m.reorderLevel && m.stockQty > 0).length
+  const currentMonthRevenue = fakeRevenue[fakeRevenue.length - 1] // Doanh thu tháng gần nhất
+  const currentMonthOrders = fakeOrders[fakeOrders.length - 1] // Đơn hàng tháng gần nhất
 
   const kpis = [
-    { label: "Doanh thu (năm)", value: formatCurrencyVND(totalRevenue), icon: "pi pi-wallet", color: C.indigo, bg: C.indigoLight, trend: "+18%", trendUp: true },
-    { label: "Đơn hàng", value: String(totalOrders), icon: "pi pi-shopping-cart", color: C.emerald, bg: C.emeraldLight, trend: "+12%", trendUp: true },
-    { label: "Dịch vụ hoạt động", value: String(activeServices), icon: "pi pi-cog", color: C.sky, bg: C.skyLight, trend: "", trendUp: true },
-    { label: "Sản phẩm kho", value: String(totalProducts), icon: "pi pi-box", color: C.violet, bg: C.violetLight, trend: "", trendUp: true },
-    { label: "Thành viên", value: String(totalMembers), icon: "pi pi-users", color: C.amber, bg: C.amberLight, trend: "", trendUp: true },
-    { label: "Hàng sắp hết", value: String(lowStockCount), icon: "pi pi-exclamation-triangle", color: C.rose, bg: C.roseLight, trend: lowStockCount > 0 ? "Cần nhập thêm" : "Ổn", trendUp: lowStockCount === 0 },
+    { label: "Doanh thu (tháng này)", value: formatCurrencyVND(currentMonthRevenue), icon: "pi pi-chart-line", color: C.sky, bg: C.skyLight },
+    { label: "Đơn hàng (tháng này)", value: String(currentMonthOrders), icon: "pi pi-shopping-bag", color: C.violet, bg: C.violetLight },
+    { label: "Doanh thu (năm)", value: formatCurrencyVND(totalRevenue), icon: "pi pi-wallet", color: C.indigo, bg: C.indigoLight },
+    { label: "Đơn hàng (năm)", value: String(totalOrders), icon: "pi pi-shopping-cart", color: C.emerald, bg: C.emeraldLight },
   ]
 
   /* ── Revenue line chart ── */
@@ -198,85 +193,91 @@ export function ShopDashboardPage() {
   }, [data.inventory])
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Tổng quan</h1>
-        <p className="mt-1.5 text-sm text-slate-500 md:text-base">
-          Theo dõi hiệu suất kinh doanh và tổng quan hoạt động cửa hàng.
-        </p>
-      </div>
+    <div className="flex flex-1 flex-col gap-2">
+      {/* Toolbar — PrimeReact Toolbar, nền trắng, tách biệt với content */}
+      <Toolbar
+        className="rounded-xl border-none bg-white shadow-[0_2px_12px_rgba(15,23,42,0.04)]"
+        start={
+          <div>
+            <h1 className="text-lg font-semibold text-slate-800">Tổng quan</h1>
+            <p className="text-sm text-slate-500">Theo dõi hiệu suất kinh doanh và hoạt động cửa hàng</p>
+          </div>
+        }
+      />
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
-        {kpis.map((kpi) => (
-          <div
-            key={kpi.label}
-            className="group relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
-          >
-            <div className="absolute -right-3 -top-3 h-16 w-16 rounded-full opacity-40 blur-2xl transition-transform duration-500 group-hover:scale-150"
-              style={{ backgroundColor: kpi.color }}
-            />
-            <div className="relative z-10 flex items-start justify-between">
+      {/* Content — white rounded box */}
+      <div className="flex-1 rounded-xl bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:p-4">
+        <div className="space-y-6">
+
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {kpis.map((kpi) => (
               <div
-                className="flex h-10 w-10 items-center justify-center rounded-xl"
-                style={{ backgroundColor: kpi.bg }}
+                key={kpi.label}
+                className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-[#f8fafc] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
               >
-                <i className={kpi.icon} style={{ color: kpi.color, fontSize: "1rem" }} />
+                <div
+                  className="absolute inset-x-0 top-0 h-[3px] opacity-80 transition-opacity duration-300 group-hover:opacity-100"
+                  style={{ backgroundImage: `linear-gradient(to right, transparent, ${kpi.color}, transparent)` }}
+                />
+                <div className="absolute -bottom-6 -right-6 opacity-[0.03] transition-transform duration-500 group-hover:-rotate-12 group-hover:scale-125">
+                  <i className={kpi.icon} style={{ fontSize: "7rem" }} />
+                </div>
+
+                <div className="relative z-10 flex items-center justify-between">
+                  <div
+                    className="flex h-12 w-12 items-center justify-center rounded-[14px] shadow-sm transition-transform duration-300 group-hover:scale-110"
+                    style={{ backgroundColor: kpi.bg, color: kpi.color }}
+                  >
+                    <i className={kpi.icon} style={{ fontSize: "1.25rem" }} />
+                  </div>
+                </div>
+
+                <div className="relative z-10 mt-6 sm:mt-8">
+                  <p className="text-[1.75rem] font-bold tracking-tight text-slate-800 transition-colors group-hover:text-slate-900">{kpi.value}</p>
+                  <p className="mt-1 text-sm font-medium text-slate-500">{kpi.label}</p>
+                </div>
               </div>
-              {kpi.trend && (
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                    kpi.trendUp ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600"
-                  }`}
-                >
-                  {kpi.trendUp ? <i className="pi pi-arrow-up text-[10px]" /> : <i className="pi pi-arrow-down text-[10px]" />}
-                  {kpi.trend}
-                </span>
-              )}
+            ))}
+          </div>
+
+          {/* Charts Row 1 — Revenue & Orders */}
+          <div className="grid gap-6 xl:grid-cols-2">
+            <ChartCard title="Doanh thu theo tháng" subtitle="Biểu đồ doanh thu cả năm">
+              <Chart type="line" data={revenueData} options={revenueOptions} className="h-[280px] w-full" />
+            </ChartCard>
+            <ChartCard title="Đơn hàng theo tháng" subtitle="Số lượng đơn hàng xử lý">
+              <Chart type="bar" data={ordersData} options={baseLineBarOptions} className="h-[280px] w-full" />
+            </ChartCard>
+          </div>
+
+          {/* Charts Row 2 — Doughnut ring charts */}
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <ChartCard title="Dịch vụ theo danh mục" subtitle={`${data.services.length} dịch vụ`}>
+              <div className="mx-auto h-[240px] max-w-[280px]">
+                <Chart type="doughnut" data={serviceCats} options={pieDoughnutOptions} className="h-full w-full" />
+              </div>
+            </ChartCard>
+            <ChartCard title="Tình trạng tồn kho" subtitle={`${data.inventory.products.length + data.inventory.materials.length} mặt hàng`}>
+              <div className="mx-auto h-[240px] max-w-[280px]">
+                <Chart type="doughnut" data={stockSummary} options={pieDoughnutOptions} className="h-full w-full" />
+              </div>
+            </ChartCard>
+
+            {/* Recent activity */}
+            <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">Hoạt động gần đây</h3>
+              <p className="mt-0.5 text-xs text-slate-500">Cập nhật từ hệ thống</p>
+              <div className="mt-5 space-y-4">
+                <ActivityItem icon="pi pi-check-circle" color={C.emerald} bg={C.emeraldLight} text="Đơn hàng mới #1042 đã xác nhận" time="5 phút trước" />
+                <ActivityItem icon="pi pi-box" color={C.amber} bg={C.amberLight} text="Khăn tắm microfiber sắp hết hàng" time="1 giờ trước" />
+                <ActivityItem icon="pi pi-user-plus" color={C.indigo} bg={C.indigoLight} text="Thành viên Tran Thu Ha được mời" time="2 giờ trước" />
+                <ActivityItem icon="pi pi-star" color={C.violet} bg={C.violetLight} text="Khách đánh giá 5⭐ dịch vụ Grooming" time="3 giờ trước" />
+                <ActivityItem icon="pi pi-shopping-cart" color={C.sky} bg={C.skyLight} text="2 sản phẩm được thêm vào kho" time="Hôm qua" />
+              </div>
             </div>
-            <div className="relative z-10 mt-4">
-              <p className="text-2xl font-bold text-slate-900">{kpi.value}</p>
-              <p className="mt-1 text-xs font-medium text-slate-500">{kpi.label}</p>
-            </div>
           </div>
-        ))}
-      </div>
 
-      {/* Charts Row 1 — Revenue & Orders */}
-      <div className="grid gap-6 xl:grid-cols-2">
-        <ChartCard title="Doanh thu theo tháng" subtitle="Biểu đồ doanh thu cả năm">
-          <Chart type="line" data={revenueData} options={revenueOptions} className="h-[280px] w-full" />
-        </ChartCard>
-        <ChartCard title="Đơn hàng theo tháng" subtitle="Số lượng đơn hàng xử lý">
-          <Chart type="bar" data={ordersData} options={baseLineBarOptions} className="h-[280px] w-full" />
-        </ChartCard>
-      </div>
-
-      {/* Charts Row 2 — Doughnut ring charts */}
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        <ChartCard title="Dịch vụ theo danh mục" subtitle={`${data.services.length} dịch vụ`}>
-          <div className="mx-auto h-[240px] max-w-[280px]">
-            <Chart type="doughnut" data={serviceCats} options={pieDoughnutOptions} className="h-full w-full" />
-          </div>
-        </ChartCard>
-        <ChartCard title="Tình trạng tồn kho" subtitle={`${data.inventory.products.length + data.inventory.materials.length} mặt hàng`}>
-          <div className="mx-auto h-[240px] max-w-[280px]">
-            <Chart type="doughnut" data={stockSummary} options={pieDoughnutOptions} className="h-full w-full" />
-          </div>
-        </ChartCard>
-
-        {/* Recent activity */}
-        <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">Hoạt động gần đây</h3>
-          <p className="mt-0.5 text-xs text-slate-500">Cập nhật từ hệ thống</p>
-          <div className="mt-5 space-y-4">
-            <ActivityItem icon="pi pi-check-circle" color={C.emerald} bg={C.emeraldLight} text="Đơn hàng mới #1042 đã xác nhận" time="5 phút trước" />
-            <ActivityItem icon="pi pi-box" color={C.amber} bg={C.amberLight} text="Khăn tắm microfiber sắp hết hàng" time="1 giờ trước" />
-            <ActivityItem icon="pi pi-user-plus" color={C.indigo} bg={C.indigoLight} text="Thành viên Tran Thu Ha được mời" time="2 giờ trước" />
-            <ActivityItem icon="pi pi-star" color={C.violet} bg={C.violetLight} text="Khách đánh giá 5⭐ dịch vụ Grooming" time="3 giờ trước" />
-            <ActivityItem icon="pi pi-shopping-cart" color={C.sky} bg={C.skyLight} text="2 sản phẩm được thêm vào kho" time="Hôm qua" />
-          </div>
         </div>
       </div>
     </div>

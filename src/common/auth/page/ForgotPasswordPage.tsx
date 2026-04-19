@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { AuthLayout } from "./AuthLayout"
+import { AuthLayout } from "@/common/auth/page/AuthLayout"
 
 export function ForgotPasswordPage() {
   const navigate = useNavigate()

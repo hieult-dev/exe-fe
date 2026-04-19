@@ -4,15 +4,15 @@ import { ShopRegisterPage } from "@/common/auth/page/ShopRegisterPage"
 import { ForgotPasswordPage } from "@/common/auth/page/ForgotPasswordPage"
 import AuthRedirect from "@/common/auth/guard/AuthRedirect"
 
-import { ShopOwnerLayout, ShopOwnerDefaultRedirect } from "@/common/home/page/features/shop-owner/ShopOwnerLayout"
-import { ShopDashboardPage } from "@/common/home/page/features/shop-owner/ShopDashboardPage"
-import { ShopOverviewPage } from "@/common/home/page/features/shop-owner/ShopOverviewPage"
-import { ShopServicesPage } from "@/common/home/page/features/shop-owner/ShopServicesPage"
-import { ShopInventoryPage } from "@/common/home/page/features/shop-owner/ShopInventoryPage"
-import { ShopMembersPage } from "@/common/home/page/features/shop-owner/ShopMembersPage"
-import { ShopOrdersPage } from "@/common/home/page/features/shop-owner/ShopOrdersPage"
-import { ShopBookingsPage } from "@/common/home/page/features/shop-owner/ShopBookingsPage"
-import { ShopTaxPage } from "@/common/home/page/features/shop-owner/ShopTaxPage"
+import { ShopOwnerLayout, ShopOwnerDefaultRedirect } from "@/common/layout/ShopOwnerLayout"
+import { ShopDashboardPage } from "@/apps/dashboard/ShopDashboardPage"
+import { ShopOverviewPage } from "@/apps/profile/ShopOverviewPage"
+import { ShopServiceManager } from "@/apps/services/ShopServiceManager"
+import { ShopInventoryPage } from "@/apps/inventory/ShopInventoryPage"
+import { ShopMembersPage } from "@/apps/members/ShopMembersPage"
+import { ShopOrdersPage } from "@/apps/orders/ShopOrdersPage"
+import { ShopBookingsPage } from "@/apps/bookings/ShopBookingsPage"
+import { ShopTaxPage } from "@/apps/tax/ShopTaxPage"
 import ToastProvider from "@/common/toast/ToastProvider"
 function App() {
   return (
@@ -35,7 +35,7 @@ function App() {
               <Route path="/shop-owner" element={<ShopOwnerDefaultRedirect />} />
               <Route path="/shop-owner/dashboard" element={<ShopDashboardPage />} />
               <Route path="/shop-owner/profile" element={<ShopOverviewPage />} />
-              <Route path="/shop-owner/services" element={<ShopServicesPage />} />
+              <Route path="/shop-owner/services" element={<ShopServiceManager />} />
               <Route path="/shop-owner/inventory" element={<ShopInventoryPage />} />
               <Route path="/shop-owner/members" element={<ShopMembersPage />} />
               <Route path="/shop-owner/orders" element={<ShopOrdersPage />} />

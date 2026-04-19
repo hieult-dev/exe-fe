@@ -1,6 +1,7 @@
-import { useMemo } from "react"
+﻿import { useMemo } from "react"
 import { Chart } from "primereact/chart"
-import { formatCurrencyVND } from "@/common/home/page/features/shop-owner/store/shopOwnerStore"
+import { Toolbar } from "primereact/toolbar"
+import { formatCurrencyVND } from "@/common/store/shopOwnerStore"
 
 /* ─── colour tokens ─── */
 const C = {
@@ -293,19 +294,19 @@ export function ShopTaxPage() {
   })
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Quản lý Thuế</h1>
-          <p className="mt-1.5 text-sm text-slate-500 md:text-base">
-            Tổng hợp nghĩa vụ thuế dành cho hộ kinh doanh theo quy định hiện hành.
-          </p>
-        </div>
-        <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-600/20">
-          <i className="pi pi-info-circle text-[11px]" /> Dữ liệu ước tính · 2026
-        </span>
-      </div>
+    <div className="flex flex-1 flex-col gap-2">
+      <Toolbar
+        className="rounded-xl border-none bg-white shadow-[0_2px_12px_rgba(15,23,42,0.04)]"
+        start={<h1 className="text-lg font-semibold text-slate-800">Quản lý Thuế</h1>}
+        end={
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-600/20">
+            <i className="pi pi-info-circle text-[11px]" /> Dữ liệu ước tính · 2026
+          </span>
+        }
+      />
+
+      <div className="flex-1 rounded-xl bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:p-4">
+      <div className="space-y-6">
 
       {/* Tax KPI Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -424,6 +425,8 @@ export function ShopTaxPage() {
             <li>Kỳ kê khai: <strong>Theo quý</strong> (nộp trước ngày 30 của tháng đầu quý tiếp theo).</li>
           </ul>
         </div>
+      </div>
+      </div>
       </div>
     </div>
   )
