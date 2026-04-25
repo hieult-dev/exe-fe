@@ -1,4 +1,4 @@
-﻿import type { AxiosRequestConfig, AxiosResponse } from 'axios';
+import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import axios from 'axios';
 import { GATEWAY_URL } from '@/common/config/api';
 import { useUserStore } from '@/apps/user/store/UserStore';
@@ -26,10 +26,14 @@ export function initialClient(
 
     axiosInstance.interceptors.request.use(
         (config) => {
-            const { authentication } = useUserStore.getState();
+            const { authentication, currentShopId } = useUserStore.getState();
             if (authentication) {
                 config.headers = config.headers || {};
                 config.headers['Authorization'] = authentication;
+            }
+            if (currentShopId !== null && currentShopId !== undefined) {
+                config.headers = config.headers || {};
+                config.headers['X-Shop-Id'] = currentShopId.toString();
             }
             return config;
         },

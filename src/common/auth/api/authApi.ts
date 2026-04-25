@@ -1,4 +1,4 @@
-﻿import { AUTH_URL, REFRESH_TOKEN_URL, assertGatewayConfigured } from "@/common/config/api"
+import { AUTH_URL, REFRESH_TOKEN_URL, assertGatewayConfigured } from "@/common/config/api"
 import { useUserStore } from "@/apps/user/store/UserStore"
 import baseApi from "@/common/api/baseApi"
 import type { User } from "@/apps/user/model/index"
@@ -16,6 +16,8 @@ type AuthenticationResponse = {
   refreshToken: string
   role: string
   user: User
+  currentShopId?: number | null
+  shops?: any[]
 }
 
 function login(email: string, password: string) {

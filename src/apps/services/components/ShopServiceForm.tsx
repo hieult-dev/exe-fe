@@ -11,11 +11,10 @@ import { formatCurrencyVND } from "@/common/store/shopOwnerStore"
 import { notify } from "@/common/toast/ToastHelper"
 
 export type FormMode = "CREATE" | "EDIT" | "VIEW" | null
-const SHOP_ID = 1
-
 type ShopServiceFormProps = {
   mode: FormMode
   service: ServiceDTO | null
+  shopId: number
   onClose: () => void
   onSaved: () => void
 }
@@ -61,7 +60,7 @@ function serviceStatusClass(isActive: boolean) {
   return isActive ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-700"
 }
 
-export function ShopServiceForm({ mode, service, onClose, onSaved }: ShopServiceFormProps) {
+export function ShopServiceForm({ mode, service, shopId, onClose, onSaved }: ShopServiceFormProps) {
   const [categories, setCategories] = useState<ServiceCategoryDTO[]>([])
   const [isLoadingCategories, setIsLoadingCategories] = useState(false)
   const [categoryError, setCategoryError] = useState("")
@@ -101,7 +100,7 @@ export function ShopServiceForm({ mode, service, onClose, onSaved }: ShopService
     setIsLoadingCategories(true)
     setCategoryError("")
 
-    getServiceCategories(SHOP_ID, true)
+    getServiceCategories(true)
       .then((result) => {
         if (!isMounted) return
         setCategories(result.filter((category) => typeof category.id === "number"))
@@ -142,7 +141,7 @@ export function ShopServiceForm({ mode, service, onClose, onSaved }: ShopService
   const onSubmit = async (data: ServiceFormValues) => {
     try {
       const payload: ServiceDTO = {
-        shopId: SHOP_ID,
+        shopId: shopId,
         name: data.name,
         durationMin: data.durationMin,
         basePrice: data.basePrice,

@@ -7,12 +7,10 @@ import { Toolbar } from "primereact/toolbar"
 import { Dialog } from "primereact/dialog"
 import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
 import { formatCurrencyVND } from "@/common/store/shopOwnerStore"
-import { getServiceCategories, getServices, updateService, deleteService } from "@/apps/services/api/serviceApi"
+import { deleteService, getServiceById, getServiceCategories, getServices, updateService } from "@/apps/services/api/serviceApi"
 import type { ServiceCategoryDTO, ServiceDTO, ServiceVisibilityFilter } from "@/apps/services/model"
 import { ShopServiceForm, type FormMode } from "@/apps/services/components/ShopServiceForm"
 import { notify } from "@/common/toast/ToastHelper"
-
-const SHOP_ID = 1
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (typeof error === "object" && error !== null && "message" in error) {
@@ -38,87 +36,199 @@ function serviceStatusClass(isActive: boolean) {
 }
 
 export function ShopServiceManager() {
-  const { data, setServices } = useShopOwnerContext()
+  const { data, globalSearchQuery } = useShopOwnerContext()
+  const shopId = Number(String(data.shop.id).replace(/\D/g, "")) || 1
+
+  const [debouncedSearch, setDebouncedSearch] = useState(globalSearchQuery)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(globalSearchQuery)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [globalSearchQuery])
+
+  const [services, setServices] = useState<ServiceDTO[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [hasNext, setHasNext] = useState<boolean>(false)
+  const observerTarget = React.useRef<HTMLDivElement>(null)
+
   const [categories, setCategories] = useState<ServiceCategoryDTO[]>([])
 
   const [targetService, setTargetService] = useState<ServiceDTO | null>(null)
   const [formMode, setFormMode] = useState<FormMode>(null)
+  const [serviceDetailLoadingId, setServiceDetailLoadingId] = useState<number | null>(null)
   const [deletingServiceId, setDeletingServiceId] = useState<number | null>(null)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
 
   const [statusFilter, setStatusFilter] = useState<ServiceVisibilityFilter>("ALL")
 
-  const loadServices = async () => {
-    setIsLoading(true)
+  const loadServices = async (isLoadMore = false) => {
+    if (isLoadMore) {
+      if (!hasNext || isLoadingMore) return
+      setIsLoadingMore(true)
+    } else {
+      setIsLoading(true)
+    }
+
     try {
       let nextCategories = categories
-      try {
-        nextCategories = await getServiceCategories(SHOP_ID, true)
-        setCategories(nextCategories)
-      } catch (err) {
-        notify.error(getErrorMessage(err, "Không tải được danh sách nhóm dịch vụ."))
-        console.error("Failed to load service categories:", err)
+      if (!isLoadMore) {
+        try {
+          const categoryResult = await getServiceCategories(true) as any
+          nextCategories = Array.isArray(categoryResult) ? categoryResult : (categoryResult?.data || categoryResult?.content || categoryResult?.items || [])
+          setCategories(nextCategories)
+        } catch (err) {
+          notify.error(getErrorMessage(err, "Không tải được danh sách nhóm dịch vụ."))
+          console.error("Failed to load service categories:", err)
+        }
       }
 
       const categoryNameById = new Map(
-        nextCategories
+        (Array.isArray(nextCategories) ? nextCategories : [])
           .filter((category) => typeof category.id === "number")
           .map((category) => [category.id, category.name])
       )
-      const result = await getServices()
+
+      const currentCursor = isLoadMore ? nextCursor : null
+      const result = await getServices(20, currentCursor, debouncedSearch) as any
       if (result) {
-        setServices(result.map((s: ServiceDTO) => ({
-          id: s.id!,
-          name: s.name,
-          category: s.category || (s.categoryId ? categoryNameById.get(s.categoryId) ?? "Chưa phân nhóm" : "Chưa phân nhóm"),
-          categoryId: s.categoryId ?? null,
-          basePrice: s.basePrice,
-          durationMin: s.durationMin,
-          active: s.active,
-        })))
+        const payload = result?.data || result
+        const servicesArray = Array.isArray(payload) ? payload : (payload?.content || payload?.items || [])
+
+        const newCursor = payload?.nextCursor || null
+        const newHasNext = payload?.hasNext ?? false
+
+        if (Array.isArray(servicesArray)) {
+          const mappedServices = servicesArray.map((s: ServiceDTO) => ({
+            id: s.id!,
+            shopId: s.shopId || shopId,
+            name: s.name,
+            category: s.category || (s.categoryId ? categoryNameById.get(s.categoryId) ?? "Chưa phân nhóm" : "Chưa phân nhóm"),
+            categoryId: s.categoryId ?? null,
+            basePrice: s.basePrice,
+            durationMin: s.durationMin,
+            active: s.active,
+          }))
+
+          if (isLoadMore) {
+            setServices((prev) => {
+              const prevIds = new Set(prev.map(p => p.id));
+              const uniqueNew = mappedServices.filter(n => !prevIds.has(n.id));
+              return [...prev, ...uniqueNew];
+            })
+          } else {
+            setServices(mappedServices)
+          }
+
+          setNextCursor(newCursor)
+          setHasNext(newHasNext)
+        }
       }
     } catch (err) {
       notify.error(getErrorMessage(err, "Không tải được danh sách dịch vụ."))
       console.error("Failed to load services:", err)
     } finally {
-      setIsLoading(false)
+      if (isLoadMore) {
+        setIsLoadingMore(false)
+      } else {
+        setIsLoading(false)
+      }
     }
   }
 
   useEffect(() => {
-    loadServices()
-  }, [])
+    loadServices(false)
+  }, [debouncedSearch])
 
-  const activeCount = useMemo(() => data.services.filter((item) => item.active).length, [data.services])
-  const inactiveCount = data.services.length - activeCount
+  useEffect(() => {
+    if (isLoading || isLoadingMore || !hasNext) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadServices(true)
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current)
+    }
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [hasNext, isLoading, isLoadingMore, nextCursor])
+
+  const activeCount = useMemo(() => services.filter((item) => item.active).length, [services])
+  const inactiveCount = services.length - activeCount
 
   const visibleServices = useMemo(() => {
     if (statusFilter === "ACTIVE") {
-      return data.services.filter((item) => item.active)
+      return services.filter((item) => item.active)
     }
 
     if (statusFilter === "INACTIVE") {
-      return data.services.filter((item) => !item.active)
+      return services.filter((item) => !item.active)
     }
 
-    return data.services
-  }, [data.services, statusFilter])
+    return services
+  }, [services, statusFilter])
 
   // ================= FORM ACTIONS =================
+  const buildServiceWithCategory = (service: ServiceDTO, fallback?: ServiceDTO): ServiceDTO => {
+    const merged = { ...fallback, ...service }
+    const categoryId = merged.categoryId ?? null
+    const category = merged.category || (categoryId ? categories.find((item) => item.id === categoryId)?.name : undefined)
+
+    return {
+      id: merged.id,
+      shopId: merged.shopId || shopId,
+      name: merged.name || "",
+      category: category || "Chưa phân nhóm",
+      categoryId,
+      basePrice: Number(merged.basePrice ?? 0),
+      durationMin: Number(merged.durationMin ?? 0),
+      active: typeof merged.active === "boolean" ? merged.active : true,
+    }
+  }
+
+  const loadServiceDetailForAction = async (service: ServiceDTO, mode: Exclude<FormMode, null>) => {
+    if (!service.id) {
+      setTargetService(service)
+      setFormMode(mode)
+      return
+    }
+
+    setServiceDetailLoadingId(Number(service.id))
+    try {
+      const result = await getServiceById(Number(service.id)) as any
+      const detail = result?.data || result
+      setTargetService(buildServiceWithCategory(detail, service))
+      setFormMode(mode)
+    } catch (err) {
+      notify.error(getErrorMessage(err, "Không tải được chi tiết dịch vụ."))
+      console.error("Failed to load service detail:", err)
+    } finally {
+      setServiceDetailLoadingId(null)
+    }
+  }
+
   const openCreateDialog = () => {
     setTargetService(null)
     setFormMode("CREATE")
   }
 
   const openEditDialog = (service: ServiceDTO) => {
-    setTargetService(service)
-    setFormMode("EDIT")
+    loadServiceDetailForAction(service, "EDIT")
   }
 
   const openViewDialog = (service: ServiceDTO) => {
-    setTargetService(service)
-    setFormMode("VIEW")
+    loadServiceDetailForAction(service, "VIEW")
   }
 
   const closeFormDialog = () => {
@@ -136,14 +246,14 @@ export function ShopServiceManager() {
     if (!service.id) return
     try {
       await updateService(Number(service.id), {
-        shopId: SHOP_ID,
+        shopId: shopId,
         name: service.name,
         durationMin: service.durationMin,
         basePrice: service.basePrice,
         active: !service.active,
         categoryId: service.categoryId ?? null,
       })
-      await loadServices()
+      setServices((prev) => prev.map((s) => s.id === service.id ? { ...s, active: !s.active } : s))
     } catch (err) {
       notify.error(getErrorMessage(err, "Không cập nhật được trạng thái dịch vụ."))
       console.error(err)
@@ -215,26 +325,31 @@ export function ShopServiceManager() {
   }
 
   const actionsBody = (service: any) => {
+    const isLoadingDetail = serviceDetailLoadingId === service.id
     const actionItems = [
       {
         label: "Xem chi tiết",
-        icon: "pi pi-eye",
+        icon: isLoadingDetail ? "pi pi-spinner pi-spin" : "pi pi-eye",
+        disabled: isLoadingDetail,
         command: () => openViewDialog(service),
       },
       {
         label: service.active ? "Tạm dừng" : "Kích hoạt",
         icon: service.active ? "pi pi-times-circle" : "pi pi-check-circle",
+        disabled: isLoadingDetail,
         command: () => toggleServiceStatus(service),
       },
       {
         label: "Chỉnh sửa",
-        icon: "pi pi-pencil",
+        icon: isLoadingDetail ? "pi pi-spinner pi-spin" : "pi pi-pencil",
+        disabled: isLoadingDetail,
         command: () => openEditDialog(service),
       },
       {
         label: "Xóa",
         icon: "pi pi-trash",
         className: "text-red-500",
+        disabled: isLoadingDetail,
         command: () => requestDelete(service.id),
       },
     ]
@@ -291,7 +406,7 @@ export function ShopServiceManager() {
           <div className="space-y-5">
 
             <div className="grid gap-3 md:grid-cols-3">
-              <SummaryCard icon={<i className="pi pi-list h-5 w-5 text-sky-500" />} label="Tổng dịch vụ" value={String(data.services.length)} color="sky" />
+              <SummaryCard icon={<i className="pi pi-list h-5 w-5 text-sky-500" />} label="Tổng dịch vụ" value={String(services.length)} color="sky" />
               <SummaryCard icon={<i className="pi pi-check-circle h-5 w-5 text-emerald-500" />} label="Đang hoạt động" value={String(activeCount)} color="emerald" />
               <SummaryCard icon={<i className="pi pi-pause-circle h-5 w-5 text-orange-500" />} label="Tạm dừng" value={String(inactiveCount)} color="orange" />
             </div>
@@ -301,7 +416,7 @@ export function ShopServiceManager() {
                 <p className="text-base font-bold text-[#24364d]">Quản lý dịch vụ</p>
                 <p className="text-sm text-[#73849b]">Bảng bên dưới là danh sách dịch vụ hiện có của cửa hàng.</p>
               </div>
-              <p className="text-sm text-[#73849b]">Hiển thị {visibleServices.length}/{data.services.length} dịch vụ</p>
+              <p className="text-sm text-[#73849b]">Hiển thị {visibleServices.length}/{services.length} dịch vụ</p>
             </div>
 
             <div className="overflow-hidden rounded-xl border border-[#e2e8f0] bg-white">
@@ -357,6 +472,15 @@ export function ShopServiceManager() {
                   bodyStyle={{ textAlign: "center" }}
                 />
               </DataTable>
+              {(hasNext || isLoadingMore) && (
+                <div ref={observerTarget} className="flex h-12 w-full items-center justify-center p-4">
+                  {isLoadingMore ? (
+                    <i className="pi pi-spinner pi-spin text-[#4c5f78] text-xl" />
+                  ) : (
+                    <span className="text-sm text-slate-500 text-transparent">Cuộn xuống để xem thêm</span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -391,6 +515,7 @@ export function ShopServiceManager() {
       </Dialog>
 
       <ShopServiceForm
+        shopId={shopId}
         mode={formMode}
         service={targetService}
         onClose={closeFormDialog}

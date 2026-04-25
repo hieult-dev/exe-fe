@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand';
+import { create } from 'zustand';
 import type { User } from '@/apps/user/model/index';
 import { persist } from 'zustand/middleware';
 
@@ -9,12 +9,16 @@ interface AuthState {
     expired?: Date;
     userRole: string;
     isRefreshingToken: boolean;
+    currentShopId: number | null;
+    shops: any[];
 
     setUser: (user: User) => void;
     setRefreshingToken: (value: boolean) => void;
     setUserRole: (userRole: string) => void;
     setAuthentication: (token: string) => void;
     setRefreshToken: (token: string) => void;
+    setCurrentShopId: (id: number | null) => void;
+    setShops: (shops: any[]) => void;
     resetUserStore: () => void;
 }
 
@@ -33,6 +37,8 @@ export const useUserStore = create(
             refreshToken: '',
             expired: undefined,
             isRefreshingToken: false,
+            currentShopId: null,
+            shops: [],
 
             setUser: (user) =>
                 set({
@@ -60,6 +66,8 @@ export const useUserStore = create(
                     refreshToken: '',
                     expired: undefined,
                     isRefreshingToken: false,
+                    currentShopId: null,
+                    shops: [],
                 }),
 
             setUserRole: (userRole) =>
@@ -71,6 +79,18 @@ export const useUserStore = create(
             setRefreshingToken: (value: boolean) =>
                 set({
                     isRefreshingToken: value,
+                }),
+
+            setCurrentShopId: (id) =>
+                set({
+                    currentShopId: id,
+                    expired: getExpiredDate(),
+                }),
+
+            setShops: (shops) =>
+                set({
+                    shops,
+                    expired: getExpiredDate(),
                 }),
         }),
         {

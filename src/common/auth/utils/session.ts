@@ -1,4 +1,4 @@
-﻿import type { User } from "@/apps/user/model"
+import type { User } from "@/apps/user/model"
 import { useUserStore } from "@/apps/user/store/UserStore"
 
 type AuthSessionPayload = {
@@ -6,6 +6,8 @@ type AuthSessionPayload = {
   refreshToken?: string | null
   role?: string | null
   user?: User | null
+  currentShopId?: number | null
+  shops?: any[]
 }
 
 const TOKEN_KEYS = ["accessToken", "refreshToken", "role"] as const
@@ -41,6 +43,13 @@ export function applyAuthSession(payload: AuthSessionPayload, rememberMe: boolea
 
   if (payload.user) {
     authStore.setUser(payload.user)
+  }
+
+  if (payload.currentShopId !== undefined) {
+    authStore.setCurrentShopId(payload.currentShopId)
+  }
+  if (payload.shops !== undefined) {
+    authStore.setShops(payload.shops)
   }
 
   clearStoredAuthTokens()

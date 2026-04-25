@@ -49,6 +49,8 @@ export function LoginPage() {
           refreshToken: res.refreshToken,
           role: res.role,
           user: res.user,
+          currentShopId: res.currentShopId,
+          shops: res.shops,
         },
         values.rememberMe ?? false
       )
