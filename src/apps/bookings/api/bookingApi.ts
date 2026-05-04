@@ -1,6 +1,7 @@
 import api from '@/common/api/baseApi';
 import { GATEWAY_URL } from '@/common/config/api';
-import type { BookingCursorPage } from '@/apps/bookings/model';
+import type { BookingCheckoutRequest, BookingCheckoutResponse, BookingCursorPage, BookingDTO } from '@/apps/bookings/model';
+import type { InvoiceDetailDTO } from '@/apps/invoices/model';
 
 const BOOKING_URL = `${GATEWAY_URL}/api/bookings`;
 
@@ -13,6 +14,8 @@ export const getBookings = async (
     cursor: number | null = null,
     keyword: string = "",
     status: string = "",
+    createDate: string | undefined = undefined,
+    appointmentDate: string | undefined = undefined,
 ) => {
     const params: Record<string, any> = { size };
     if (cursor) {
@@ -24,6 +27,12 @@ export const getBookings = async (
     if (status && status !== "ALL") {
         params.status = status;
     }
+    if (createDate) {
+        params.createDate = createDate;
+    }
+    if (appointmentDate) {
+        params.appointmentDate = appointmentDate;
+    }
     return api.get<BookingCursorPage>(BOOKING_URL, { params });
 };
 
@@ -31,7 +40,7 @@ export const getBookings = async (
  * Get a single booking by ID.
  */
 export const getBookingById = async (id: number) => {
-    return api.get<any>(`${BOOKING_URL}/${id}`);
+    return api.get<BookingDTO>(`${BOOKING_URL}/${id}`);
 };
 
 /**
@@ -46,4 +55,12 @@ export const updateBookingStatus = async (id: number, status: string, note?: str
  */
 export const assignBooking = async (bookingId: number, staffUserIds: number[]) => {
     return api.put<any>(`${BOOKING_URL}/${bookingId}/staff`, { staffUserIds });
+};
+
+export const checkoutBooking = async (bookingId: number, data: BookingCheckoutRequest) => {
+    return api.post<BookingCheckoutResponse>(`${BOOKING_URL}/${bookingId}/checkout`, data);
+};
+
+export const getBookingInvoice = async (bookingId: number) => {
+    return api.get<InvoiceDetailDTO>(`${BOOKING_URL}/${bookingId}/invoice`);
 };

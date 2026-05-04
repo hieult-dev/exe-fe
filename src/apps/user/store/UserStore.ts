@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { User } from '@/apps/user/model/index';
+import type { AuthShopDTO, User } from '@/apps/user/model/index';
 import { persist } from 'zustand/middleware';
 
 interface AuthState {
@@ -10,7 +10,7 @@ interface AuthState {
     userRole: string;
     isRefreshingToken: boolean;
     currentShopId: number | null;
-    shops: any[];
+    shops: AuthShopDTO[];
 
     setUser: (user: User) => void;
     setRefreshingToken: (value: boolean) => void;
@@ -18,7 +18,7 @@ interface AuthState {
     setAuthentication: (token: string) => void;
     setRefreshToken: (token: string) => void;
     setCurrentShopId: (id: number | null) => void;
-    setShops: (shops: any[]) => void;
+    setShops: (shops: AuthShopDTO[]) => void;
     resetUserStore: () => void;
 }
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react"
+import { Button } from "primereact/button"
 import { DataTable } from "primereact/datatable"
 import { Column } from "primereact/column"
 import { TableActionMenu } from "@/common/component/TableActionMenu"
@@ -6,11 +7,11 @@ import type { ColumnBodyOptions } from "primereact/column"
 import { Toolbar } from "primereact/toolbar"
 import { Dialog } from "primereact/dialog"
 import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
-import { formatCurrencyVND } from "@/common/store/shopOwnerStore"
 import { deleteService, getServiceById, getServiceCategories, getServices, updateService } from "@/apps/services/api/serviceApi"
 import type { ServiceCategoryDTO, ServiceDTO, ServiceVisibilityFilter } from "@/apps/services/model"
 import { ShopServiceForm, type FormMode } from "@/apps/services/components/ShopServiceForm"
 import { notify } from "@/common/toast/ToastHelper"
+import { formatCurrencyVND } from "@/common/utils/format"
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (typeof error === "object" && error !== null && "message" in error) {
@@ -492,21 +493,21 @@ export function ShopServiceManager() {
         header="Xác nhận xóa dịch vụ"
         style={{ width: '100%', maxWidth: '30rem' }}
         footer={
-          <div className="flex justify-end gap-2 mt-4">
-            <button
+          <div className="mt-4 flex w-full flex-col-reverse items-center justify-center gap-2 sm:flex-row">
+            <Button
               type="button"
+              label="Hủy"
+              icon="pi pi-times"
               onClick={closeDeleteDialog}
-              className="rounded-lg bg-[#f4f7fb] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[#ecf1f8]"
-            >
-              Hủy
-            </button>
-            <button
+              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#d9e1eb] !bg-white !px-4 !py-0 !text-sm !font-semibold !text-[#40526b] hover:!bg-[#f8fafc]"
+            />
+            <Button
               type="button"
+              label="Xóa dịch vụ"
+              icon="pi pi-trash"
               onClick={confirmDelete}
-              className="rounded-lg bg-[#d93b1f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#c23218]"
-            >
-              Xóa dịch vụ
-            </button>
+              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#d93b1f] !bg-[#d93b1f] !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-[#c23218] [&_.p-button-icon]:!text-white [&_.p-button-label]:!text-white"
+            />
           </div>
         }
       >

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { Button } from "primereact/button"
 import { Sidebar } from "primereact/sidebar"
 import { Dialog } from "primereact/dialog"
 import { useForm } from "react-hook-form"
@@ -7,8 +8,8 @@ import { z } from "zod"
 import { SidebarConfig } from "@/common/config/sidebar.config"
 import { createService, getServiceCategories, updateService } from "@/apps/services/api/serviceApi"
 import type { ServiceCategoryDTO, ServiceDTO } from "@/apps/services/model"
-import { formatCurrencyVND } from "@/common/store/shopOwnerStore"
 import { notify } from "@/common/toast/ToastHelper"
+import { formatCurrencyVND } from "@/common/utils/format"
 
 export type FormMode = "CREATE" | "EDIT" | "VIEW" | null
 type ShopServiceFormProps = {
@@ -173,13 +174,15 @@ export function ShopServiceForm({ mode, service, shopId, onClose, onSaved }: Sho
         header="Chi tiết dịch vụ"
         style={{ width: '100%', maxWidth: '32rem' }}
         footer={
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg bg-[#f4f7fb] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[#ecf1f8]"
-          >
-            Đóng
-          </button>
+          <div className="mt-4 flex w-full justify-center">
+            <Button
+              type="button"
+              label="Đóng"
+              icon="pi pi-times"
+              onClick={onClose}
+              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#d9e1eb] !bg-white !px-4 !py-0 !text-sm !font-semibold !text-[#40526b] hover:!bg-[#f8fafc]"
+            />
+          </div>
         }
       >
         <div className="mb-4 text-sm text-[#73849b]">
@@ -227,14 +230,13 @@ export function ShopServiceForm({ mode, service, shopId, onClose, onSaved }: Sho
       <div className="flex h-full flex-col">
         <div className="mb-6">
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
               onClick={onClose}
               aria-label="Đóng form dịch vụ"
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#fee2e2] text-[#b42318] hover:bg-[#fecaca]"
-            >
-              <span className="pi pi-arrow-left text-sm" />
-            </button>
+              icon="pi pi-arrow-left"
+              className="!flex !h-9 !w-9 !items-center !justify-center !rounded-lg !border-none !bg-[#fee2e2] !p-0 !text-[#b42318] hover:!bg-[#fecaca] [&_.p-button-icon]:!text-sm [&_.p-button-icon]:!text-[#b42318]"
+            />
             <h2 className="text-xl font-bold text-[#24364d]">{sidebarTitle}</h2>
           </div>
           <p className="text-sm text-[#73849b] mt-1">
@@ -307,22 +309,22 @@ export function ShopServiceForm({ mode, service, shopId, onClose, onSaved }: Sho
         </form>
 
         <div className="mt-auto border-t border-[#e2e8f0] pt-4 flex items-center justify-center gap-3 bg-white pb-4">
-          <button
+          <Button
             type="button"
+            label="Hủy"
+            icon="pi pi-times"
             onClick={onClose}
-            className="rounded-lg bg-[#f4f7fb] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[#ecf1f8]"
             disabled={isSubmitting}
-          >
-            Hủy
-          </button>
-          <button
+            className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border-none !bg-[#f4f7fb] !px-4 !py-0 !text-sm !font-medium !text-slate-700 hover:!bg-[#ecf1f8]"
+          />
+          <Button
             type="submit"
             form="shop-service-form"
             disabled={isSubmitting || isLoadingCategories || categories.length === 0}
-            className="rounded-lg bg-[#214388] px-4 py-2 text-sm font-semibold text-white hover:bg-[#19356a] disabled:opacity-70 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? "Đang lưu..." : (mode === "EDIT" ? "Lưu thay đổi" : "Tạo dịch vụ")}
-          </button>
+            label={isSubmitting ? "Đang lưu..." : (mode === "EDIT" ? "Lưu thay đổi" : "Tạo dịch vụ")}
+            icon="pi pi-save"
+            className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border-none !bg-[#214388] !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-[#19356a] disabled:!cursor-not-allowed disabled:!opacity-70 [&_.p-button-icon]:!text-white [&_.p-button-label]:!text-white"
+          />
         </div>
       </div>
     </Sidebar>

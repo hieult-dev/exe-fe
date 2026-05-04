@@ -1,7 +1,7 @@
 ﻿import { useMemo } from "react"
 import { Chart } from "primereact/chart"
 import { Toolbar } from "primereact/toolbar"
-import { formatCurrencyVND } from "@/common/store/shopOwnerStore"
+import { formatCurrencyVND } from "@/common/utils/format"
 
 /* ─── colour tokens ─── */
 const C = {

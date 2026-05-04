@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { AuthLayout } from "@/common/auth/page/AuthLayout"
+import { Button } from "primereact/button"
 import { Dialog } from "primereact/dialog"
 import { notify } from "@/common/toast/ToastHelper"
 import { register as registerApi } from "@/common/auth/api/authApi"
@@ -133,6 +134,8 @@ export function ShopRegisterPage() {
                     refreshToken: res.refreshToken,
                     role: res.role,
                     user: res.user,
+                    currentShopId: res.currentShopId,
+                    shops: res.shops,
                 },
                 false
             )
@@ -537,14 +540,13 @@ export function ShopRegisterPage() {
                                             <p className="text-sm text-slate-400">Bấm vào bản đồ để chọn điểm, sau đó xác nhận.</p>
                                         </div>
                                     </div>
-                                    <button
+                                    <Button
                                         type="button"
+                                        label="Đóng"
+                                        icon="pi pi-times"
                                         onClick={() => setIsMapOpen(false)}
-                                        className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-700/80 bg-slate-900 px-4 text-sm font-semibold text-slate-200 transition hover:bg-slate-800"
-                                    >
-                                        <i className="pi pi-times mr-2 text-base" />
-                                        Đóng
-                                    </button>
+                                        className="!m-0 !inline-flex !h-11 !items-center !justify-center !rounded-2xl !border !border-slate-700/80 !bg-slate-900 !px-4 !py-0 !text-sm !font-semibold !text-slate-200 hover:!bg-slate-800 [&_.p-button-icon]:!text-slate-200 [&_.p-button-label]:!text-slate-200"
+                                    />
                                 </div>
                             </div>
 
@@ -576,21 +578,21 @@ export function ShopRegisterPage() {
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-                                    <button
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
+                                    <Button
                                         type="button"
+                                        label="Hủy"
+                                        icon="pi pi-times"
                                         onClick={() => setIsMapOpen(false)}
-                                        className="inline-flex min-w-[110px] items-center justify-center rounded-2xl border border-slate-700/80 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-slate-800"
-                                    >
-                                        Hủy
-                                    </button>
-                                    <button
+                                        className="!m-0 !inline-flex !h-11 !min-w-[110px] !items-center !justify-center !rounded-2xl !border !border-slate-700/80 !bg-slate-900 !px-4 !py-0 !text-sm !font-semibold !text-slate-200 hover:!bg-slate-800 [&_.p-button-icon]:!text-slate-200 [&_.p-button-label]:!text-slate-200"
+                                    />
+                                    <Button
                                         type="button"
+                                        label="Chọn vị trí này"
+                                        icon="pi pi-check"
                                         onClick={confirmMapPicker}
-                                        className="inline-flex min-w-[170px] items-center justify-center rounded-2xl bg-gradient-to-r from-blue-500 via-sky-500 to-cyan-400 px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(59,130,246,0.24)] transition hover:opacity-95"
-                                    >
-                                        Chọn vị trí này
-                                    </button>
+                                        className="!m-0 !inline-flex !h-11 !min-w-[170px] !items-center !justify-center !rounded-2xl !border-none !bg-blue-500 !px-4 !py-0 !text-sm !font-semibold !text-white !shadow-[0_12px_30px_rgba(59,130,246,0.24)] hover:!bg-blue-400 [&_.p-button-icon]:!text-white [&_.p-button-label]:!text-white"
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -669,13 +671,13 @@ export function ShopRegisterPage() {
                     </p>
                 </div>
                 <div className="flex justify-center pt-4 mt-4 border-t border-slate-800">
-                    <button
+                    <Button
                         type="button"
+                        label="Đóng"
+                        icon="pi pi-times"
                         onClick={() => setIsTermsOpen(false)}
-                        className="inline-flex items-center justify-center rounded-2xl bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-400"
-                    >
-                        Đóng
-                    </button>
+                        className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-xl !border-none !bg-blue-500 !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-blue-400 [&_.p-button-icon]:!text-white [&_.p-button-label]:!text-white"
+                    />
                 </div>
             </Dialog>
         </AuthLayout>

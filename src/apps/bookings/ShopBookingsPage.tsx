@@ -1,19 +1,24 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
+import { Button } from "primereact/button"
+import { Calendar } from "primereact/calendar"
 import { Dialog } from "primereact/dialog"
 import { PickList, type PickListChangeEvent } from "primereact/picklist"
 import { DataTable } from "primereact/datatable"
 import { Toolbar } from "primereact/toolbar"
 import { TableActionMenu } from "@/common/component/TableActionMenu"
 import { StaffAvatarGroup } from "@/common/component/StaffAvatarGroup"
-import { StaffProfile } from "@/common/component/StaffProfile"
 import type { MenuItem } from "primereact/menuitem"
 import { Column } from "primereact/column"
 import type { ColumnBodyOptions } from "primereact/column"
 import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
-import { getBookings, updateBookingStatus, getBookingById, assignBooking } from "@/apps/bookings/api/bookingApi"
-import { getActiveStaff } from "@/apps/members/api/shopMemberApi"
-import type { BookingDTO, BookingStaffDTO, BookingStatus, BookingStatusFilter } from "@/apps/bookings/model"
+import { getBookings, updateBookingStatus, assignBooking, getBookingInvoice } from "@/apps/bookings/api/bookingApi"
+import { getActiveStaff, type ShopMemberDTO } from "@/apps/members/api/shopMemberApi"
+import type { BookingDTO, BookingStatus, BookingStatusFilter } from "@/apps/bookings/model"
+import { ShopBookingDetailModal } from "@/apps/bookings/ShopBookingDetailModal"
+import { InvoiceDetailDialog } from "@/apps/invoices/components/InvoiceDetailDialog"
+import type { InvoiceDetailDTO } from "@/apps/invoices/model"
 import { notify } from "@/common/toast/ToastHelper"
+import { formatCurrencyVND, formatDateForApi, formatDateOnlyViVN, formatDateTimeViVN } from "@/common/utils/format"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -37,7 +42,6 @@ const STATUS_CONFIG: Record<BookingStatus, { label: string; bg: string; text: st
 
 const STATUS_FLOW: Partial<Record<BookingStatus, BookingStatus>> = {
   CONFIRMED: "IN_PROGRESS",
-  IN_PROGRESS: "COMPLETED",
 }
 
 const STATUS_FILTER_OPTIONS: { value: BookingStatusFilter; label: string }[] = [
@@ -50,129 +54,21 @@ const STATUS_FILTER_OPTIONS: { value: BookingStatusFilter; label: string }[] = [
   { value: "CANCELLED", label: "Khách hủy" },
 ]
 
-type AssignStaffItem = {
-  id: number
-  fullName: string | null
-  email: string | null
-  status?: string | null
-  avatarUrlPreview?: string | null
-}
+function isTodayBooking(booking: BookingDTO) {
+  const value = booking.startAt || booking.time
+  if (!value) return false
 
-function fmt(value: number) {
-  return `${value.toLocaleString("vi-VN")}đ`
-}
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return false
 
-function fmtDate(iso: string | null | undefined) {
-  if (!iso) return "—"
-  const d = new Date(iso)
-  return d.toLocaleString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
-
-function normalizeAssigneeIds(rawIds: unknown, fallbackId?: unknown) {
-  const values = Array.isArray(rawIds) && rawIds.length > 0 ? rawIds : fallbackId == null ? [] : [fallbackId]
-  return values.map((id) => Number(id)).filter((id) => Number.isFinite(id))
-}
-
-function normalizeAssigneeNames(rawNames: unknown, fallbackName?: unknown) {
-  const values = Array.isArray(rawNames) ? rawNames : fallbackName == null ? [] : [fallbackName]
-  return values
-    .filter((name): name is string => typeof name === "string" && name.trim().length > 0)
-    .map((name) => name.trim())
-}
-
-function normalizeAssignedStaffs(rawStaffs: unknown) {
-  if (!Array.isArray(rawStaffs)) return []
-
-  return rawStaffs
-    .map((staff): BookingStaffDTO | null => {
-      if (!staff || typeof staff !== "object") return null
-      const item = staff as Partial<BookingStaffDTO>
-      const userId = Number(item.userId)
-      if (!Number.isFinite(userId)) return null
-
-      return {
-        bookingId: item.bookingId,
-        userId,
-        fullName: item.fullName ?? null,
-        email: item.email ?? null,
-        avatarUrlPreview: item.avatarUrlPreview ?? null,
-      }
-    })
-    .filter((staff): staff is BookingStaffDTO => staff !== null)
-}
-
-function formatAssigneeNames(names: string[]) {
-  return names.length > 0 ? names.join(", ") : null
-}
-
-function normalizeAssignStaffItems(rawStaffs: unknown) {
-  if (!Array.isArray(rawStaffs)) return []
-
-  return rawStaffs
-    .map((staff): AssignStaffItem | null => {
-      if (!staff || typeof staff !== "object") return null
-      const item = staff as Record<string, unknown>
-      const id = Number(item.userId ?? item.id)
-      if (!Number.isFinite(id)) return null
-
-      return {
-        id,
-        fullName: typeof item.userFullName === "string" ? item.userFullName : typeof item.fullName === "string" ? item.fullName : null,
-        email: typeof item.userEmail === "string" ? item.userEmail : typeof item.email === "string" ? item.email : null,
-        status: typeof item.status === "string" ? item.status : null,
-        avatarUrlPreview: typeof item.avatarUrlPreview === "string" ? item.avatarUrlPreview : null,
-      }
-    })
-    .filter((staff): staff is AssignStaffItem => staff !== null)
-}
-
-function getAssignedStaffItems(booking: BookingDTO | null | undefined, staffPool: AssignStaffItem[] = []) {
-  if (!booking) return []
-
-  const assignedStaffs = normalizeAssignedStaffs(booking.assignedStaffs)
-  const assignedIdsFromStaffs = assignedStaffs.map((staff) => staff.userId)
-  const rawAssignedIds = Array.isArray(booking.assignedStaffIds) && booking.assignedStaffIds.length > 0
-    ? booking.assignedStaffIds
-    : assignedIdsFromStaffs
-  const assignedIds = normalizeAssigneeIds(rawAssignedIds, booking.assigneeId)
-  const poolById = new Map(staffPool.map((staff) => [staff.id, staff]))
-  const assignedById = new Map(assignedStaffs.map((staff) => [staff.userId, staff]))
-  const fallbackNames = normalizeAssigneeNames(
-    assignedStaffs.map((staff) => staff.fullName),
-    assignedIds.length === 1 ? booking.assigneeName : undefined,
-  )
-  const seen = new Set<number>()
-
-  return assignedIds
-    .map((id, index): AssignStaffItem | null => {
-      if (seen.has(id)) return null
-      seen.add(id)
-
-      const poolItem = poolById.get(id)
-      const assignedItem = assignedById.get(id)
-
-      return {
-        id,
-        fullName: poolItem?.fullName ?? assignedItem?.fullName ?? fallbackNames[index] ?? `Staff #${id}`,
-        email: poolItem?.email ?? assignedItem?.email ?? null,
-        status: poolItem?.status ?? null,
-        avatarUrlPreview: poolItem?.avatarUrlPreview ?? assignedItem?.avatarUrlPreview ?? null,
-      }
-    })
-    .filter((staff): staff is AssignStaffItem => staff !== null)
+  const today = new Date()
+  return date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate()
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function ShopBookingsPage() {
-  const { globalSearchQuery, data } = useShopOwnerContext()
-  const activeMembers = useMemo(() => data.members.filter((m) => m.status === "ACTIVE"), [data.members])
+  const { globalSearchQuery } = useShopOwnerContext()
 
   // ── Debounce search ───────────────────────────────────────────────────────
   const [debouncedSearch, setDebouncedSearch] = useState(globalSearchQuery)
@@ -191,19 +87,25 @@ export function ShopBookingsPage() {
   const observerTarget = useRef<HTMLDivElement>(null)
 
   const [statusFilter, setStatusFilter] = useState<BookingStatusFilter>("ALL")
+  const [createDateFilter, setCreateDateFilter] = useState<Date | null>(null)
+  const [appointmentDateFilter, setAppointmentDateFilter] = useState<Date | null>(null)
 
   // ── Dialog states ─────────────────────────────────────────────────────────
   const [selectedBooking, setSelectedBooking] = useState<BookingDTO | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const [isDetailLoading, setIsDetailLoading] = useState(false)
   const [isRejectOpen, setIsRejectOpen] = useState(false)
   const [rejectNote, setRejectNote] = useState("")
   const [rejectTargetId, setRejectTargetId] = useState<number | null>(null)
   const [isAssignOpen, setIsAssignOpen] = useState(false)
   const [assignTargetId, setAssignTargetId] = useState<number | null>(null)
-  const [assignSource, setAssignSource] = useState<any[]>([])
-  const [assignTarget, setAssignTarget] = useState<any[]>([])
+  const [assignSource, setAssignSource] = useState<ShopMemberDTO[]>([])
+  const [assignTarget, setAssignTarget] = useState<ShopMemberDTO[]>([])
   const [isAssignLoading, setIsAssignLoading] = useState(false)
+  const [invoiceBooking, setInvoiceBooking] = useState<BookingDTO | null>(null)
+  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceDetailDTO | null>(null)
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false)
+  const [isInvoiceLoading, setIsInvoiceLoading] = useState(false)
+  const [todayConfirmedCount, setTodayConfirmedCount] = useState(0)
 
   // ── Load bookings (mirrors services pattern) ──────────────────────────────
   const loadBookings = async (isLoadMore = false) => {
@@ -216,61 +118,28 @@ export function ShopBookingsPage() {
 
     try {
       const currentCursor = isLoadMore ? nextCursor : null
-      const result = await getBookings(20, currentCursor, debouncedSearch, statusFilter) as any
+      const result = await getBookings(
+        20,
+        currentCursor,
+        debouncedSearch,
+        statusFilter,
+        formatDateForApi(createDateFilter),
+        formatDateForApi(appointmentDateFilter),
+      )
+      const mapped = result.content
 
-      if (result) {
-        const payload = result?.data || result
-        const contentArray = Array.isArray(payload) ? payload : (payload?.content || [])
-        const newCursor = payload?.nextCursor || null
-        const newHasNext = payload?.hasNext ?? false
-
-        if (Array.isArray(contentArray)) {
-          const mapped: BookingDTO[] = contentArray.map((b: any) => {
-            const assignedStaffs = normalizeAssignedStaffs(b.assignedStaffs)
-            const assignedStaffIds = normalizeAssigneeIds(
-              b.assignedStaffIds ?? assignedStaffs.map((staff) => staff.userId),
-              b.assigneeId,
-            )
-            const assigneeNames = normalizeAssigneeNames(
-              assignedStaffs.map((staff) => staff.fullName),
-              b.assigneeName,
-            )
-
-            return {
-              id: b.id,
-              bookingCode: b.bookingCode || "",
-              shopId: b.shopId,
-              customerId: b.customerId ?? null,
-              customerName: b.customerName || "",
-              customerPhone: b.customerPhone || "",
-              items: Array.isArray(b.items) ? b.items : [],
-              totalAmount: b.totalAmount || 0,
-              status: b.status || "DRAFT",
-              statusLabel: b.statusLabel || STATUS_CONFIG[b.status as BookingStatus]?.label || "",
-              source: b.source || null,
-              assigneeId: assignedStaffIds[0] ?? null,
-              assigneeName: formatAssigneeNames(assigneeNames),
-              assignedStaffIds,
-              assignedStaffs,
-              time: b.time ?? null,
-              createdAt: b.createdAt || "",
-            }
-          })
-
-          if (isLoadMore) {
-            setBookings((prev) => {
-              const prevIds = new Set(prev.map((p) => p.id))
-              const uniqueNew = mapped.filter((n) => !prevIds.has(n.id))
-              return [...prev, ...uniqueNew]
-            })
-          } else {
-            setBookings(mapped)
-          }
-
-          setNextCursor(newCursor)
-          setHasNext(newHasNext)
-        }
+      if (isLoadMore) {
+        setBookings((prev) => {
+          const prevIds = new Set(prev.map((p) => p.id))
+          const uniqueNew = mapped.filter((n) => !prevIds.has(n.id))
+          return [...prev, ...uniqueNew]
+        })
+      } else {
+        setBookings(mapped)
       }
+
+      setNextCursor(result.nextCursor ?? null)
+      setHasNext(result.hasNext ?? false)
     } catch (err) {
       notify.error(getErrorMessage(err, "Không tải được danh sách lịch hẹn."))
       console.error("Failed to load bookings:", err)
@@ -283,10 +152,31 @@ export function ShopBookingsPage() {
     }
   }
 
+  const loadTodayConfirmedCount = async () => {
+    try {
+      let cursor: number | null = null
+      let count = 0
+
+      do {
+        const result = await getBookings(100, cursor, "", "CONFIRMED")
+        count += result.content.filter(isTodayBooking).length
+        cursor = result.hasNext ? result.nextCursor : null
+      } while (cursor !== null)
+
+      setTodayConfirmedCount(count)
+    } catch (err) {
+      notify.error(getErrorMessage(err, "Không tải được số lịch hẹn đã xác nhận hôm nay."))
+    }
+  }
+
   // ── Auto-load on search/filter change ─────────────────────────────────────
   useEffect(() => {
     loadBookings(false)
-  }, [debouncedSearch, statusFilter])
+  }, [appointmentDateFilter, createDateFilter, debouncedSearch, statusFilter])
+
+  useEffect(() => {
+    loadTodayConfirmedCount()
+  }, [])
 
   // ── Infinite scroll observer ──────────────────────────────────────────────
   useEffect(() => {
@@ -306,14 +196,13 @@ export function ShopBookingsPage() {
     }
 
     return () => observer.disconnect()
-  }, [hasNext, isLoading, isLoadingMore, nextCursor])
+  }, [appointmentDateFilter, createDateFilter, hasNext, isLoading, isLoadingMore, nextCursor, statusFilter])
 
   // ── Stats ─────────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
     const DRAFT = bookings.filter((b) => b.status === "DRAFT").length
-    const incoming = bookings.filter((b) => b.status === "CONFIRMED").length
     const active = bookings.filter((b) => b.status === "IN_PROGRESS").length
-    return { DRAFT, incoming, active }
+    return { DRAFT, active }
   }, [bookings])
 
   // ── Actions ───────────────────────────────────────────────────────────────
@@ -323,6 +212,7 @@ export function ShopBookingsPage() {
       setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status: "CONFIRMED" as BookingStatus, statusLabel: STATUS_CONFIG.CONFIRMED.label } : b)))
       notify.success("Đã xác nhận lịch hẹn.")
       loadBookings(false)
+      loadTodayConfirmedCount()
     } catch (err) {
       notify.error(getErrorMessage(err, "Không thể xác nhận lịch hẹn."))
     }
@@ -352,7 +242,7 @@ export function ShopBookingsPage() {
 
   const handleNextStatus = async (booking: BookingDTO) => {
     const next = STATUS_FLOW[booking.status]
-    if (!next) return
+    if (!next) return false
     try {
       await updateBookingStatus(booking.id, next)
       setBookings((prev) => prev.map((b) => (b.id === booking.id ? { ...b, status: next, statusLabel: STATUS_CONFIG[next]?.label || "" } : b)))
@@ -360,117 +250,79 @@ export function ShopBookingsPage() {
         setSelectedBooking((prev) => (prev ? { ...prev, status: next, statusLabel: STATUS_CONFIG[next]?.label || "" } : prev))
       }
       loadBookings(false)
+      loadTodayConfirmedCount()
+      return true
     } catch (err) {
       notify.error(getErrorMessage(err, "Không thể cập nhật trạng thái."))
+      return false
     }
   }
 
-  const openDetail = async (booking: BookingDTO) => {
+  const openDetail = (booking: BookingDTO) => {
     setSelectedBooking(booking)
     setIsDetailOpen(true)
-    setIsDetailLoading(true)
-    try {
-      const res = await getBookingById(booking.id) as any
-      const fullBooking = res?.data || res
-      const assignedStaffs = normalizeAssignedStaffs(fullBooking.assignedStaffs ?? booking.assignedStaffs)
-      const assignedStaffIds = normalizeAssigneeIds(
-        fullBooking.assignedStaffIds ?? booking.assignedStaffIds ?? assignedStaffs.map((staff) => staff.userId),
-        fullBooking.assigneeId ?? booking.assigneeId,
-      )
-      const assigneeNames = normalizeAssigneeNames(
-        assignedStaffs.map((staff) => staff.fullName),
-        fullBooking.assigneeName ?? booking.assigneeName,
-      )
-      const mappedFull: BookingDTO = {
-        id: fullBooking.id || booking.id,
-        bookingCode: fullBooking.bookingCode || booking.bookingCode,
-        shopId: fullBooking.shopId || booking.shopId,
-        customerId: fullBooking.customerId ?? booking.customerId,
-        customerName: fullBooking.customerName || booking.customerName,
-        customerPhone: fullBooking.customerPhone || booking.customerPhone,
-        items: Array.isArray(fullBooking.items) ? fullBooking.items : booking.items,
-        totalAmount: fullBooking.totalAmount ?? booking.totalAmount,
-        status: fullBooking.status || booking.status,
-        statusLabel: fullBooking.statusLabel || booking.statusLabel,
-        source: fullBooking.source || booking.source,
-        assigneeId: assignedStaffIds[0] ?? null,
-        assigneeName: formatAssigneeNames(assigneeNames),
-        assignedStaffIds,
-        assignedStaffs,
-        time: fullBooking.time ?? booking.time,
-        createdAt: fullBooking.createdAt || booking.createdAt,
-      }
-      setSelectedBooking(mappedFull)
-    } catch (err) {
-      notify.error(getErrorMessage(err, "Không tải được chi tiết lịch hẹn."))
-    } finally {
-      setIsDetailLoading(false)
+  }
+
+  const openInvoice = async (booking: BookingDTO) => {
+    if (booking.status !== "COMPLETED") {
+      notify.error("Chỉ có thể xem hóa đơn khi lịch hẹn đã hoàn thành.")
+      return
     }
+
+    setInvoiceBooking(booking)
+    setSelectedInvoice(null)
+    setIsInvoiceOpen(true)
+    setIsInvoiceLoading(true)
+
+    try {
+      const invoice = await getBookingInvoice(booking.id)
+      setSelectedInvoice(invoice)
+    } catch (err) {
+      notify.error(getErrorMessage(err, "Không tải được hóa đơn của lịch hẹn."))
+    } finally {
+      setIsInvoiceLoading(false)
+    }
+  }
+
+  const closeInvoice = () => {
+    setIsInvoiceOpen(false)
+    setInvoiceBooking(null)
+    setSelectedInvoice(null)
   }
 
   // ── Assign staff ──────────────────────────────────────────────────────────
-  const openAssign = async (id: number) => {
-    const booking = bookings.find((item) => item.id === id) ?? (selectedBooking?.id === id ? selectedBooking : null)
+  const openAssign = async (id: number, bookingOverride?: BookingDTO) => {
+    const booking = bookingOverride ?? bookings.find((item) => item.id === id) ?? (selectedBooking?.id === id ? selectedBooking : null)
 
     setAssignTargetId(id)
     setAssignSource([])
-    setAssignTarget(getAssignedStaffItems(booking))
+    setAssignTarget([])
     setIsAssignOpen(true)
     setIsAssignLoading(true)
 
     try {
-      const res = await getActiveStaff() as any;
-      const staffList = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
-      const mappedStaff = normalizeAssignStaffItems(staffList);
-      const assignedStaff = getAssignedStaffItems(booking, mappedStaff);
-      const assignedStaffIds = new Set(assignedStaff.map((staff) => staff.id));
+      const staffList = await getActiveStaff()
+      const assignedStaffIdSet = new Set(booking?.assignedStaffs.map((staff) => staff.userId) ?? [])
+      const assignedStaff = staffList.filter((staff) => assignedStaffIdSet.has(staff.userId))
 
-      setAssignTarget(assignedStaff);
-      setAssignSource(mappedStaff.filter((staff) => !assignedStaffIds.has(staff.id)));
+      setAssignTarget(assignedStaff)
+      setAssignSource(staffList.filter((staff) => !assignedStaffIdSet.has(staff.userId)))
     } catch (err) {
-      notify.error(getErrorMessage(err, "Không tải được danh sách nhân viên."));
-      const fallbackStaff = normalizeAssignStaffItems(activeMembers);
-      const assignedStaff = getAssignedStaffItems(booking, fallbackStaff);
-      const assignedStaffIds = new Set(assignedStaff.map((staff) => staff.id));
-
-      setAssignTarget(assignedStaff);
-      setAssignSource(fallbackStaff.filter((staff) => !assignedStaffIds.has(staff.id)));
+      notify.error(getErrorMessage(err, "Không tải được danh sách nhân viên."))
     } finally {
-      setIsAssignLoading(false);
+      setIsAssignLoading(false)
     }
   }
 
   const confirmAssign = async () => {
     if (!assignTargetId || assignTarget.length === 0) return
     const staffUserIds = assignTarget
-      .map((member) => Number(member.id))
+      .map((member) => Number(member.userId))
       .filter((id) => Number.isFinite(id))
     if (staffUserIds.length === 0) return
 
-    const assignedStaffs: BookingStaffDTO[] = assignTarget.map((member) => ({
-      bookingId: assignTargetId,
-      userId: Number(member.id),
-      fullName: member.fullName || null,
-      email: member.email || null,
-      avatarUrlPreview: member.avatarUrlPreview || null,
-    }))
-    const assigneeNames = normalizeAssigneeNames(assignedStaffs.map((staff) => staff.fullName))
-    const assigneeName = formatAssigneeNames(assigneeNames)
-
     try {
       await assignBooking(assignTargetId, staffUserIds)
-      setBookings((prev) =>
-        prev.map((b) =>
-          b.id === assignTargetId
-            ? { ...b, assigneeId: staffUserIds[0] ?? null, assigneeName, assignedStaffIds: staffUserIds, assignedStaffs }
-            : b,
-        ),
-      )
-      if (selectedBooking?.id === assignTargetId) {
-        setSelectedBooking((prev) =>
-          prev ? { ...prev, assigneeId: staffUserIds[0] ?? null, assigneeName, assignedStaffIds: staffUserIds, assignedStaffs } : prev,
-        )
-      }
       setIsAssignOpen(false)
       setAssignTargetId(null)
       notify.success("Đã gán nhân viên phụ trách.")
@@ -482,7 +334,11 @@ export function ShopBookingsPage() {
 
   const handleRefreshView = () => {
     setStatusFilter("ALL")
-    loadBookings(false)
+    setCreateDateFilter(null)
+    setAppointmentDateFilter(null)
+    if (statusFilter === "ALL" && createDateFilter === null && appointmentDateFilter === null) {
+      loadBookings(false)
+    }
   }
 
   // ── Column bodies ─────────────────────────────────────────────────────────
@@ -505,7 +361,7 @@ export function ShopBookingsPage() {
     <div className="text-xs text-slate-600">
       {booking.items.slice(0, 2).map((item, i) => (
         <p key={i} className="truncate">
-          {item.quantity || 1}× {item.serviceName || "Dịch vụ"}
+          {item.quantity}× {item.name}
         </p>
       ))}
       {booking.items.length > 2 && <p className="text-slate-400">+{booking.items.length - 2} mục khác</p>}
@@ -514,11 +370,11 @@ export function ShopBookingsPage() {
   )
 
   const totalBody = (booking: BookingDTO) => (
-    <div className="text-center text-sm font-semibold text-[#ef5c2c]">{fmt(booking.totalAmount)}</div>
+    <div className="text-center text-sm font-semibold text-[#ef5c2c]">{formatCurrencyVND(booking.totalAmount)}</div>
   )
 
   const timeBody = (booking: BookingDTO) => (
-    <div className="text-center text-xs text-slate-500">{fmtDate(booking.time)}</div>
+    <div className="text-center text-xs text-slate-500">{formatDateTimeViVN(booking.time)}</div>
   )
 
   const statusBody = (booking: BookingDTO) => {
@@ -532,40 +388,12 @@ export function ShopBookingsPage() {
     )
   }
 
-  const getBookingAssignedStaffs = (booking: BookingDTO) =>
-    booking.assignedStaffs?.length
-      ? booking.assignedStaffs
-      : getAssignedStaffItems(booking).map((staff) => ({
-        userId: staff.id,
-        fullName: staff.fullName,
-        email: staff.email,
-        avatarUrlPreview: staff.avatarUrlPreview,
-      }))
-
   const assignBody = (booking: BookingDTO) => {
-    const assignedStaffs = getBookingAssignedStaffs(booking)
-
-    return <StaffAvatarGroup staffs={assignedStaffs} maxVisible={4} />
-  }
-
-  const assignedStaffProfilesBody = (booking: BookingDTO) => {
-    const assignedStaffs = getBookingAssignedStaffs(booking)
-
-    if (assignedStaffs.length === 0) {
-      return <span className="italic text-slate-400">Chưa gán</span>
-    }
-
-    return (
-      <div className="space-y-2">
-        {assignedStaffs.map((staff, index) => (
-          <StaffProfile key={staff.userId ?? index} staff={staff} />
-        ))}
-      </div>
-    )
+    return <StaffAvatarGroup staffs={booking.assignedStaffs} maxVisible={4} />
   }
 
   const createdAtBody = (booking: BookingDTO) => (
-    <div className="text-center text-xs text-slate-500">{fmtDate(booking.createdAt)}</div>
+    <div className="text-center text-xs text-slate-500">{formatDateTimeViVN(booking.createdAt)}</div>
   )
 
   const actionsBody = (booking: BookingDTO) => {
@@ -576,6 +404,15 @@ export function ShopBookingsPage() {
         command: () => openDetail(booking),
       },
     ]
+
+    if (booking.status === "COMPLETED") {
+      actionItems.push({
+        label: "Xem hóa đơn",
+        icon: "pi pi-file",
+        className: "text-[#214388]",
+        command: () => openInvoice(booking),
+      })
+    }
 
     if (booking.status === "DRAFT") {
       actionItems.push(
@@ -607,7 +444,7 @@ export function ShopBookingsPage() {
     // Gán nhân viên chỉ trước khi bắt đầu thực hiện.
     if (booking.status === "CONFIRMED") {
       actionItems.push({
-        label: booking.assigneeName ? "Đổi nhân viên" : "Gán nhân viên",
+        label: booking.assignedStaffs.length ? "Đổi nhân viên" : "Gán nhân viên",
         icon: "pi pi-user-plus",
         className: "text-sky-600",
         command: () => openAssign(booking.id),
@@ -648,14 +485,66 @@ export function ShopBookingsPage() {
                   ))}
                 </select>
               </label>
-              <button
+              <div className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d9e1eb] bg-white px-3 text-sm text-[#52657e]">
+                <i className="pi pi-calendar h-4 w-4 text-[#70829a]" />
+                <span>Ngày tạo</span>
+                <Calendar
+                  value={createDateFilter}
+                  onChange={(event) => setCreateDateFilter(event.value instanceof Date ? event.value : null)}
+                  dateFormat="dd/mm/yy"
+                  placeholder="Tất cả"
+                  readOnlyInput
+                  showButtonBar
+                  inputClassName="!w-24 !border-0 !bg-transparent !p-0 !text-sm !font-medium !text-[#24364d] !shadow-none !outline-none"
+                  className="[&_.p-datepicker-trigger]:!hidden [&_.p-inputtext]:!h-auto"
+                  panelClassName="text-sm"
+                />
+                {createDateFilter && (
+                  <Button
+                    type="button"
+                    icon="pi pi-times"
+                    text
+                    rounded
+                    aria-label={`Bỏ lọc ngày ${formatDateOnlyViVN(createDateFilter)}`}
+                    className="!m-0 !h-6 !w-6 !p-0 !text-slate-400 hover:!bg-slate-100"
+                    onClick={() => setCreateDateFilter(null)}
+                  />
+                )}
+              </div>
+              <div className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d9e1eb] bg-white px-3 text-sm text-[#52657e]">
+                <i className="pi pi-calendar h-4 w-4 text-[#70829a]" />
+                <span>Ngày hẹn</span>
+                <Calendar
+                  value={appointmentDateFilter}
+                  onChange={(event) => setAppointmentDateFilter(event.value instanceof Date ? event.value : null)}
+                  dateFormat="dd/mm/yy"
+                  placeholder="Tất cả"
+                  readOnlyInput
+                  showButtonBar
+                  inputClassName="!w-24 !border-0 !bg-transparent !p-0 !text-sm !font-medium !text-[#24364d] !shadow-none !outline-none"
+                  className="[&_.p-datepicker-trigger]:!hidden [&_.p-inputtext]:!h-auto"
+                  panelClassName="text-sm"
+                />
+                {appointmentDateFilter && (
+                  <Button
+                    type="button"
+                    icon="pi pi-times"
+                    text
+                    rounded
+                    aria-label={`Bỏ lọc ngày hẹn ${formatDateOnlyViVN(appointmentDateFilter)}`}
+                    className="!m-0 !h-6 !w-6 !p-0 !text-slate-400 hover:!bg-slate-100"
+                    onClick={() => setAppointmentDateFilter(null)}
+                  />
+                )}
+              </div>
+              <Button
+                type="button"
+                icon={`pi pi-refresh ${isLoading ? "pi-spin" : ""}`}
+                label="Refresh"
                 onClick={handleRefreshView}
-                className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d9e1eb] bg-white px-4 text-sm font-medium text-[#40526b] transition hover:bg-[#f8fafc]"
                 disabled={isLoading}
-              >
-                <i className={`pi pi-refresh h-4 w-4 ${isLoading ? "pi-spin" : ""}`} />
-                Refresh
-              </button>
+                className="!m-0 !inline-flex !h-9 !items-center !justify-center !rounded-md !border !border-[#d9e1eb] !bg-white !px-4 !py-0 !text-sm !font-medium !text-[#40526b] hover:!bg-[#f8fafc]"
+              />
             </div>
           }
         />
@@ -665,7 +554,12 @@ export function ShopBookingsPage() {
             {/* ── Stats ──────────────────────────────────────────────────── */}
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               <StatCard icon={<i className="pi pi-clock h-5 w-5 text-amber-500" />} label="Chờ xác nhận" value={stats.DRAFT} color="amber" />
-              <StatCard icon={<i className="pi pi-calendar h-5 w-5 text-sky-500" />} label="Sắp tới" value={stats.incoming} color="blue" />
+              <StatCard
+                icon={<i className="pi pi-calendar h-5 w-5 text-sky-500" />}
+                label="Đã xác nhận hôm nay"
+                value={todayConfirmedCount}
+                color="blue"
+              />
               <StatCard icon={<i className="pi pi-wrench h-5 w-5 text-violet-500" />} label="Đang thực hiện" value={stats.active} color="violet" />
             </div>
 
@@ -717,133 +611,29 @@ export function ShopBookingsPage() {
         </div>
       </div>
 
-      {/* ── Detail dialog ──────────────────────────────────────────────────── */}
-      {selectedBooking && (
-        <Dialog
-          visible={isDetailOpen}
-          onHide={() => setIsDetailOpen(false)}
-          header={`Chi tiết Lịch hẹn ${selectedBooking.bookingCode}`}
-          style={{ width: "100%", maxWidth: "48rem" }}
-          footer={
-            <div className="mt-4 flex justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => setIsDetailOpen(false)}
-                className="rounded-lg bg-[#f4f7fb] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[#ecf1f8]"
-              >
-                Đóng
-              </button>
-              {selectedBooking.status === "DRAFT" && (
-                <>
-                  <button
-                    onClick={() => {
-                      handleAccept(selectedBooking.id)
-                      setIsDetailOpen(false)
-                    }}
-                    className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600"
-                  >
-                    Chấp nhận
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsDetailOpen(false)
-                      openReject(selectedBooking.id)
-                    }}
-                    className="rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600"
-                  >
-                    Từ chối
-                  </button>
-                </>
-              )}
-              {STATUS_FLOW[selectedBooking.status] && (
-                <button
-                  onClick={() => handleNextStatus(selectedBooking)}
-                  className="rounded-lg bg-[#214388] px-4 py-2 text-sm font-semibold text-white hover:bg-[#19356a]"
-                >
-                  Chuyển → {STATUS_CONFIG[STATUS_FLOW[selectedBooking.status]!].label}
-                </button>
-              )}
-              {selectedBooking.status === "CONFIRMED" && (
-                <button
-                  onClick={() => {
-                    setIsDetailOpen(false)
-                    openAssign(selectedBooking.id)
-                  }}
-                  className="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-600"
-                >
-                  <i className="pi pi-user-plus mr-1" />
-                  {selectedBooking.assigneeName ? "Đổi NV" : "Gán NV"}
-                </button>
-              )}
+      <ShopBookingDetailModal
+        visible={isDetailOpen}
+        booking={selectedBooking}
+        onHide={() => setIsDetailOpen(false)}
+        onAccept={handleAccept}
+        onReject={openReject}
+        onNextStatus={handleNextStatus}
+        onAssign={(booking) => openAssign(booking.id, booking)}
+        onLoaded={setSelectedBooking}
+      />
 
-            </div>
-          }
-        >
-          <p className="mb-4 mt-0 text-sm text-[#73849b]">Xem thông tin và cập nhật tiến độ.</p>
-          <div className="space-y-4">
-            {isDetailLoading && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/50 backdrop-blur-sm">
-                <i className="pi pi-spinner pi-spin text-3xl text-[#214388]" />
-              </div>
-            )}
-            {/* Thời gian hẹn */}
-            <div className="rounded-xl border border-[#d3e3f6] bg-[#eef3fb] p-4 text-center">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#214388]">Thời gian hẹn</p>
-              <p className="text-xl font-bold text-[#1a365d]">{fmtDate(selectedBooking.time)}</p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              {/* Khách hàng */}
-              <div className="rounded-xl border border-[#e2e8f0] p-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Khách hàng</p>
-                <div className="space-y-3">
-                  <InfoItem icon={<i className="pi pi-user h-4 w-4" />} label="Họ tên" value={selectedBooking.customerName} />
-                  <InfoItem icon={<i className="pi pi-phone h-4 w-4" />} label="Điện thoại" value={selectedBooking.customerPhone} />
-                </div>
-              </div>
-
-              {/* Dịch vụ */}
-              <div className="rounded-xl border border-[#e2e8f0] p-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Dịch vụ đặt hẹn</p>
-                <div className="space-y-2">
-                  {selectedBooking.items.map((item, i) => (
-                    <div key={i} className="flex items-center justify-between text-sm">
-                      <span className="text-slate-700">{item.quantity || 1}× {item.serviceName || "Dịch vụ"}</span>
-                      <span className="font-semibold text-[#ef5c2c]">{fmt(item.subtotal || item.unitPrice || 0)}</span>
-                    </div>
-                  ))}
-                  <div className="flex items-center justify-between border-t border-[#f0f4f8] pt-2 text-sm font-bold">
-                    <span className="text-slate-800">Tổng cộng</span>
-                    <span className="text-[#ef5c2c]">{fmt(selectedBooking.totalAmount)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Trạng thái & Phụ trách */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-xl border border-[#e2e8f0] p-4">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Trạng thái</p>
-                <span
-                  className={`inline-flex rounded-md px-3 py-1 text-sm font-semibold ${STATUS_CONFIG[selectedBooking.status]?.bg} ${STATUS_CONFIG[selectedBooking.status]?.text}`}
-                >
-                  {selectedBooking.statusLabel || STATUS_CONFIG[selectedBooking.status]?.label}
-                </span>
-                {selectedBooking.source && (
-                  <p className="mt-2 text-xs text-slate-500">Nguồn: {selectedBooking.source}</p>
-                )}
-              </div>
-
-              <div className="rounded-xl border border-[#e2e8f0] p-4">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Nhân viên phụ trách</p>
-                {assignedStaffProfilesBody(selectedBooking)}
-              </div>
-            </div>
-
-            <p className="text-right text-xs text-slate-400">Ngày tạo: {fmtDate(selectedBooking.createdAt)}</p>
-          </div>
-        </Dialog>
-      )}
+      <InvoiceDetailDialog
+        visible={isInvoiceOpen}
+        loading={isInvoiceLoading}
+        invoice={selectedInvoice}
+        reference={{
+          code: invoiceBooking?.bookingCode,
+          customerName: invoiceBooking?.customerName,
+          customerPhone: invoiceBooking?.customerPhone,
+          emptyMessage: "Không tìm thấy hóa đơn cho lịch hẹn này.",
+        }}
+        onHide={closeInvoice}
+      />
 
       {/* ── Reject dialog ──────────────────────────────────────────────────── */}
       <Dialog
@@ -852,20 +642,21 @@ export function ShopBookingsPage() {
         header="Từ chối lịch hẹn"
         style={{ width: "100%", maxWidth: "30rem" }}
         footer={
-          <div className="mt-4 flex justify-center gap-2">
-            <button
+          <div className="mt-4 flex w-full flex-col-reverse items-center justify-center gap-2 sm:flex-row">
+            <Button
               type="button"
+              label="Hủy"
+              icon="pi pi-times"
               onClick={() => setIsRejectOpen(false)}
-              className="rounded-lg bg-[#f4f7fb] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[#ecf1f8]"
-            >
-              Hủy
-            </button>
-            <button
+              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#d9e1eb] !bg-white !px-4 !py-0 !text-sm !font-semibold !text-[#40526b] hover:!bg-[#f8fafc]"
+            />
+            <Button
+              type="button"
+              label="Xác nhận từ chối"
+              icon="pi pi-times-circle"
               onClick={confirmReject}
-              className="rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600"
-            >
-              Xác nhận từ chối
-            </button>
+              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-rose-500 !bg-rose-500 !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-rose-600 [&_.p-button-icon]:!text-white [&_.p-button-label]:!text-white"
+            />
           </div>
         }
       >
@@ -890,21 +681,22 @@ export function ShopBookingsPage() {
         header="Gán nhân viên phụ trách"
         style={{ width: "100%", maxWidth: "56rem" }}
         footer={
-          <div className="mt-4 flex justify-center gap-2">
-            <button
+          <div className="mt-4 flex w-full flex-col-reverse items-center justify-center gap-2 sm:flex-row">
+            <Button
               type="button"
+              label="Hủy"
+              icon="pi pi-times"
               onClick={() => setIsAssignOpen(false)}
-              className="rounded-lg bg-[#f4f7fb] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[#ecf1f8]"
-            >
-              Hủy
-            </button>
-            <button
+              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#d9e1eb] !bg-white !px-4 !py-0 !text-sm !font-semibold !text-[#40526b] hover:!bg-[#f8fafc]"
+            />
+            <Button
+              type="button"
+              label="Xác nhận gán"
+              icon="pi pi-check"
               onClick={confirmAssign}
               disabled={assignTarget.length === 0}
-              className="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Xác nhận gán
-            </button>
+              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-sky-500 !bg-sky-500 !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-sky-600 disabled:!cursor-not-allowed disabled:!opacity-50 [&_.p-button-icon]:!text-white [&_.p-button-label]:!text-white"
+            />
           </div>
         }
       >
@@ -917,21 +709,21 @@ export function ShopBookingsPage() {
           <p className="text-xs italic text-slate-400">Chưa có nhân viên nào. Hãy thêm ở mục Thành viên.</p>
         ) : (
           <PickList
-            dataKey="id"
+            dataKey="userId"
             source={assignSource}
             target={assignTarget}
             onChange={(e: PickListChangeEvent) => {
-              setAssignSource(e.source)
-              setAssignTarget(e.target)
+              setAssignSource(e.source as ShopMemberDTO[])
+              setAssignTarget(e.target as ShopMemberDTO[])
             }}
             itemTemplate={(item) => (
               <div className="flex items-center gap-3 py-1">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e8eef8] text-xs font-semibold text-[#2c4b7a]">
-                  {(item.fullName?.[0] || "U").toUpperCase()}
+                  {(item.userFullName?.[0] || "U").toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">{item.fullName}</p>
-                  <p className="text-xs text-slate-500">{item.email}</p>
+                  <p className="text-sm font-semibold text-slate-800">{item.userFullName}</p>
+                  <p className="text-xs text-slate-500">{item.userEmail}</p>
                 </div>
               </div>
             )}
@@ -986,15 +778,3 @@ function StatCard({ icon, label, value, color }: StatCardProps) {
   )
 }
 
-type InfoItemProps = { icon: React.ReactNode; label: string; value: string }
-function InfoItem({ icon, label, value }: InfoItemProps) {
-  return (
-    <div className="flex items-start gap-2 text-sm">
-      <span className="mt-0.5 text-[#70829a]">{icon}</span>
-      <div>
-        <p className="text-xs text-slate-400">{label}</p>
-        <p className="font-medium text-slate-800">{value}</p>
-      </div>
-    </div>
-  )
-}

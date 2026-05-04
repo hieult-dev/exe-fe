@@ -3,6 +3,15 @@
 @tailwind utilities;
 
 @layer components {
+  .p-datatable .p-datatable-thead > tr > th {
+    color: #1f2937;
+    font-weight: 800;
+  }
+
+  .p-datatable .p-datatable-thead > tr > th .p-column-title {
+    font-weight: 800;
+  }
+
   .p-menu .p-menuitem.table-action-menu__delete > .p-menuitem-content .p-menuitem-link,
   .p-menu .p-menuitem.table-action-menu__delete > .p-menuitem-content .p-menuitem-link .p-menuitem-icon,
   .p-menu .p-menuitem.table-action-menu__delete > .p-menuitem-content .p-menuitem-link .p-menuitem-text {

@@ -1,4 +1,4 @@
-import type { User } from "@/apps/user/model"
+import type { AuthShopDTO, User } from "@/apps/user/model"
 import { useUserStore } from "@/apps/user/store/UserStore"
 
 type AuthSessionPayload = {
@@ -7,7 +7,7 @@ type AuthSessionPayload = {
   role?: string | null
   user?: User | null
   currentShopId?: number | null
-  shops?: any[]
+  shops?: AuthShopDTO[]
 }
 
 const TOKEN_KEYS = ["accessToken", "refreshToken", "role"] as const

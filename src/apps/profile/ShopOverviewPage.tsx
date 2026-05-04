@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from "react"
+import { Button } from "primereact/button"
 import { Dialog } from "primereact/dialog"
 import { Toolbar } from "primereact/toolbar"
 import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
 import type { ShopInfo, ShopStatus } from "@/common/store/shopOwnerStore"
+import { formatDateTimeViVN } from "@/common/utils/format"
 
 const statusOptions: ShopStatus[] = ["ACTIVE", "INACTIVE", "SUSPENDED"]
 
@@ -174,7 +176,7 @@ export function ShopOverviewPage() {
                   <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm">
                     <i className="pi pi-clock text-indigo-500" />
                   </div>
-                  {new Date(data.shop.locationUpdatedAt).toLocaleString("vi-VN")}
+                  {formatDateTimeViVN(data.shop.locationUpdatedAt)}
                 </div>
               </div>
 
@@ -200,22 +202,22 @@ export function ShopOverviewPage() {
         header="Cập nhật thông tin cửa hàng"
         style={{ width: '100%', maxWidth: '48rem' }}
         footer={
-          <>
-            <button
+          <div className="mt-4 flex w-full flex-col-reverse items-center justify-center gap-2 sm:flex-row">
+            <Button
               type="button"
+              label="Hủy bỏ"
+              icon="pi pi-times"
               onClick={closeDialog}
-              className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors focus:ring-2 focus:ring-slate-200 focus:outline-none"
-            >
-              Hủy bỏ
-            </button>
-            <button
+              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#d9e1eb] !bg-white !px-4 !py-0 !text-sm !font-semibold !text-[#40526b] hover:!bg-[#f8fafc]"
+            />
+            <Button
               type="submit"
               form="shop-info-form"
-              className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors shadow-sm focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
-            >
-              Lưu thay đổi
-            </button>
-          </>
+              label="Lưu thay đổi"
+              icon="pi pi-save"
+              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#214388] !bg-[#214388] !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-[#19356a] [&_.p-button-icon]:!text-white [&_.p-button-label]:!text-white"
+            />
+          </div>
         }
       >
         <p className="mb-4 mt-0 text-sm text-[#73849b]">Bạn có thể chỉnh tên, địa chỉ, vị trí và trạng thái hoạt động.</p>

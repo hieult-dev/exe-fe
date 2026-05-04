@@ -1,436 +1,403 @@
-import { useState, type FormEvent } from "react"
-import { DataTable } from "primereact/datatable"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { Avatar } from "primereact/avatar"
+import { Button } from "primereact/button"
 import { Column } from "primereact/column"
+import type { ColumnBodyOptions } from "primereact/column"
+import { DataTable } from "primereact/datatable"
+import { Dialog } from "primereact/dialog"
+import { Dropdown } from "primereact/dropdown"
+import type { MenuItem } from "primereact/menuitem"
 import { Toolbar } from "primereact/toolbar"
 import { TableActionMenu } from "@/common/component/TableActionMenu"
-import type { ColumnBodyOptions } from "primereact/column"
-import { Dialog } from "primereact/dialog"
 import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
+import { notify } from "@/common/toast/ToastHelper"
+import { formatDateTimeViVN } from "@/common/utils/format"
+import { buildUploadPublicUrl } from "@/common/utils/url"
+import { deleteShopMember, getShopMemberById, getShopMembers } from "@/apps/members/api/shopMemberApi"
+import { ShopMemberForm, type ShopMemberFormMode } from "@/apps/members/components/ShopMemberForm"
+import { ShopMemberPasswordDialog } from "@/apps/members/components/ShopMemberPasswordDialog"
 import {
-  createLocalId,
-  type ShopMember,
+  SHOP_MEMBER_ROLE_OPTIONS,
+  SHOP_MEMBER_STATUS_OPTIONS,
+  getShopMemberDisplayName,
+  getShopMemberInitial,
+  roleLabel,
+  statusClass,
+  statusLabel,
+  type ShopMemberDTO,
   type ShopMemberRole,
   type ShopMemberStatus,
-} from "@/common/store/shopOwnerStore"
+} from "@/apps/members/model"
 
-type MemberFormState = {
-  fullName: string
-  email: string
-  phone: string
-  role: ShopMemberRole
-  status: ShopMemberStatus
+type FilterAll = "ALL"
+type RoleFilterValue = ShopMemberRole | FilterAll
+type StatusFilterValue = ShopMemberStatus | FilterAll
+
+const roleFilterOptions: { label: string; value: RoleFilterValue }[] = [
+  { label: "Tất cả vai trò", value: "ALL" },
+  ...SHOP_MEMBER_ROLE_OPTIONS,
+]
+
+const statusFilterOptions: { label: string; value: StatusFilterValue }[] = [
+  { label: "Tất cả trạng thái", value: "ALL" },
+  ...SHOP_MEMBER_STATUS_OPTIONS,
+]
+
+const dropdownClassName =
+  "w-full rounded-lg border border-[#d9e1eb] bg-white text-sm shadow-none focus:!border-[#d9e1eb] focus:!shadow-none [&.p-focus]:!border-[#d9e1eb] [&.p-focus]:!shadow-none [&_.p-dropdown-label]:px-3 [&_.p-dropdown-label]:py-2 [&_.p-dropdown-label]:text-sm [&_.p-dropdown-trigger]:w-10 sm:w-48"
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message?: unknown }).message
+    if (typeof message === "string" && message.trim()) return message
+  }
+  if (error instanceof Error && error.message.trim()) return error.message
+  return fallback
 }
 
-const emptyForm: MemberFormState = {
-  fullName: "",
-  email: "",
-  phone: "",
-  role: "STAFF",
-  status: "ACTIVE",
-}
-
-function roleLabel(role: ShopMemberRole) {
-  if (role === "OWNER") return "Chủ shop"
-  if (role === "MANAGER") return "Quản lý"
-  return "Nhân viên"
-}
-
-function statusLabel(status: ShopMemberStatus) {
-  if (status === "ACTIVE") return "Đang hoạt động"
-  if (status === "INACTIVE") return "Tạm nghỉ"
-  if (status === "INVITED") return "Đã mời"
-  return "Đã xóa"
-}
-
-function statusClass(status: ShopMemberStatus) {
-  if (status === "ACTIVE") return "bg-emerald-500 text-white"
-  if (status === "INVITED") return "bg-sky-500 text-white"
-  if (status === "INACTIVE") return "bg-slate-200 text-slate-700"
-  return "bg-rose-500 text-white"
-}
-
-function toForm(member: ShopMember): MemberFormState {
+function buildSummary(members: ShopMemberDTO[]) {
   return {
-    fullName: member.fullName,
-    email: member.email,
-    phone: member.phone || "",
-    role: member.role,
-    status: member.status,
+    total: members.length,
+    active: members.filter((member) => member.status === "ACTIVE").length,
   }
 }
 
 export function ShopMembersPage() {
-  const { data, setMembers } = useShopOwnerContext()
-  const [isFormOpen, setIsFormOpen] = useState(false)
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
-  const [editingMemberId, setEditingMemberId] = useState<string | null>(null)
-  const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null)
-  const [formState, setFormState] = useState<MemberFormState>(emptyForm)
-  const [formError, setFormError] = useState("")
+  const { globalSearchQuery } = useShopOwnerContext()
+  const [members, setMembers] = useState<ShopMemberDTO[]>([])
+  const [roleFilter, setRoleFilter] = useState<RoleFilterValue>("ALL")
+  const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("ALL")
+  const [formMode, setFormMode] = useState<ShopMemberFormMode>(null)
+  const [formMember, setFormMember] = useState<ShopMemberDTO | null>(null)
+  const [passwordTarget, setPasswordTarget] = useState<ShopMemberDTO | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ShopMemberDTO | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
-  const openCreateDialog = () => {
-    setEditingMemberId(null)
-    setFormState(emptyForm)
-    setFormError("")
-    setIsFormOpen(true)
-  }
-
-  const openEditDialog = (member: ShopMember) => {
-    setEditingMemberId(member.id)
-    setFormState(toForm(member))
-    setFormError("")
-    setIsFormOpen(true)
-  }
-
-  const closeFormDialog = () => {
-    setEditingMemberId(null)
-    setFormState(emptyForm)
-    setFormError("")
-    setIsFormOpen(false)
-  }
-
-  const handleSave = (event: FormEvent) => {
-    event.preventDefault()
-
-    const fullName = formState.fullName.trim()
-    const email = formState.email.trim().toLowerCase()
-
-    if (!fullName || !email) {
-      setFormError("Vui lòng nhập họ tên và email thành viên.")
-      return
+  const loadMembers = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const result = await getShopMembers({
+        role: roleFilter === "ALL" ? null : roleFilter,
+        status: statusFilter === "ALL" ? null : statusFilter,
+        keyword: globalSearchQuery,
+      })
+      setMembers(result)
+    } catch (error) {
+      notify.error(getErrorMessage(error, "Không tải được danh sách thành viên."))
+    } finally {
+      setIsLoading(false)
     }
+  }, [globalSearchQuery, roleFilter, statusFilter])
 
-    const duplicated = data.members.find(
-      (member) => member.email.toLowerCase() === email && member.id !== editingMemberId
-    )
+  useEffect(() => {
+    void loadMembers()
+  }, [loadMembers])
 
-    if (duplicated) {
-      setFormError("Email này đã tồn tại trong shop.")
-      return
-    }
+  const summary = useMemo(() => buildSummary(members), [members])
 
-    if (editingMemberId) {
-      setMembers(
-        data.members.map((member) =>
-          member.id === editingMemberId
-            ? {
-              ...member,
-              fullName,
-              email,
-              phone: formState.phone.trim() || undefined,
-              role: formState.role,
-              status: formState.status,
-            }
-            : member
-        )
-      )
-    } else {
-      const newMember: ShopMember = {
-        id: createLocalId("member"),
-        fullName,
-        email,
-        phone: formState.phone.trim() || undefined,
-        role: formState.role,
-        status: formState.status,
-      }
-
-      setMembers([newMember, ...data.members])
-    }
-
-    closeFormDialog()
+  const openCreateForm = () => {
+    setFormMember(null)
+    setFormMode("CREATE")
   }
 
-  const requestDelete = (memberId: string) => {
-    setDeletingMemberId(memberId)
-    setIsDeleteOpen(true)
+  const openEditForm = async (member: ShopMemberDTO) => {
+    setIsLoadingDetail(true)
+    try {
+      const freshMember = await getShopMemberById(member.userId)
+      setFormMember(freshMember)
+      setFormMode("EDIT")
+    } catch (error) {
+      notify.error(getErrorMessage(error, "Không tải được thông tin thành viên."))
+    } finally {
+      setIsLoadingDetail(false)
+    }
+  }
+
+  const closeForm = () => {
+    setFormMember(null)
+    setFormMode(null)
+  }
+
+  const requestDelete = (member: ShopMemberDTO) => {
+    setDeleteTarget(member)
+  }
+
+  const requestResetPassword = (member: ShopMemberDTO) => {
+    setPasswordTarget(member)
   }
 
   const closeDeleteDialog = () => {
-    setDeletingMemberId(null)
-    setIsDeleteOpen(false)
+    if (isDeleting) return
+    setDeleteTarget(null)
   }
 
-  const confirmDelete = () => {
-    if (!deletingMemberId) return
-    setMembers(data.members.filter((member) => member.id !== deletingMemberId))
-    closeDeleteDialog()
+  const handleMemberSaved = (savedMember: ShopMemberDTO, mode: Exclude<ShopMemberFormMode, null>) => {
+    setMembers((prev) => {
+      if (mode === "CREATE") {
+        return [savedMember, ...prev.filter((member) => member.userId !== savedMember.userId)]
+      }
+
+      return prev.map((member) => (member.userId === savedMember.userId ? savedMember : member))
+    })
+    closeForm()
+    void loadMembers()
   }
 
-  const indexBody = (_member: ShopMember, options: ColumnBodyOptions) => {
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+
+    setIsDeleting(true)
+    try {
+      await deleteShopMember(deleteTarget.userId)
+      notify.success("Đã xóa thành viên.")
+      setDeleteTarget(null)
+      await loadMembers()
+    } catch (error) {
+      notify.error(getErrorMessage(error, "Không xóa được thành viên."))
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const indexBody = (_member: ShopMemberDTO, options: ColumnBodyOptions) => {
     return <div className="w-full text-center">{options.rowIndex + 1}</div>
   }
 
-  const memberBody = (member: ShopMember) => {
-    const initial = (member.fullName.trim()[0] || "U").toUpperCase()
-
+  const memberBody = (member: ShopMemberDTO) => {
     return (
-      <div className="flex w-full flex-row items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8eef8] text-xs font-semibold text-[#2c4b7a]">
-          {initial}
-        </div>
-        <div className="text-left">
-          <p className="font-semibold text-slate-800">{member.fullName}</p>
-          <p className="text-xs text-slate-500">{member.id}</p>
+      <div className="flex w-full items-center gap-3">
+        <Avatar
+          image={member.avatarUrlPreview ? buildUploadPublicUrl(member.avatarUrlPreview) : undefined}
+          label={member.avatarUrlPreview ? undefined : getShopMemberInitial(member)}
+          shape="circle"
+          className="!h-9 !w-9 !bg-[#e8eef8] !text-xs !font-semibold !text-[#2c4b7a]"
+        />
+        <div className="min-w-0 text-left">
+          <p className="m-0 truncate font-semibold text-[#24364d]">{getShopMemberDisplayName(member)}</p>
         </div>
       </div>
     )
   }
 
-  const emailBody = (member: ShopMember) => {
-    return <div className="w-full text-center">{member.email}</div>
+  const centeredText = (value: string | number | null | undefined) => {
+    const text = value === null || value === undefined || value === "" ? "—" : String(value)
+    return <div className="w-full text-center text-[#4c5f78]">{text}</div>
   }
 
-  const roleBody = (member: ShopMember) => {
-    return <div className="w-full text-center">{roleLabel(member.role)}</div>
-  }
+  const roleBody = (member: ShopMemberDTO) => centeredText(roleLabel(member.role))
 
-  const phoneBody = (member: ShopMember) => {
-    return <div className="w-full text-center">{member.phone || "Chưa cập nhật"}</div>
-  }
-
-  const statusBody = (member: ShopMember) => {
+  const statusBody = (member: ShopMemberDTO) => {
     return (
       <div className="flex w-full justify-center">
-        <span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${statusClass(member.status)}`}>
+        <span className={`inline-flex rounded-md px-2.5 py-1 text-xs font-semibold ${statusClass(member.status)}`}>
           {statusLabel(member.status)}
         </span>
       </div>
     )
   }
 
-  const actionsBody = (member: ShopMember) => {
-    const actionItems = [
+  const dateBody = (member: ShopMemberDTO) => centeredText(formatDateTimeViVN(member.createdAt))
+
+  const actionsBody = (member: ShopMemberDTO) => {
+    const actionItems: MenuItem[] = [
       {
         label: "Chỉnh sửa",
         icon: "pi pi-pencil",
-        command: () => openEditDialog(member),
+        command: () => void openEditForm(member),
       },
       {
+        label: "Đặt lại mật khẩu",
+        icon: "pi pi-key",
+        command: () => requestResetPassword(member),
+      },
+    ]
+
+    if (member.status !== "REMOVED") {
+      actionItems.push({
         label: "Xóa",
         icon: "pi pi-trash",
         className: "text-red-500",
-        command: () => requestDelete(member.id),
-      },
-    ]
+        command: () => requestDelete(member),
+      })
+    }
 
     return <TableActionMenu items={actionItems} />
   }
 
   return (
     <>
-    <div className="flex flex-1 flex-col gap-2">
-      <Toolbar
-        className="rounded-xl border-none bg-white shadow-[0_2px_12px_rgba(15,23,42,0.04)]"
-        start={
-          <div>
-            <h1 className="text-lg font-semibold text-slate-800">Quản lý thành viên</h1>
-            <p className="mt-0.5 text-sm text-slate-500">Thêm, sửa, xóa hội viên, quản lý, nhân viên của shop.</p>
-          </div>
-        }
-        end={
-          <button
-            onClick={openCreateDialog}
-            className="inline-flex items-center gap-2 rounded-md bg-[#ee4d2d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#de4322]"
-          >
-            <i className="pi pi-plus h-4 w-4" />
-            Thêm thành viên
-          </button>
-        }
-      />
+      <div className="flex flex-1 flex-col gap-2">
+        <Toolbar
+          className="rounded-xl border-none bg-white shadow-[0_2px_12px_rgba(15,23,42,0.04)]"
+          start={
+            <div>
+              <h1 className="text-lg font-semibold text-slate-800">Quản lý thành viên</h1>
+              <p className="mt-0.5 text-sm text-slate-500">Thêm, sửa, xóa hội viên, quản lý, nhân viên của shop.</p>
+            </div>
+          }
+          end={
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Dropdown
+                value={roleFilter}
+                options={roleFilterOptions}
+                optionLabel="label"
+                optionValue="value"
+                filter
+                filterBy="label,value"
+                emptyFilterMessage="Không tìm thấy vai trò"
+                onChange={(event) => setRoleFilter(event.value)}
+                className={dropdownClassName}
+              />
+              <Dropdown
+                value={statusFilter}
+                options={statusFilterOptions}
+                optionLabel="label"
+                optionValue="value"
+                filter
+                filterBy="label,value"
+                emptyFilterMessage="Không tìm thấy trạng thái"
+                onChange={(event) => setStatusFilter(event.value)}
+                className={dropdownClassName}
+              />
+              <Button
+                type="button"
+                label="Làm mới"
+                icon="pi pi-refresh"
+                loading={isLoading}
+                onClick={() => void loadMembers()}
+                className="!h-9 !rounded-md !border-none !bg-white !px-3 !py-0 !text-sm !font-semibold !text-[#40526b] hover:!bg-[#f4f7fb] [&_.p-button-icon]:!text-[#40526b] [&_.p-button-label]:!text-[#40526b]"
+              />
+              <Button
+                type="button"
+                label="Thêm thành viên"
+                icon="pi pi-plus"
+                onClick={openCreateForm}
+                disabled={isLoadingDetail}
+                className="!h-9 !rounded-md !border-[#214388] !bg-[#214388] !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-[#19356a] [&_.p-button-icon]:!text-white [&_.p-button-label]:!text-white"
+              />
+            </div>
+          }
+        />
 
-      <div className="flex-1 rounded-xl bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:p-4">
-        <div className="rounded-sm border border-[#d9e1ec] bg-white">
-          <DataTable
-            value={data.members}
-            dataKey="id"
-            size="small"
-            stripedRows
-            showGridlines
-            tableStyle={{ minWidth: "62rem" }}
-            emptyMessage="Chưa có thành viên nào."
-          >
-            <Column
-              header="TT"
-              body={indexBody}
-              style={{ width: "64px" }}
-              alignHeader="center"
-              bodyStyle={{ textAlign: "center" }}
-            />
-            <Column
-              field="fullName"
-              header="Thành viên"
-              body={memberBody}
-              style={{ minWidth: "240px" }}
-              alignHeader="left"
-            />
-            <Column field="email" header="Email" body={emailBody} style={{ minWidth: "220px" }} alignHeader="center" />
-            <Column field="role" header="Vai trò" body={roleBody} style={{ minWidth: "120px" }} alignHeader="center" />
-            <Column
-              field="phone"
-              header="Số điện thoại"
-              body={phoneBody}
-              style={{ minWidth: "140px" }}
-              alignHeader="center"
-            />
-            <Column
-              field="status"
-              header="Trạng thái"
-              body={statusBody}
-              style={{ minWidth: "140px" }}
-              alignHeader="center"
-              bodyStyle={{ textAlign: "center" }}
-            />
-            <Column
-              header="Thao tác"
-              body={actionsBody}
-              style={{ minWidth: "120px" }}
-              alignHeader="center"
-              bodyStyle={{ textAlign: "center" }}
-            />
-          </DataTable>
+        <div className="flex-1 rounded-xl bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:p-4">
+          <div className="space-y-5">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <StatCard icon="pi pi-users" label="Tổng thành viên" value={summary.total.toString()} color="blue" />
+              <StatCard icon="pi pi-check-circle" label="Đang hoạt động" value={summary.active.toString()} color="emerald" />
+            </div>
+
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-[#24364d]">Danh sách thành viên</p>
+                <p className="text-sm text-[#73849b]">Theo dõi thông tin liên hệ, vai trò và trạng thái của từng thành viên.</p>
+              </div>
+              <p className="text-sm text-[#73849b]">Hiển thị {members.length} mục</p>
+            </div>
+
+            <div className="overflow-hidden rounded-xl border border-[#e2e8f0] bg-white">
+              <DataTable
+                value={members}
+                dataKey="userId"
+                size="small"
+                stripedRows
+                rowHover
+                showGridlines
+                loading={isLoading}
+                tableStyle={{ width: "100%" }}
+                emptyMessage={<div className="w-full py-2 text-center text-[#4c5f78]">Chưa có thành viên nào.</div>}
+              >
+                <Column header="TT" body={indexBody} style={{ width: "4rem" }} alignHeader="center" bodyStyle={{ textAlign: "center" }} />
+                <Column field="userFullName" header="Thành viên" body={memberBody} style={{ width: "20%" }} alignHeader="left" />
+                <Column field="userEmail" header="Email" body={(member) => centeredText((member as ShopMemberDTO).userEmail)} style={{ width: "23%" }} alignHeader="center" />
+                <Column field="role" header="Vai trò" body={roleBody} style={{ width: "11%" }} alignHeader="center" bodyStyle={{ textAlign: "center" }} />
+                <Column
+                  field="userPhone"
+                  header="Số điện thoại"
+                  body={(member) => centeredText((member as ShopMemberDTO).userPhone)}
+                  style={{ width: "13%" }}
+                  alignHeader="center"
+                />
+                <Column field="status" header="Trạng thái" body={statusBody} style={{ width: "14%" }} alignHeader="center" bodyStyle={{ textAlign: "center" }} />
+                <Column field="createdAt" header="Ngày thêm" body={dateBody} style={{ width: "14%" }} alignHeader="center" />
+                <Column header="Thao tác" body={actionsBody} style={{ width: "5.5rem" }} alignHeader="center" bodyStyle={{ textAlign: "center" }} />
+              </DataTable>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+
+      <ShopMemberForm mode={formMode} member={formMember} onClose={closeForm} onSaved={handleMemberSaved} />
+
+      <ShopMemberPasswordDialog
+        member={passwordTarget}
+        onClose={() => setPasswordTarget(null)}
+        onReset={() => void loadMembers()}
+      />
 
       <Dialog
-        visible={isFormOpen}
-        onHide={closeFormDialog}
-        header={editingMemberId ? "Cập nhật thành viên" : "Thêm thành viên mới"}
-        style={{ width: '100%', maxWidth: '32rem' }}
-        footer={
-          <div className="flex justify-end gap-2 mt-4">
-            <button
-              type="button"
-              onClick={closeFormDialog}
-              className="rounded-sm border border-[#d9d9d9] bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[#fafafa]"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              form="shop-member-form"
-              className="rounded-sm bg-[#ee4d2d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#de4322]"
-            >
-              {editingMemberId ? "Lưu thay đổi" : "Tạo thành viên"}
-            </button>
-          </div>
-        }
-      >
-        <p className="mb-4 mt-0 text-sm text-[#73849b]">Quản lý hội viên, quản lý và nhân viên làm việc trong shop.</p>
-        <form id="shop-member-form" onSubmit={handleSave} className="space-y-3">
-          {formError && (
-            <div className="rounded-sm border border-[#f0c2b7] bg-[#fff4f1] px-3 py-2 text-sm text-[#c73d1e]">{formError}</div>
-          )}
-
-          <div className="grid gap-3 md:grid-cols-2">
-            <InputField
-              label="Họ và tên"
-              value={formState.fullName}
-              required
-              onChange={(value) => setFormState((prev) => ({ ...prev, fullName: value }))}
-            />
-            <InputField
-              label="Email"
-              type="email"
-              value={formState.email}
-              required
-              onChange={(value) => setFormState((prev) => ({ ...prev, email: value }))}
-            />
-            <InputField
-              label="Số điện thoại"
-              value={formState.phone}
-              onChange={(value) => setFormState((prev) => ({ ...prev, phone: value }))}
-            />
-            <SelectField
-              label="Vai trò"
-              value={formState.role}
-              options={["OWNER", "MANAGER", "STAFF"]}
-              onChange={(value) => setFormState((prev) => ({ ...prev, role: value as ShopMemberRole }))}
-            />
-            <SelectField
-              label="Trạng thái"
-              value={formState.status}
-              options={["ACTIVE", "INACTIVE", "INVITED", "REMOVED"]}
-              onChange={(value) => setFormState((prev) => ({ ...prev, status: value as ShopMemberStatus }))}
-            />
-          </div>
-        </form>
-      </Dialog>
-      <Dialog
-        visible={isDeleteOpen}
+        visible={deleteTarget !== null}
         onHide={closeDeleteDialog}
         header="Xác nhận xóa thành viên"
-        style={{ width: '100%', maxWidth: '30rem' }}
+        style={{ width: "100%", maxWidth: "30rem" }}
         footer={
-          <div className="flex justify-end gap-2 mt-4">
-            <button
+          <div className="mt-4 flex w-full flex-col-reverse items-center justify-center gap-2 sm:flex-row">
+            <Button
               type="button"
+              label="Hủy"
               onClick={closeDeleteDialog}
-              className="rounded-sm border border-[#d9d9d9] bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[#fafafa]"
-            >
-              Hủy
-            </button>
-            <button
+              disabled={isDeleting}
+              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#d9e1eb] !bg-white !px-4 !py-0 !text-sm !font-semibold !text-[#40526b] hover:!bg-[#f8fafc]"
+            />
+            <Button
               type="button"
+              label="Xóa thành viên"
+              icon="pi pi-trash"
               onClick={confirmDelete}
-              className="rounded-sm bg-[#d93b1f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#c23218]"
-            >
-              Xóa thành viên
-            </button>
+              loading={isDeleting}
+              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#d93b1f] !bg-[#d93b1f] !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-[#c23218] [&_.p-button-icon]:!text-white [&_.p-button-label]:!text-white"
+            />
           </div>
         }
       >
-        <p className="mb-2 mt-0 text-sm text-[#73849b]">Thành viên bị xóa sẽ không còn quyền quản lý trong shop.</p>
-        <p className="text-sm text-slate-600">Bạn chắc chắn muốn xóa thành viên này?</p>
+        <p className="mb-2 mt-0 text-sm text-[#73849b]">Backend sẽ chuyển trạng thái thành viên sang Đã xóa.</p>
+        <p className="text-sm text-slate-600">
+          Bạn chắc chắn muốn xóa {deleteTarget ? getShopMemberDisplayName(deleteTarget) : "thành viên này"}?
+        </p>
       </Dialog>
     </>
   )
 }
 
-type InputFieldProps = {
+type StatCardProps = {
+  icon: string
   label: string
   value: string
-  required?: boolean
-  type?: "text" | "email"
-  onChange: (value: string) => void
+  color: "blue" | "emerald"
 }
 
-function InputField({ label, value, type = "text", onChange }: InputFieldProps) {
+function StatCard({ icon, label, value, color }: StatCardProps) {
+  const borderMap = {
+    blue: "border-sky-200",
+    emerald: "border-emerald-200",
+  }
+  const bgMap = {
+    blue: "bg-sky-50",
+    emerald: "bg-emerald-50",
+  }
+  const iconColorMap = {
+    blue: "text-sky-500",
+    emerald: "text-emerald-500",
+  }
+
   return (
-    <label className="text-sm text-slate-700">
-      <div className="mb-1">{label}</div>
-      <input
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-sm border border-[#d9d9d9] bg-white px-3 py-2 text-sm outline-none focus:border-[#ee4d2d]"
-      />
-    </label>
-  )
-}
-
-type SelectFieldProps = {
-  label: string
-  value: string
-  options: string[]
-  onChange: (value: string) => void
-}
-
-function SelectField({ label, value, options, onChange }: SelectFieldProps) {
-  return (
-    <label className="text-sm text-slate-700">
-      <div className="mb-1">{label}</div>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-sm border border-[#d9d9d9] bg-white px-3 py-2 text-sm outline-none focus:border-[#ee4d2d]"
-      >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </label>
+    <div className={`rounded-xl border ${borderMap[color]} ${bgMap[color]} p-4`}>
+      <div className="mb-2 flex items-center gap-2">
+        <i className={`${icon} h-5 w-5 ${iconColorMap[color]}`} />
+        <p className="text-sm text-slate-600">{label}</p>
+      </div>
+      <p className="text-3xl font-bold leading-none text-[#24364d]">{value}</p>
+    </div>
   )
 }

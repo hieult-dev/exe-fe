@@ -15,6 +15,7 @@ type GetOrdersParams = {
   customerId?: number
   status?: OrderStatus
   source?: OrderSource
+  createdDate?: string
   cursor?: number | null
   size?: number
 }
@@ -23,6 +24,7 @@ export const getOrders = async ({
   customerId,
   status,
   source,
+  createdDate,
   cursor = null,
   size = 20,
 }: GetOrdersParams = {}) => {
@@ -31,6 +33,7 @@ export const getOrders = async ({
   if (typeof customerId === "number") params.customerId = customerId
   if (status) params.status = status
   if (source) params.source = source
+  if (createdDate) params.createdDate = createdDate
   if (typeof cursor === "number") params.cursor = cursor
 
   return api.get<OrderCursorPage>(ORDER_URL, { params })

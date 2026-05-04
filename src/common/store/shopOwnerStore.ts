@@ -306,7 +306,3 @@ export function resolveInventoryStockState(stockQty: number, reorderLevel: numbe
   if (stockQty <= reorderLevel) return "LOW"
   return "OK"
 }
-
-export function formatCurrencyVND(value: number) {
-  return `${value.toLocaleString("vi-VN")}đ`
-}

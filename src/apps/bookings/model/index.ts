@@ -1,3 +1,5 @@
+import type { InvoiceDetailDTO } from "@/apps/invoices/model"
+
 /**
  * Booking status enum matching backend BookingStatus.
  */
@@ -12,18 +14,34 @@ export type BookingStatus =
 /**
  * Booking source enum matching backend BookingSource.
  */
-export type BookingSource = "ONLINE" | "WALK_IN" | "PHONE"
+export type BookingSource = "ONLINE" | "WALK_IN" | "PHONE" | "STAFF"
+export type BookingItemType = "SERVICE" | "PRODUCT" | "PACKAGE_REDEEM" | "ADJUSTMENT"
 
 /**
  * Line item within a booking.
  */
 export interface BookingLineItemDTO {
-  id?: number
-  serviceId?: number
-  serviceName?: string
-  quantity?: number
-  unitPrice?: number
-  subtotal?: number
+  id: number
+  itemType: BookingItemType
+  refId: number
+  petId?: number | null
+  name: string
+  quantity: number
+  unitPrice: number
+  amount: number
+}
+
+export type BookingCheckoutItemRequest = {
+  itemType: BookingItemType
+  refId: number
+  petId?: number | null
+  qty: number
+  unitPrice: number
+}
+
+export type BookingCheckoutRequest = {
+  items: BookingCheckoutItemRequest[]
+  issuedAt: string
 }
 
 export interface BookingStaffDTO {
@@ -41,20 +59,25 @@ export interface BookingDTO {
   id: number
   bookingCode: string
   shopId: number
-  customerId?: number | null
+  customerId: number | null
   customerName: string
   customerPhone: string
+  startAt: string
+  endAt: string
   items: BookingLineItemDTO[]
   totalAmount: number
   status: BookingStatus
-  statusLabel?: string
-  source?: BookingSource
-  assigneeId?: number | null
-  assigneeName?: string | null
-  assignedStaffIds?: number[] | null
-  assignedStaffs?: BookingStaffDTO[] | null
-  time?: string | null
+  statusLabel: string
+  source: BookingSource
+  note: string | null
+  createdBy: number | null
+  assigneeId: number | null
+  assigneeName: string | null
+  assignedStaffIds: number[]
+  assignedStaffs: BookingStaffDTO[]
+  time: string
   createdAt: string
+  updatedAt: string
 }
 
 /**
@@ -65,6 +88,11 @@ export interface BookingCursorPage {
   size: number
   nextCursor: number | null
   hasNext: boolean
+}
+
+export type BookingCheckoutResponse = {
+  booking: BookingDTO
+  invoice: InvoiceDetailDTO
 }
 
 export type BookingStatusFilter = "ALL" | BookingStatus

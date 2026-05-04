@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
+import { Button } from "primereact/button"
+import { Calendar } from "primereact/calendar"
 import { Dialog } from "primereact/dialog"
 import { DataTable } from "primereact/datatable"
 import { Toolbar } from "primereact/toolbar"
@@ -6,8 +8,14 @@ import { TableActionMenu } from "@/common/component/TableActionMenu"
 import type { MenuItem } from "primereact/menuitem"
 import { Column } from "primereact/column"
 import type { ColumnBodyOptions } from "primereact/column"
+import { getInvoiceByOrderId } from "@/apps/invoices/api/invoiceApi"
+import type { InvoiceDetailDTO } from "@/apps/invoices/model"
 import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
 import { deleteOrder, getOrderById, getOrders, updateOrder } from "@/apps/orders/api/orderApi"
+import { submitGhtkOrder } from "@/apps/orders/api/ghtkOrderApi"
+import { InvoiceDetailDialog } from "@/apps/invoices/components/InvoiceDetailDialog"
+import { ShopOrderDetailModal } from "@/apps/orders/components/ShopOrderDetailModal"
+import { SubmitGhtkOrderModal } from "@/apps/orders/components/SubmitGhtkOrderModal"
 import type {
   OrderDTO,
   OrderItemDTO,
@@ -16,8 +24,10 @@ import type {
   OrderSourceFilter,
   OrderStatus,
   OrderStatusFilter,
+  SubmitGhtkOrderRequest,
 } from "@/apps/orders/model"
 import { notify } from "@/common/toast/ToastHelper"
+import { formatCurrencyVND, formatDateForApi, formatDateOnlyViVN, formatDateTimeViVN } from "@/common/utils/format"
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (typeof error === "object" && error !== null && "message" in error) {
@@ -43,9 +53,13 @@ const SOURCE_CONFIG: Record<OrderSource, string> = {
   STAFF: "Nhân viên",
 }
 
+const SOURCE_BADGE_CONFIG: Record<OrderSource, { bg: string; text: string }> = {
+  ONLINE: { bg: "bg-sky-100", text: "text-sky-700" },
+  STAFF: { bg: "bg-violet-100", text: "text-violet-700" },
+}
+
 const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus>> = {
   CONFIRMED: "PACKING",
-  PACKING: "SHIPPING",
   SHIPPING: "COMPLETED",
 }
 
@@ -60,29 +74,10 @@ const STATUS_FILTER_OPTIONS: { value: OrderStatusFilter; label: string }[] = [
 ]
 
 const SOURCE_FILTER_OPTIONS: { value: OrderSourceFilter; label: string }[] = [
+  { value: "ALL", label: "Tất cả nguồn" },
   { value: "ONLINE", label: SOURCE_CONFIG.ONLINE },
   { value: "STAFF", label: SOURCE_CONFIG.STAFF },
-  { value: "ALL", label: "Tất cả nguồn" },
 ]
-
-function fmt(value: number | null | undefined) {
-  return `${Number(value ?? 0).toLocaleString("vi-VN")}đ`
-}
-
-function fmtDate(iso: string | null | undefined) {
-  if (!iso) return "---"
-
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return "---"
-
-  return d.toLocaleString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
 
 function statusLabel(status: OrderStatus, fallback?: string | null) {
   return STATUS_CONFIG[status]?.label || fallback || status
@@ -110,9 +105,10 @@ function normalizeListItem(order: Partial<OrderListItemDTO>): OrderListItemDTO {
     id: Number(order.id ?? 0),
     orderCode: order.orderCode || `#${order.id ?? ""}`,
     shopId: Number(order.shopId ?? 0),
-    customerId: Number(order.customerId ?? 0),
-    customerName: order.customerName ?? null,
-    customerPhone: order.customerPhone ?? null,
+    customerId: order.customerId ?? null,
+    customer: order.customer ?? null,
+    customerAddressId: order.customerAddressId ?? null,
+    customerAddress: order.customerAddress ?? null,
     receiverName: order.receiverName ?? null,
     receiverPhone: order.receiverPhone ?? null,
     shippingAddress: order.shippingAddress ?? null,
@@ -122,34 +118,6 @@ function normalizeListItem(order: Partial<OrderListItemDTO>): OrderListItemDTO {
     statusLabel: order.statusLabel || statusLabel(status),
     source,
     createdAt: order.createdAt || "",
-  }
-}
-
-function normalizeDetail(order: Partial<OrderDTO>, fallback?: OrderListItemDTO | null): OrderDTO {
-  const status = (order.status || fallback?.status || "PENDING") as OrderStatus
-  const source = (order.source || fallback?.source || "ONLINE") as OrderSource
-  const totalAmount = Number(order.totalAmount ?? fallback?.totalAmount ?? 0)
-
-  return {
-    id: Number(order.id ?? fallback?.id ?? 0),
-    orderCode: order.orderCode || fallback?.orderCode || "",
-    shopId: Number(order.shopId ?? fallback?.shopId ?? 0),
-    customerId: Number(order.customerId ?? fallback?.customerId ?? 0),
-    status,
-    source,
-    subtotalAmount: Number(order.subtotalAmount ?? totalAmount),
-    shippingFee: Number(order.shippingFee ?? 0),
-    discountAmount: Number(order.discountAmount ?? 0),
-    totalAmount,
-    receiverName: order.receiverName ?? fallback?.receiverName ?? null,
-    receiverPhone: order.receiverPhone ?? fallback?.receiverPhone ?? null,
-    shippingAddress: order.shippingAddress ?? fallback?.shippingAddress ?? null,
-    note: order.note ?? null,
-    createdAt: order.createdAt || fallback?.createdAt || "",
-    updatedAt: order.updatedAt || order.createdAt || fallback?.createdAt || "",
-    items: Array.isArray(order.items)
-      ? order.items.map(normalizeItem)
-      : fallback?.items.map(normalizeItem) || [],
   }
 }
 
@@ -171,12 +139,21 @@ export function ShopOrdersPage() {
   const observerTarget = useRef<HTMLDivElement>(null)
 
   const [statusFilter, setStatusFilter] = useState<OrderStatusFilter>("ALL")
-  const [sourceFilter, setSourceFilter] = useState<OrderSourceFilter>("ONLINE")
+  const [sourceFilter, setSourceFilter] = useState<OrderSourceFilter>("ALL")
+  const [createdDateFilter, setCreatedDateFilter] = useState<Date | null>(null)
 
-  const [selectedListOrder, setSelectedListOrder] = useState<OrderListItemDTO | null>(null)
-  const [selectedOrder, setSelectedOrder] = useState<OrderDTO | null>(null)
+  const [selectedDetailOrder, setSelectedDetailOrder] = useState<OrderDTO | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [isDetailLoading, setIsDetailLoading] = useState(false)
+
+  const [ghtkTarget, setGhtkTarget] = useState<OrderListItemDTO | null>(null)
+  const [isGhtkOpen, setIsGhtkOpen] = useState(false)
+  const [isGhtkSubmitting, setIsGhtkSubmitting] = useState(false)
+
+  const [selectedListOrder, setSelectedListOrder] = useState<OrderListItemDTO | null>(null)
+  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceDetailDTO | null>(null)
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false)
+  const [isInvoiceLoading, setIsInvoiceLoading] = useState(false)
 
   const [isCancelOpen, setIsCancelOpen] = useState(false)
   const [cancelNote, setCancelNote] = useState("")
@@ -200,6 +177,7 @@ export function ShopOrdersPage() {
         cursor: currentCursor,
         status: statusFilter === "ALL" ? undefined : statusFilter,
         source: sourceFilter === "ALL" ? undefined : sourceFilter,
+        createdDate: formatDateForApi(createdDateFilter),
       }) as any
 
       const payload = result?.data || result
@@ -237,7 +215,7 @@ export function ShopOrdersPage() {
 
   useEffect(() => {
     loadOrders(false)
-  }, [statusFilter, sourceFilter])
+  }, [createdDateFilter, statusFilter, sourceFilter])
 
   useEffect(() => {
     if (isLoading || isLoadingMore || !hasNext) return
@@ -256,14 +234,13 @@ export function ShopOrdersPage() {
     }
 
     return () => observer.disconnect()
-  }, [hasNext, isLoading, isLoadingMore, nextCursor, statusFilter, sourceFilter])
+  }, [createdDateFilter, hasNext, isLoading, isLoadingMore, nextCursor, statusFilter, sourceFilter])
 
   const stats = useMemo(() => {
     const pending = orders.filter((order) => order.status === "PENDING").length
-    const active = orders.filter((order) => ["CONFIRMED", "PACKING", "SHIPPING"].includes(order.status)).length
     const shipping = orders.filter((order) => order.status === "SHIPPING").length
     const completed = orders.filter((order) => order.status === "COMPLETED").length
-    return { pending, active, shipping, completed }
+    return { pending, shipping, completed }
   }, [orders])
 
   const visibleOrders = useMemo(() => {
@@ -273,10 +250,8 @@ export function ShopOrdersPage() {
     return orders.filter((order) => {
       const searchable = [
         order.orderCode,
-        order.customerName,
-        order.customerPhone,
-        order.receiverName,
-        order.receiverPhone,
+        order.customer?.fullName,
+        order.customer?.phone,
         order.shippingAddress,
       ]
         .filter(Boolean)
@@ -287,7 +262,7 @@ export function ShopOrdersPage() {
     })
   }, [orders, debouncedSearch])
 
-  const patchOrderInState = (id: number, patch: Partial<OrderListItemDTO & OrderDTO>) => {
+  const patchOrderInState = (id: number, patch: Partial<OrderListItemDTO & { note?: string }>) => {
     setOrders((prev) =>
       prev.map((order) =>
         order.id === id
@@ -310,7 +285,6 @@ export function ShopOrdersPage() {
         : prev,
     )
 
-    setSelectedOrder((prev) => (prev?.id === id ? { ...prev, ...patch } : prev))
   }
 
   const handleAccept = async (id: number) => {
@@ -363,15 +337,15 @@ export function ShopOrdersPage() {
   }
 
   const openDetail = async (order: OrderListItemDTO) => {
-    setSelectedListOrder(order)
-    setSelectedOrder(normalizeDetail({}, order))
+    setSelectedDetailOrder(null)
     setIsDetailOpen(true)
     setIsDetailLoading(true)
 
     try {
-      const detail = await getOrderById(order.id) as any
-      setSelectedOrder(normalizeDetail(detail?.data || detail, order))
+      const detail = await getOrderById(order.id)
+      setSelectedDetailOrder(detail)
     } catch (err) {
+      setIsDetailOpen(false)
       notify.error(getErrorMessage(err, "Không tải được chi tiết đơn hàng."))
     } finally {
       setIsDetailLoading(false)
@@ -380,8 +354,64 @@ export function ShopOrdersPage() {
 
   const closeDetail = () => {
     setIsDetailOpen(false)
+    setSelectedDetailOrder(null)
+  }
+
+  const openGhtkSubmit = (order: OrderListItemDTO) => {
+    setGhtkTarget(order)
+    setIsGhtkOpen(true)
+  }
+
+  const closeGhtkSubmit = () => {
+    if (isGhtkSubmitting) return
+    setIsGhtkOpen(false)
+    setGhtkTarget(null)
+  }
+
+  const confirmGhtkSubmit = async (data: SubmitGhtkOrderRequest) => {
+    if (!ghtkTarget) return
+
+    setIsGhtkSubmitting(true)
+    try {
+      const response = await submitGhtkOrder(ghtkTarget.id, data)
+
+      if (!response.success) {
+        notify.error(response.error || response.message || "Không thể gửi đơn sang GHTK.")
+        return
+      }
+
+      notify.success(response.message || "Đã gửi đơn sang GHTK.")
+      if (response.warning) notify.warn(response.warning)
+      setIsGhtkOpen(false)
+      setGhtkTarget(null)
+      loadOrders(false)
+    } catch (err) {
+      notify.error(getErrorMessage(err, "Không thể gửi đơn sang GHTK."))
+    } finally {
+      setIsGhtkSubmitting(false)
+    }
+  }
+
+  const openInvoice = async (order: OrderListItemDTO) => {
+    setSelectedListOrder(order)
+    setSelectedInvoice(null)
+    setIsInvoiceOpen(true)
+    setIsInvoiceLoading(true)
+
+    try {
+      const invoice = await getInvoiceByOrderId(order.id)
+      setSelectedInvoice(invoice)
+    } catch (err) {
+      notify.error(getErrorMessage(err, "Không tải được hóa đơn của đơn hàng."))
+    } finally {
+      setIsInvoiceLoading(false)
+    }
+  }
+
+  const closeInvoice = () => {
+    setIsInvoiceOpen(false)
     setSelectedListOrder(null)
-    setSelectedOrder(null)
+    setSelectedInvoice(null)
   }
 
   const openDelete = (order: OrderListItemDTO) => {
@@ -400,7 +430,9 @@ export function ShopOrdersPage() {
     try {
       await deleteOrder(deleteTarget.id)
       setOrders((prev) => prev.filter((order) => order.id !== deleteTarget.id))
-      if (selectedOrder?.id === deleteTarget.id) closeDetail()
+      if (selectedDetailOrder?.id === deleteTarget.id) closeDetail()
+      if (ghtkTarget?.id === deleteTarget.id) closeGhtkSubmit()
+      if (selectedListOrder?.id === deleteTarget.id) closeInvoice()
       closeDelete()
       notify.success("Đã xóa đơn hàng.")
     } catch (err) {
@@ -409,9 +441,10 @@ export function ShopOrdersPage() {
   }
 
   const handleRefreshView = () => {
-    const isDefaultView = statusFilter === "ALL" && sourceFilter === "ONLINE"
+    const isDefaultView = statusFilter === "ALL" && sourceFilter === "ALL" && createdDateFilter === null
     setStatusFilter("ALL")
-    setSourceFilter("ONLINE")
+    setSourceFilter("ALL")
+    setCreatedDateFilter(null)
 
     if (isDefaultView) {
       loadOrders(false)
@@ -427,8 +460,8 @@ export function ShopOrdersPage() {
   )
 
   const customerBody = (order: OrderListItemDTO) => {
-    const name = order.customerName || order.receiverName || "---"
-    const phone = order.customerPhone || order.receiverPhone || "---"
+    const name = order.customer?.fullName || "---"
+    const phone = order.customer?.phone || "---"
 
     return (
       <div>
@@ -451,12 +484,12 @@ export function ShopOrdersPage() {
   )
 
   const totalBody = (order: OrderListItemDTO) => (
-    <div className="text-center text-sm font-semibold text-[#ef5c2c]">{fmt(order.totalAmount)}</div>
+    <div className="text-center text-sm font-semibold text-[#ef5c2c]">{formatCurrencyVND(order.totalAmount)}</div>
   )
 
   const sourceBody = (order: OrderListItemDTO) => (
     <div className="flex justify-center">
-      <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+      <span className={`rounded-md px-2 py-1 text-xs font-medium ${SOURCE_BADGE_CONFIG[order.source]?.bg || "bg-slate-100"} ${SOURCE_BADGE_CONFIG[order.source]?.text || "text-slate-700"}`}>
         {SOURCE_CONFIG[order.source] || order.source}
       </span>
     </div>
@@ -474,17 +507,25 @@ export function ShopOrdersPage() {
   }
 
   const createdAtBody = (order: OrderListItemDTO) => (
-    <div className="text-center text-xs text-slate-500">{fmtDate(order.createdAt)}</div>
+    <div className="text-center text-xs text-slate-500">{formatDateTimeViVN(order.createdAt, "---")}</div>
   )
 
   const actionsBody = (order: OrderListItemDTO) => {
-    const actionItems: MenuItem[] = [
-      {
-        label: "Xem chi tiết",
+    const actionItems: MenuItem[] = []
+
+    actionItems.push({
+      label: "Xem chi tiết",
+      icon: "pi pi-info-circle",
+      command: () => openDetail(order),
+    })
+
+    if (order.status === "COMPLETED") {
+      actionItems.push({
+        label: "Xem hóa đơn",
         icon: "pi pi-eye",
-        command: () => openDetail(order),
-      },
-    ]
+        command: () => openInvoice(order),
+      })
+    }
 
     if (order.status === "PENDING") {
       actionItems.push({
@@ -492,6 +533,15 @@ export function ShopOrdersPage() {
         icon: "pi pi-check-circle",
         className: "text-emerald-600",
         command: () => handleAccept(order.id),
+      })
+    }
+
+    if (order.status === "PACKING") {
+      actionItems.push({
+        label: "Chuyển cho bên GHTK",
+        icon: "pi pi-truck",
+        className: "text-violet-600",
+        command: () => openGhtkSubmit(order),
       })
     }
 
@@ -524,10 +574,6 @@ export function ShopOrdersPage() {
     return <TableActionMenu items={actionItems} />
   }
 
-  const detail = selectedOrder
-  const detailCustomerName = selectedListOrder?.customerName || detail?.receiverName || "---"
-  const detailCustomerPhone = selectedListOrder?.customerPhone || detail?.receiverPhone || "---"
-
   return (
     <>
       <div className="flex flex-1 flex-col gap-2">
@@ -535,9 +581,9 @@ export function ShopOrdersPage() {
           className="rounded-xl border-none bg-white shadow-[0_2px_12px_rgba(15,23,42,0.04)]"
           start={
             <div>
-              <h1 className="text-lg font-semibold text-slate-800">Đơn hàng online</h1>
+              <h1 className="text-lg font-semibold text-slate-800">Đơn hàng</h1>
               <p className="mt-0.5 text-sm text-slate-500">
-                Quản lý đơn hàng mua sản phẩm, xác nhận và theo dõi tiến trình giao hàng.
+                Quản lý đơn hàng online và đơn bán tại quầy, xác nhận và theo dõi tiến trình.
               </p>
             </div>
           }
@@ -573,23 +619,48 @@ export function ShopOrdersPage() {
                   ))}
                 </select>
               </label>
-              <button
+              <div className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d9e1eb] bg-white px-3 text-sm text-[#52657e]">
+                <i className="pi pi-calendar h-4 w-4 text-[#70829a]" />
+                <span>Ngày tạo</span>
+                <Calendar
+                  value={createdDateFilter}
+                  onChange={(event) => setCreatedDateFilter(event.value instanceof Date ? event.value : null)}
+                  dateFormat="dd/mm/yy"
+                  placeholder="Tất cả"
+                  readOnlyInput
+                  showButtonBar
+                  inputClassName="!w-24 !border-0 !bg-transparent !p-0 !text-sm !font-medium !text-[#24364d] !shadow-none !outline-none"
+                  className="[&_.p-datepicker-trigger]:!hidden [&_.p-inputtext]:!h-auto"
+                  panelClassName="text-sm"
+                />
+                {createdDateFilter && (
+                  <Button
+                    type="button"
+                    icon="pi pi-times"
+                    text
+                    rounded
+                    aria-label={`Bỏ lọc ngày ${formatDateOnlyViVN(createdDateFilter)}`}
+                    className="!m-0 !h-6 !w-6 !p-0 !text-slate-400 hover:!bg-slate-100"
+                    onClick={() => setCreatedDateFilter(null)}
+                  />
+                )}
+              </div>
+              <Button
+                type="button"
+                icon={`pi pi-refresh ${isLoading ? "pi-spin" : ""}`}
+                label="Refresh"
                 onClick={handleRefreshView}
-                className="inline-flex h-9 items-center gap-2 rounded-md border border-[#d9e1eb] bg-white px-4 text-sm font-medium text-[#40526b] transition hover:bg-[#f8fafc]"
                 disabled={isLoading}
-              >
-                <i className={`pi pi-refresh h-4 w-4 ${isLoading ? "pi-spin" : ""}`} />
-                Refresh
-              </button>
+                className="!m-0 !inline-flex !h-9 !items-center !justify-center !rounded-md !border !border-[#d9e1eb] !bg-white !px-4 !py-0 !text-sm !font-medium !text-[#40526b] hover:!bg-[#f8fafc]"
+              />
             </div>
           }
         />
 
         <div className="flex-1 rounded-xl bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:p-4">
           <div className="space-y-5">
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               <StatCard icon={<i className="pi pi-clock h-5 w-5 text-amber-500" />} label="Chờ xác nhận" value={stats.pending} color="amber" />
-              <StatCard icon={<i className="pi pi-box h-5 w-5 text-violet-500" />} label="Đang xử lý" value={stats.active} color="violet" />
               <StatCard icon={<i className="pi pi-truck h-5 w-5 text-orange-500" />} label="Đang giao" value={stats.shipping} color="orange" />
               <StatCard icon={<i className="pi pi-check-circle h-5 w-5 text-emerald-500" />} label="Hoàn thành" value={stats.completed} color="emerald" />
             </div>
@@ -640,119 +711,44 @@ export function ShopOrdersPage() {
         </div>
       </div>
 
-      {detail && (
-        <Dialog
-          visible={isDetailOpen}
-          onHide={closeDetail}
-          header={`Chi tiết đơn hàng ${detail.orderCode}`}
-          style={{ width: "100%", maxWidth: "52rem" }}
-          footer={
-            <div className="mt-4 flex flex-wrap justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeDetail}
-                className="rounded-lg bg-[#f4f7fb] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[#ecf1f8]"
-              >
-                Đóng
-              </button>
-              {detail.status === "PENDING" && (
-                <button
-                  onClick={() => handleAccept(detail.id)}
-                  className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600"
-                >
-                  Xác nhận
-                </button>
-              )}
-              {STATUS_FLOW[detail.status] && (
-                <button
-                  onClick={() => handleNextStatus(detail)}
-                  className="rounded-lg bg-[#214388] px-4 py-2 text-sm font-semibold text-white hover:bg-[#19356a]"
-                >
-                  Chuyển sang {statusLabel(STATUS_FLOW[detail.status]!).toLowerCase()}
-                </button>
-              )}
-              {!["COMPLETED", "CANCELLED"].includes(detail.status) && (
-                <button
-                  onClick={() => openCancel(detail.id)}
-                  className="rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600"
-                >
-                  Hủy đơn
-                </button>
-              )}
-            </div>
-          }
-        >
-          <p className="mb-4 mt-0 text-sm text-[#73849b]">
-            {isDetailLoading ? "Đang tải chi tiết đơn hàng..." : "Xem thông tin người mua, sản phẩm và tiến trình đơn hàng."}
-          </p>
+      <SubmitGhtkOrderModal
+        visible={isGhtkOpen}
+        submitting={isGhtkSubmitting}
+        orderCode={ghtkTarget?.orderCode}
+        onHide={closeGhtkSubmit}
+        onSubmit={confirmGhtkSubmit}
+      />
 
-          <div className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-xl border border-[#e2e8f0] p-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Khách hàng</p>
-                <div className="space-y-3">
-                  <InfoItem icon={<i className="pi pi-user h-4 w-4" />} label="Họ tên" value={detailCustomerName} />
-                  <InfoItem icon={<i className="pi pi-phone h-4 w-4" />} label="Điện thoại" value={detailCustomerPhone} />
-                  <InfoItem icon={<i className="pi pi-shopping-cart h-4 w-4" />} label="Nguồn" value={SOURCE_CONFIG[detail.source] || detail.source} />
-                </div>
-              </div>
+      <ShopOrderDetailModal
+        visible={isDetailOpen}
+        loading={isDetailLoading}
+        order={selectedDetailOrder}
+        onHide={closeDetail}
+      />
 
-              <div className="rounded-xl border border-[#e2e8f0] p-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Người nhận</p>
-                <div className="space-y-3">
-                  <InfoItem icon={<i className="pi pi-user h-4 w-4" />} label="Họ tên" value={detail.receiverName || "---"} />
-                  <InfoItem icon={<i className="pi pi-phone h-4 w-4" />} label="Điện thoại" value={detail.receiverPhone || "---"} />
-                  <InfoItem icon={<i className="pi pi-map-marker h-4 w-4" />} label="Địa chỉ" value={detail.shippingAddress || "---"} />
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-[#e2e8f0] p-4">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Sản phẩm đặt hàng</p>
-              <div className="space-y-2">
-                {detail.items.map((item) => (
-                  <div key={`${detail.id}-${item.id ?? item.productId}`} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="min-w-0 truncate text-slate-700">
-                      {item.qty}x {item.productName || `Product #${item.productId}`}
-                    </span>
-                    <span className="whitespace-nowrap font-semibold text-[#ef5c2c]">
-                      {fmt(item.amount ?? (item.unitPrice || 0) * item.qty)}
-                    </span>
-                  </div>
-                ))}
-                {detail.items.length === 0 && <p className="text-sm italic text-slate-400">Chưa có sản phẩm.</p>}
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-xl border border-[#e2e8f0] p-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Thanh toán</p>
-                <div className="space-y-2 text-sm">
-                  <MoneyRow label="Tạm tính" value={detail.subtotalAmount} />
-                  <MoneyRow label="Phí giao hàng" value={detail.shippingFee} />
-                  <MoneyRow label="Giảm giá" value={-detail.discountAmount} />
-                  <div className="flex items-center justify-between border-t border-[#f0f4f8] pt-2 font-bold">
-                    <span className="text-slate-800">Tổng cộng</span>
-                    <span className="text-[#ef5c2c]">{fmt(detail.totalAmount)}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-[#e2e8f0] p-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Trạng thái</p>
-                <span className={`inline-flex rounded-md px-3 py-1 text-sm font-semibold ${STATUS_CONFIG[detail.status].bg} ${STATUS_CONFIG[detail.status].text}`}>
-                  {statusLabel(detail.status)}
-                </span>
-                {detail.note && <p className="mt-3 text-sm text-slate-600">Ghi chú: {detail.note}</p>}
-                <div className="mt-4 space-y-1 text-xs text-slate-400">
-                  <p>Ngày tạo: {fmtDate(detail.createdAt)}</p>
-                  <p>Cập nhật: {fmtDate(detail.updatedAt)}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Dialog>
-      )}
+      <InvoiceDetailDialog
+        visible={isInvoiceOpen}
+        loading={isInvoiceLoading}
+        invoice={selectedInvoice}
+        reference={{
+          code: selectedListOrder?.orderCode,
+          customerName: selectedListOrder?.customer?.fullName,
+          customerPhone: selectedListOrder?.customer?.phone,
+          delivery: selectedListOrder?.customerAddress
+            ? {
+                name: selectedListOrder.customerAddress.name,
+                tel: selectedListOrder.customerAddress.tel,
+                address: selectedListOrder.customerAddress.address,
+                hamlet: selectedListOrder.customerAddress.hamlet,
+                ward: selectedListOrder.customerAddress.ward,
+                district: selectedListOrder.customerAddress.district,
+                province: selectedListOrder.customerAddress.province,
+              }
+            : null,
+          emptyMessage: "Không tìm thấy hóa đơn cho đơn hàng này.",
+        }}
+        onHide={closeInvoice}
+      />
 
       <Dialog
         visible={isCancelOpen}
@@ -760,20 +756,21 @@ export function ShopOrdersPage() {
         header="Hủy đơn hàng"
         style={{ width: "100%", maxWidth: "30rem" }}
         footer={
-          <div className="mt-4 flex justify-end gap-2">
-            <button
+          <div className="mt-4 flex w-full flex-col-reverse items-center justify-center gap-2 sm:flex-row">
+            <Button
               type="button"
+              label="Đóng"
+              icon="pi pi-times"
               onClick={() => setIsCancelOpen(false)}
-              className="rounded-lg bg-[#f4f7fb] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[#ecf1f8]"
-            >
-              Đóng
-            </button>
-            <button
+              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#d9e1eb] !bg-white !px-4 !py-0 !text-sm !font-semibold !text-[#40526b] hover:!bg-[#f8fafc]"
+            />
+            <Button
+              type="button"
+              label="Xác nhận hủy"
+              icon="pi pi-times-circle"
               onClick={confirmCancel}
-              className="rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600"
-            >
-              Xác nhận hủy
-            </button>
+              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-rose-500 !bg-rose-500 !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-rose-600 [&_.p-button-icon]:!text-white [&_.p-button-label]:!text-white"
+            />
           </div>
         }
       >
@@ -795,21 +792,21 @@ export function ShopOrdersPage() {
         header="Xác nhận xóa đơn hàng"
         style={{ width: "100%", maxWidth: "30rem" }}
         footer={
-          <div className="mt-4 flex justify-end gap-2">
-            <button
+          <div className="mt-4 flex w-full flex-col-reverse items-center justify-center gap-2 sm:flex-row">
+            <Button
               type="button"
+              label="Hủy"
+              icon="pi pi-times"
               onClick={closeDelete}
-              className="rounded-lg bg-[#f4f7fb] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[#ecf1f8]"
-            >
-              Hủy
-            </button>
-            <button
+              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#d9e1eb] !bg-white !px-4 !py-0 !text-sm !font-semibold !text-[#40526b] hover:!bg-[#f8fafc]"
+            />
+            <Button
               type="button"
+              label="Xóa đơn hàng"
+              icon="pi pi-trash"
               onClick={confirmDelete}
-              className="rounded-lg bg-[#d93b1f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#c23218]"
-            >
-              Xóa đơn hàng
-            </button>
+              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#d93b1f] !bg-[#d93b1f] !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-[#c23218] [&_.p-button-icon]:!text-white [&_.p-button-label]:!text-white"
+            />
           </div>
         }
       >
@@ -852,25 +849,3 @@ function StatCard({ icon, label, value, color }: StatCardProps) {
   )
 }
 
-type InfoItemProps = { icon: React.ReactNode; label: string; value: React.ReactNode }
-function InfoItem({ icon, label, value }: InfoItemProps) {
-  return (
-    <div className="flex items-start gap-2 text-sm">
-      <span className="mt-0.5 text-[#70829a]">{icon}</span>
-      <div className="min-w-0">
-        <p className="text-xs text-slate-400">{label}</p>
-        <p className="break-words font-medium text-slate-800">{value}</p>
-      </div>
-    </div>
-  )
-}
-
-type MoneyRowProps = { label: string; value: number }
-function MoneyRow({ label, value }: MoneyRowProps) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-800">{fmt(value)}</span>
-    </div>
-  )
-}

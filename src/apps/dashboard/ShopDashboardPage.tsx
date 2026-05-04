@@ -2,7 +2,7 @@
 import { Chart } from "primereact/chart"
 import { Toolbar } from "primereact/toolbar"
 import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
-import { formatCurrencyVND } from "@/common/store/shopOwnerStore"
+import { formatCurrencyVND } from "@/common/utils/format"
 
 /* ─── colour tokens ─── */
 const C = {

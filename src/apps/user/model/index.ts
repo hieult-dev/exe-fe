@@ -1,8 +1,10 @@
 ﻿export type UserStatus = "ACTIVE" | "INACTIVE" | "BANNED";
-export type UserRole = "CUSTOMER" | "STAFF" | "ADMIN";
+export type UserRole = "CUSTOMER" | "STAFF" | "ADMIN" | "SHOP";
+export type AuthShopMemberRole = "OWNER" | "MANAGER" | "STAFF";
+export type AuthShopMemberStatus = "ACTIVE" | "INACTIVE" | "INVITED" | "REMOVED";
 
 export interface User {
-  id?: string;            
+  id?: number;
   email?: string;
   phone?: string;
   fullName?: string;
@@ -19,9 +21,20 @@ export interface User {
   lastLoginAt?: string | null;
 }
 
+export interface AuthShopDTO {
+  id: number;
+  name: string;
+  addressText: string;
+  shopStatus: string;
+  memberRole: AuthShopMemberRole;
+  memberStatus: AuthShopMemberStatus;
+}
+
 export interface UserLoginResponse {
-  user: User;
   accessToken: string;
+  role: UserRole;
   refreshToken: string;
-  tokenType: string;
+  user: User;
+  shops: AuthShopDTO[];
+  currentShopId: number | null;
 }

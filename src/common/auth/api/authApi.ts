@@ -1,7 +1,7 @@
 import { AUTH_URL, REFRESH_TOKEN_URL, assertGatewayConfigured } from "@/common/config/api"
 import { useUserStore } from "@/apps/user/store/UserStore"
 import baseApi from "@/common/api/baseApi"
-import type { User } from "@/apps/user/model/index"
+import type { User, UserLoginResponse } from "@/apps/user/model/index"
 import { clearPersistedUserStore, clearStoredAuthTokens } from "@/common/auth/utils/session"
 
 type TokenRefresh = {
@@ -11,18 +11,9 @@ type TokenRefresh = {
   user: User
 }
 
-type AuthenticationResponse = {
-  accessToken: string
-  refreshToken: string
-  role: string
-  user: User
-  currentShopId?: number | null
-  shops?: any[]
-}
-
 function login(email: string, password: string) {
   assertGatewayConfigured()
-  return baseApi.post<AuthenticationResponse>(`${AUTH_URL}/shop/login`, {
+  return baseApi.post<UserLoginResponse>(`${AUTH_URL}/shop/login`, {
     email,
     password,
   })
@@ -30,7 +21,7 @@ function login(email: string, password: string) {
 
 function register(data: FormData) {
   assertGatewayConfigured()
-  return baseApi.postWithFile<AuthenticationResponse>(`${AUTH_URL}/shop-owner/register`, data)
+  return baseApi.postWithFile<UserLoginResponse>(`${AUTH_URL}/shop-owner/register`, data)
 }
 
 function logout() {
