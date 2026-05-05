@@ -19,6 +19,7 @@ export function initialClient(
             'Content-Type': hasFile
                 ? 'multipart/form-data'
                 : 'application/json',
+            'ngrok-skip-browser-warning': 'true',
         },
         responseType: isDownload ? 'blob' : 'json',
         timeout: isSync ? 1800000 : 120000,
