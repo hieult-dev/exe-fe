@@ -41,6 +41,12 @@ const shopConsoleNav: NavEntry[] = [
     icon: "pi pi-chart-bar",
   },
   {
+    type: "single",
+    to: "/shop/chat",
+    railLabel: "Tin nhắn",
+    icon: "pi pi-comments",
+  },
+  {
     type: "group",
     railLabel: "Kinh doanh",
     icon: "pi pi-briefcase",
@@ -90,6 +96,7 @@ export function ShopConsoleLayout() {
 
   const ownerKey = user.email?.trim().toLowerCase() || "default"
   const isSalesPage = location.pathname.startsWith("/shop/sales")
+  const isChatPage = location.pathname.startsWith("/shop/chat")
 
   return (
     <ShopOwnerProvider ownerKey={ownerKey}>
@@ -99,7 +106,7 @@ export function ShopConsoleLayout() {
             user={user}
             homePath="/shop/dashboard"
             title={currentShop?.name ?? "PetPees"}
-            center={isSalesPage ? <StaffSaleHeaderSearch /> : <GlobalSearchBar />}
+            center={isSalesPage ? <StaffSaleHeaderSearch /> : isChatPage ? null : <GlobalSearchBar />}
           />
 
           <div className="grid flex-1 grid-cols-[96px,1fr] overflow-hidden">

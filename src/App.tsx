@@ -15,6 +15,7 @@ import { ShopOrdersPage } from "@/apps/orders/ShopOrdersPage"
 import { ShopBookingsPage } from "@/apps/bookings/ShopBookingsPage"
 import { ShopPaymentConfigPage } from "@/apps/payment_config/ShopPaymentConfigPage"
 import { ShopGhtkConfigPage } from "@/apps/ghtk_config/ShopGhtkConfigPage"
+import { ShopChatPage } from "@/apps/chat/ShopChatPage"
 import { StaffCustomerDisplayPage } from "@/apps/staff/StaffCustomerDisplayPage"
 import { StaffSalesPage } from "@/apps/staff/StaffSalesPage"
 import ToastProvider from "@/common/toast/ToastProvider"
@@ -43,6 +44,7 @@ function App() {
             <Route element={<ShopConsoleLayout />}>
               <Route path="/shop" element={<ShopConsoleDefaultRedirect />} />
               <Route path="/shop/dashboard" element={<ShopDashboardPage />} />
+              <Route path="/shop/chat" element={<ShopChatPage />} />
               <Route path="/shop/sales" element={<StaffSalesPage />} />
               <Route path="/shop/profile" element={<ShopOverviewPage />} />
               <Route path="/shop/services" element={<ShopServiceManager />} />
