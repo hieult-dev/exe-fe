@@ -527,7 +527,7 @@ export function StaffSalesPage() {
 
   const openCustomerDisplay = () => {
     publishCustomerDisplaySnapshot(customerDisplaySnapshot)
-    window.open("/staff/sales/customer-display", "petpees-customer-display", "popup,width=960,height=900")?.focus()
+    window.open("/shop/sales/customer-display", "petpees-customer-display", "popup,width=960,height=900")?.focus()
   }
 
   const handleCustomerCreated = (customer: CustomerDTO) => {

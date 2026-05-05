@@ -1,9 +1,11 @@
 ﻿import { useState, useRef, useEffect } from "react"
 import { NavLink, Navigate, Outlet, useLocation } from "react-router-dom"
 import { InputText } from "primereact/inputtext"
+import { StaffSaleHeaderSearch } from "@/apps/staff/components/StaffSaleHeaderSearch"
+import { StaffSalesSearchProvider } from "@/apps/staff/context/StaffSalesSearchContext"
 import { useUserStore } from "@/apps/user/store/UserStore"
 import { ShopOwnerProvider, useShopOwnerContext } from "@/common/store/ShopOwnerContext"
-import { canAccessShopOwnerPages, resolveCurrentAuthShop } from "@/common/auth/utils/shopAccess"
+import { canAccessShopConsolePages, resolveCurrentAuthShop } from "@/common/auth/utils/shopAccess"
 import { AppHeader } from "@/common/layout/AppHeader"
 
 /* ── Types ── */
@@ -31,10 +33,10 @@ type NavItemGroup = {
 type NavEntry = NavItemSingle | NavItemGroup
 
 /* ── Nav config ── */
-const shopOwnerNav: NavEntry[] = [
+const shopConsoleNav: NavEntry[] = [
   {
     type: "single",
-    to: "/shop-owner/dashboard",
+    to: "/shop/dashboard",
     railLabel: "Tổng quan",
     icon: "pi pi-chart-bar",
   },
@@ -42,44 +44,39 @@ const shopOwnerNav: NavEntry[] = [
     type: "group",
     railLabel: "Kinh doanh",
     icon: "pi pi-briefcase",
-    matchPrefix: ["/shop-owner/services", "/shop-owner/orders", "/shop-owner/bookings"],
+    matchPrefix: ["/shop/sales", "/shop/services", "/shop/orders", "/shop/bookings"],
     children: [
-      { to: "/shop-owner/services", label: "Dịch vụ", icon: "pi pi-cog" },
-      { to: "/shop-owner/orders", label: "Đơn hàng", icon: "pi pi-shopping-cart" },
-      { to: "/shop-owner/bookings", label: "Lịch hẹn", icon: "pi pi-calendar" },
+      { to: "/shop/sales", label: "Bán hàng", icon: "pi pi-calculator" },
+      { to: "/shop/services", label: "Dịch vụ", icon: "pi pi-cog" },
+      { to: "/shop/orders", label: "Đơn hàng", icon: "pi pi-shopping-cart" },
+      { to: "/shop/bookings", label: "Lịch hẹn", icon: "pi pi-calendar" },
     ],
   },
   {
     type: "group",
     railLabel: "Quản lý",
     icon: "pi pi-th-large",
-    matchPrefix: ["/shop-owner/product", "/shop-owner/members"],
+    matchPrefix: ["/shop/product"],
     children: [
-      { to: "/shop-owner/product", label: "Sản phẩm", icon: "pi pi-box" },
-      { to: "/shop-owner/members", label: "Thành viên", icon: "pi pi-users" },
+      { to: "/shop/product", label: "Sản phẩm", icon: "pi pi-box" },
     ],
-  },
-  {
-    type: "single",
-    to: "/shop-owner/tax",
-    railLabel: "Thuế",
-    icon: "pi pi-file",
   },
   {
     type: "group",
     railLabel: "Cấu hình",
     icon: "pi pi-cog",
-    matchPrefix: ["/shop-owner/profile", "/shop-owner/payment-config", "/shop-owner/ghtk-config"],
+    matchPrefix: ["/shop/profile", "/shop/payment-config", "/shop/ghtk-config"],
     children: [
-      { to: "/shop-owner/profile", label: "Thông tin", icon: "pi pi-info-circle" },
-      { to: "/shop-owner/payment-config", label: "Ngân hàng", icon: "pi pi-credit-card" },
-      { to: "/shop-owner/ghtk-config", label: "GHTK", icon: "pi pi-truck" },
+      { to: "/shop/profile", label: "Thông tin", icon: "pi pi-info-circle" },
+      { to: "/shop/payment-config", label: "Ngân hàng", icon: "pi pi-credit-card" },
+      { to: "/shop/ghtk-config", label: "GHTK", icon: "pi pi-truck" },
     ],
   },
 ]
 
-export function ShopOwnerLayout() {
+export function ShopConsoleLayout() {
   const { user, authentication, currentShopId, shops } = useUserStore()
+  const location = useLocation()
 
   if (!user || !authentication) {
     return <Navigate to="/login" replace />
@@ -87,30 +84,38 @@ export function ShopOwnerLayout() {
 
   const currentShop = resolveCurrentAuthShop(shops, currentShopId)
 
-  if (!canAccessShopOwnerPages(currentShop)) {
+  if (!canAccessShopConsolePages(currentShop)) {
     return <Navigate to="/unauthorized" replace />
   }
 
   const ownerKey = user.email?.trim().toLowerCase() || "default"
+  const isSalesPage = location.pathname.startsWith("/shop/sales")
 
   return (
     <ShopOwnerProvider ownerKey={ownerKey}>
-      <div className="flex h-screen flex-col overflow-hidden bg-[#eef2f6]">
-        <AppHeader user={user} homePath="/shop-owner/dashboard" center={<GlobalSearchBar />} />
+      <StaffSalesSearchProvider>
+        <div className="flex h-screen flex-col overflow-hidden bg-[#eef2f6]">
+          <AppHeader
+            user={user}
+            homePath="/shop/dashboard"
+            title={currentShop?.name ?? "PetPees"}
+            center={isSalesPage ? <StaffSaleHeaderSearch /> : <GlobalSearchBar />}
+          />
 
-        <div className="grid flex-1 grid-cols-[96px,1fr] overflow-hidden">
-          <aside className="flex h-full flex-col border-r border-[#dfe5ee] bg-[#f7f8fb]">
-            <SidebarNav />
+          <div className="grid flex-1 grid-cols-[96px,1fr] overflow-hidden">
+            <aside className="flex h-full flex-col border-r border-[#dfe5ee] bg-[#f7f8fb]">
+              <SidebarNav />
 
-          </aside>
+            </aside>
 
-          <section className="flex h-full min-w-0 flex-col overflow-y-auto">
-            <main className="flex flex-1 flex-col px-2 py-2 lg:px-3 lg:pb-3">
-              <Outlet />
-            </main>
-          </section>
+            <section className="flex h-full min-w-0 flex-col overflow-y-auto">
+              <main className="flex flex-1 flex-col px-2 py-2 lg:px-3 lg:pb-3">
+                <Outlet />
+              </main>
+            </section>
+          </div>
         </div>
-      </div>
+      </StaffSalesSearchProvider>
     </ShopOwnerProvider>
   )
 }
@@ -184,7 +189,7 @@ function SidebarNav() {
 
   return (
     <nav className="pt-3">
-      {shopOwnerNav.map((entry) =>
+      {shopConsoleNav.map((entry) =>
         entry.type === "single" ? (
           <SingleNavItem key={entry.to} item={entry} onHover={closeImmediately} />
         ) : (
@@ -284,6 +289,6 @@ function GroupNavItem({
   )
 }
 
-export function ShopOwnerDefaultRedirect() {
-  return <Navigate to="/shop-owner/dashboard" replace />
+export function ShopConsoleDefaultRedirect() {
+  return <Navigate to="/shop/dashboard" replace />
 }

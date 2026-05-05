@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom"
 import { Button } from "primereact/button"
 import type { CustomerDisplayInvoiceLine, CustomerDisplayInvoiceSnapshot } from "@/apps/staff/model"
 import { useUserStore } from "@/apps/user/store/UserStore"
-import { canAccessStaffPages, resolveCurrentAuthShop } from "@/common/auth/utils/shopAccess"
+import { canAccessShopConsolePages, resolveCurrentAuthShop } from "@/common/auth/utils/shopAccess"
 import { formatCurrencyVND } from "@/common/utils/format"
 import { NOT_FOUND_IMAGE_URL } from "@/common/utils/url"
 import {
@@ -73,7 +73,7 @@ export function StaffCustomerDisplayPage() {
     return <Navigate to="/login" replace />
   }
 
-  if (!canAccessStaffPages(currentShop)) {
+  if (!canAccessShopConsolePages(currentShop)) {
     return <Navigate to="/unauthorized" replace />
   }
 
