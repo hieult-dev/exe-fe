@@ -75,6 +75,8 @@ export function StaffSaleHeaderSearch() {
               {visibleSuggestions.map((suggestion) => {
                 if (suggestion.type === "BOOKING") {
                   const booking = suggestion.booking
+                  const customerName = booking.customerName || booking.userFullName || `User #${booking.userId ?? booking.id}`
+                  const customerContact = booking.customerPhone || booking.userPhone || booking.userEmail || "---"
                   return (
                     <button
                       key={`BOOKING-${booking.id}`}
@@ -90,13 +92,13 @@ export function StaffSaleHeaderSearch() {
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex min-w-0 items-center gap-2">
-                          <p className="m-0 truncate text-sm font-semibold text-slate-800">{booking.customerName}</p>
+                          <p className="m-0 truncate text-sm font-semibold text-slate-800">{customerName}</p>
                           <span className="shrink-0 rounded bg-sky-100 px-1.5 py-0.5 font-mono text-[10px] font-bold text-sky-700">
                             {booking.bookingCode}
                           </span>
                         </div>
                         <p className="m-0 mt-0.5 truncate text-xs text-slate-500">
-                          {booking.customerPhone} · {formatDateTimeViVN(booking.startAt || booking.time)}
+                          {customerContact} · {formatDateTimeViVN(booking.startAt || booking.time)}
                         </p>
                       </div>
                       <div className="shrink-0 text-right">

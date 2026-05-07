@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useEffect, useMemo, useRef, useState } from "react"
+import { useLocation } from "react-router-dom"
 import { Button } from "primereact/button"
 import { DataTable } from "primereact/datatable"
 import { Column } from "primereact/column"
@@ -28,6 +29,15 @@ function getErrorMessage(error: unknown, fallback: string) {
   return fallback
 }
 
+function getNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string" && value.trim()) {
+    const parsedValue = Number(value)
+    return Number.isFinite(parsedValue) ? parsedValue : null
+  }
+  return null
+}
+
 function serviceStatusLabel(isActive: boolean) {
   return isActive ? "Đang hoạt động" : "Tạm dừng"
 }
@@ -37,8 +47,14 @@ function serviceStatusClass(isActive: boolean) {
 }
 
 export function ShopServiceManager() {
+  const location = useLocation()
   const { data, globalSearchQuery } = useShopOwnerContext()
   const shopId = Number(String(data.shop.id).replace(/\D/g, "")) || 1
+  const highlightedServiceId = useMemo(
+    () => getNumber(new URLSearchParams(location.search).get("serviceId")),
+    [location.search],
+  )
+  const highlightedServiceFetchRef = useRef<number | null>(null)
 
   const [debouncedSearch, setDebouncedSearch] = useState(globalSearchQuery)
 
@@ -65,6 +81,11 @@ export function ShopServiceManager() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
 
   const [statusFilter, setStatusFilter] = useState<ServiceVisibilityFilter>("ALL")
+
+  useEffect(() => {
+    if (highlightedServiceId === null) return
+    setStatusFilter("ALL")
+  }, [highlightedServiceId])
 
   const loadServices = async (isLoadMore = false) => {
     if (isLoadMore) {
@@ -197,6 +218,50 @@ export function ShopServiceManager() {
       active: typeof merged.active === "boolean" ? merged.active : true,
     }
   }
+
+  useEffect(() => {
+    if (highlightedServiceId === null) return
+    if (services.some((service) => service.id === highlightedServiceId)) return
+    if (highlightedServiceFetchRef.current === highlightedServiceId) return
+
+    let cancelled = false
+    highlightedServiceFetchRef.current = highlightedServiceId
+
+    getServiceById(highlightedServiceId)
+      .then((result) => {
+        if (cancelled) return
+        const detail = ((result as any)?.data || result) as ServiceDTO
+        if (!detail || !detail.id) return
+        const nextService = buildServiceWithCategory(detail)
+
+        setServices((prev) => {
+          if (prev.some((item) => item.id === nextService.id)) {
+            return prev.map((item) => (item.id === nextService.id ? nextService : item))
+          }
+          return [nextService, ...prev]
+        })
+      })
+      .catch((error) => console.error("[SERVICE HIGHLIGHT]", error))
+      .finally(() => {
+        if (!cancelled && highlightedServiceFetchRef.current === highlightedServiceId) {
+          highlightedServiceFetchRef.current = null
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [highlightedServiceId, services, categories, shopId])
+
+  useEffect(() => {
+    if (highlightedServiceId === null || !visibleServices.some((service) => service.id === highlightedServiceId)) return
+
+    const frameId = window.requestAnimationFrame(() => {
+      document.querySelector(".service-row-highlight")?.scrollIntoView({ behavior: "smooth", block: "center" })
+    })
+
+    return () => window.cancelAnimationFrame(frameId)
+  }, [highlightedServiceId, visibleServices])
 
   const loadServiceDetailForAction = async (service: ServiceDTO, mode: Exclude<FormMode, null>) => {
     if (!service.id) {
@@ -358,6 +423,10 @@ export function ShopServiceManager() {
     return <TableActionMenu items={actionItems} />
   }
 
+  const serviceRowClassName = (service: ServiceDTO) => {
+    return highlightedServiceId !== null && service.id === highlightedServiceId ? "service-row-highlight" : ""
+  }
+
   return (
     <>
       <div className="flex flex-1 flex-col gap-2">
@@ -427,6 +496,7 @@ export function ShopServiceManager() {
                 size="small"
                 stripedRows
                 rowHover
+                rowClassName={serviceRowClassName}
                 showGridlines
                 tableStyle={{ minWidth: "68rem" }}
                 emptyMessage={

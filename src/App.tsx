@@ -18,11 +18,13 @@ import { ShopGhtkConfigPage } from "@/apps/ghtk_config/ShopGhtkConfigPage"
 import { ShopChatPage } from "@/apps/chat/ShopChatPage"
 import { StaffCustomerDisplayPage } from "@/apps/staff/StaffCustomerDisplayPage"
 import { StaffSalesPage } from "@/apps/staff/StaffSalesPage"
+import { NotificationRealtimeBridge } from "@/apps/notifications/NotificationRealtimeBridge"
 import ToastProvider from "@/common/toast/ToastProvider"
 function App() {
   return (
     <>
       <ToastProvider />
+      <NotificationRealtimeBridge />
       <div className="min-h-screen">
         <main className="min-h-screen">
           <Routes>

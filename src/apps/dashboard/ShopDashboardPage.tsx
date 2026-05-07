@@ -1,6 +1,5 @@
 ﻿import { useMemo } from "react"
 import { Chart } from "primereact/chart"
-import { Toolbar } from "primereact/toolbar"
 import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
 import { formatCurrencyVND } from "@/common/utils/format"
 
@@ -194,17 +193,6 @@ export function ShopDashboardPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-2">
-      {/* Toolbar — PrimeReact Toolbar, nền trắng, tách biệt với content */}
-      <Toolbar
-        className="rounded-xl border-none bg-white shadow-[0_2px_12px_rgba(15,23,42,0.04)]"
-        start={
-          <div>
-            <h1 className="text-lg font-semibold text-slate-800">Tổng quan</h1>
-            <p className="text-sm text-slate-500">Theo dõi hiệu suất kinh doanh và hoạt động cửa hàng</p>
-          </div>
-        }
-      />
-
       {/* Content — white rounded box */}
       <div className="flex-1 rounded-xl bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:p-4">
         <div className="space-y-6">

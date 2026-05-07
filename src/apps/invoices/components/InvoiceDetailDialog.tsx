@@ -14,6 +14,7 @@ export type InvoiceDetailReference = {
     name?: string | null
     tel?: string | null
     address?: string | null
+    street?: string | null
     hamlet?: string | null
     ward?: string | null
     district?: string | null
@@ -66,9 +67,9 @@ export function InvoiceDetailDialog({ visible, loading, invoice, reference, onHi
   const customerPhone = reference?.customerPhone || "---"
   const delivery = reference?.delivery
   const deliveryAddress =
-    [delivery?.address, delivery?.hamlet, delivery?.ward, delivery?.district, delivery?.province].filter(Boolean).join(", ") || "---"
+    [delivery?.address, delivery?.street, delivery?.hamlet, delivery?.ward, delivery?.district, delivery?.province].filter(Boolean).join(", ") || "---"
   const hasDeliveryInfo = Boolean(
-    delivery?.name || delivery?.tel || delivery?.address || delivery?.hamlet || delivery?.ward || delivery?.district || delivery?.province,
+    delivery?.name || delivery?.tel || delivery?.address || delivery?.street || delivery?.hamlet || delivery?.ward || delivery?.district || delivery?.province,
   )
 
   const footer = (

@@ -1,9 +1,10 @@
-﻿import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect } from "react"
 import { NavLink, Navigate, Outlet, useLocation } from "react-router-dom"
 import { InputText } from "primereact/inputtext"
 import { StaffSaleHeaderSearch } from "@/apps/staff/components/StaffSaleHeaderSearch"
 import { StaffSalesSearchProvider } from "@/apps/staff/context/StaffSalesSearchContext"
 import { useUserStore } from "@/apps/user/store/UserStore"
+import { useNotificationStore } from "@/apps/notifications/store/NotificationStore"
 import { ShopOwnerProvider, useShopOwnerContext } from "@/common/store/ShopOwnerContext"
 import { canAccessShopConsolePages, resolveCurrentAuthShop } from "@/common/auth/utils/shopAccess"
 import { AppHeader } from "@/common/layout/AppHeader"
@@ -82,6 +83,8 @@ const shopConsoleNav: NavEntry[] = [
 
 export function ShopConsoleLayout() {
   const { user, authentication, currentShopId, shops } = useUserStore()
+  const notificationBadgeCount = useNotificationStore((state) => state.unreadNotificationCount)
+  const chatBadgeCount = useNotificationStore((state) => state.unreadChatNotificationCount)
   const location = useLocation()
 
   if (!user || !authentication) {
@@ -107,16 +110,17 @@ export function ShopConsoleLayout() {
             homePath="/shop/dashboard"
             title={currentShop?.name ?? "PetPees"}
             center={isSalesPage ? <StaffSaleHeaderSearch /> : isChatPage ? null : <GlobalSearchBar />}
+            notificationBadgeCount={notificationBadgeCount}
           />
 
           <div className="grid flex-1 grid-cols-[96px,1fr] overflow-hidden">
             <aside className="flex h-full flex-col border-r border-[#dfe5ee] bg-[#f7f8fb]">
-              <SidebarNav />
+              <SidebarNav chatBadgeCount={chatBadgeCount} />
 
             </aside>
 
-            <section className="flex h-full min-w-0 flex-col overflow-y-auto">
-              <main className="flex flex-1 flex-col px-2 py-2 lg:px-3 lg:pb-3">
+            <section className={`flex h-full min-w-0 flex-col ${isChatPage ? "overflow-hidden" : "overflow-y-auto"}`}>
+              <main className={`flex flex-1 flex-col px-2 py-2 lg:px-3 lg:pb-3 ${isChatPage ? "min-h-0" : ""}`}>
                 <Outlet />
               </main>
             </section>
@@ -163,7 +167,7 @@ function GlobalSearchBar() {
 }
 
 /* ── Sidebar nav with shared flyout state ── */
-function SidebarNav() {
+function SidebarNav({ chatBadgeCount }: { chatBadgeCount: number }) {
   const location = useLocation()
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -198,7 +202,7 @@ function SidebarNav() {
     <nav className="pt-3">
       {shopConsoleNav.map((entry) =>
         entry.type === "single" ? (
-          <SingleNavItem key={entry.to} item={entry} onHover={closeImmediately} />
+          <SingleNavItem key={entry.to} item={entry} badgeCount={entry.to === "/shop/chat" ? chatBadgeCount : 0} onHover={closeImmediately} />
         ) : (
           <GroupNavItem
             key={entry.railLabel}
@@ -215,7 +219,14 @@ function SidebarNav() {
 }
 
 /* ── Single nav item (no children) ── */
-function SingleNavItem({ item, onHover }: { item: NavItemSingle; onHover: () => void }) {
+function formatBadgeCount(count: number) {
+  if (count <= 0) return null
+  return count > 99 ? "99+" : String(count)
+}
+
+function SingleNavItem({ item, badgeCount = 0, onHover }: { item: NavItemSingle; badgeCount?: number; onHover: () => void }) {
+  const formattedBadgeCount = formatBadgeCount(badgeCount)
+
   return (
     <NavLink
       to={item.to}
@@ -229,7 +240,14 @@ function SingleNavItem({ item, onHover }: { item: NavItemSingle; onHover: () => 
       {({ isActive }) => (
         <>
           {isActive && <span className="absolute inset-y-0 left-0 w-1 rounded-r-full bg-[#214388]" />}
-          <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#eef3fb] text-[#214388] ${item.icon}`}></span>
+          <span className="relative inline-flex">
+            <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#eef3fb] text-[#214388] ${item.icon}`}></span>
+            {formattedBadgeCount && (
+              <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-red-500 px-1 text-[10px] font-bold leading-4 text-white">
+                {formattedBadgeCount}
+              </span>
+            )}
+          </span>
           <span className="px-1 text-[11px] font-semibold leading-tight">{item.railLabel}</span>
         </>
       )}

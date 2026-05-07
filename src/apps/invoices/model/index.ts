@@ -16,6 +16,7 @@ export interface InvoiceLineDTO {
 export interface InvoiceDTO {
   id: number
   shopId: number
+  userId: number | null
   customerId: number | null
   bookingId: number | null
   orderId: number | null
@@ -32,7 +33,8 @@ export interface InvoiceDetailDTO extends InvoiceDTO {
 }
 
 export type CreateInvoiceRequest = {
-  customerId: number | null
+  userId?: number | null
+  customerId?: number | null
   bookingId: number | null
   orderId: number | null
   totalAmount: number

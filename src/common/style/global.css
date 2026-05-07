@@ -12,6 +12,48 @@
     font-weight: 800;
   }
 
+  .p-datatable .order-row-highlight > td {
+    background: #fff7ed !important;
+    box-shadow:
+      inset 0 1px 0 #fed7aa,
+      inset 0 -1px 0 #fed7aa;
+  }
+
+  .p-datatable .order-row-highlight > td:first-child {
+    box-shadow:
+      inset 4px 0 0 #f97316,
+      inset 0 1px 0 #fed7aa,
+      inset 0 -1px 0 #fed7aa;
+  }
+
+  .p-datatable .booking-row-highlight > td {
+    background: #eff6ff !important;
+    box-shadow:
+      inset 0 1px 0 #bfdbfe,
+      inset 0 -1px 0 #bfdbfe;
+  }
+
+  .p-datatable .booking-row-highlight > td:first-child {
+    box-shadow:
+      inset 4px 0 0 #2563eb,
+      inset 0 1px 0 #bfdbfe,
+      inset 0 -1px 0 #bfdbfe;
+  }
+
+  .p-datatable .service-row-highlight > td {
+    background: #ecfdf5 !important;
+    box-shadow:
+      inset 0 1px 0 #a7f3d0,
+      inset 0 -1px 0 #a7f3d0;
+  }
+
+  .p-datatable .service-row-highlight > td:first-child {
+    box-shadow:
+      inset 4px 0 0 #10b981,
+      inset 0 1px 0 #a7f3d0,
+      inset 0 -1px 0 #a7f3d0;
+  }
+
   .p-menu .p-menuitem.table-action-menu__delete > .p-menuitem-content .p-menuitem-link,
   .p-menu .p-menuitem.table-action-menu__delete > .p-menuitem-content .p-menuitem-link .p-menuitem-icon,
   .p-menu .p-menuitem.table-action-menu__delete > .p-menuitem-content .p-menuitem-link .p-menuitem-text {

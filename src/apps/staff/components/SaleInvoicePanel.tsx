@@ -97,6 +97,12 @@ export function SaleInvoicePanel({
   const totalAmount = Math.max(0, subtotal - appliedDiscount)
   const hasInvoiceItem = cart.length > 0 || Boolean(selectedBooking)
   const discountInputValue = discountAmount > 0 ? formatVndInput(String(discountAmount)) : ""
+  const selectedBookingName = selectedBooking
+    ? selectedBooking.customerName || selectedBooking.userFullName || `User #${selectedBooking.userId ?? selectedBooking.id}`
+    : ""
+  const selectedBookingContact = selectedBooking
+    ? selectedBooking.customerPhone || selectedBooking.userPhone || selectedBooking.userEmail || "---"
+    : ""
 
   const handleDiscountInputChange = (value: string) => {
     onDiscountChange(Number(toDigitsOnly(value) || 0))
@@ -163,8 +169,8 @@ export function SaleInvoicePanel({
           <div>
             <p className="m-0 text-xs font-bold uppercase tracking-wider text-slate-400">Khách hàng</p>
             <div className="mt-2 rounded-lg bg-[#f8fafc] px-3 py-2">
-              <p className="m-0 truncate text-sm font-semibold text-slate-800">{selectedBooking.customerName}</p>
-              <p className="m-0 mt-0.5 truncate text-xs text-slate-500">{selectedBooking.customerPhone}</p>
+              <p className="m-0 truncate text-sm font-semibold text-slate-800">{selectedBookingName}</p>
+              <p className="m-0 mt-0.5 truncate text-xs text-slate-500">{selectedBookingContact}</p>
             </div>
           </div>
         ) : (

@@ -13,10 +13,10 @@ export function resolveAvatarUrl(avatarPath: string | null | undefined) {
     return null
   }
 
-  if (avatarPath.startsWith("http") || avatarPath.startsWith("/")) {
+  if (avatarPath.startsWith("http")) {
     return avatarPath
   }
 
-  return `${GATEWAY_URL}${avatarPath}`
+  return `${GATEWAY_URL}/${avatarPath.replace(/^\/+/, "")}`
 }
 

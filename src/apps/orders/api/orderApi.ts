@@ -3,6 +3,7 @@ import { GATEWAY_URL } from "@/common/config/api"
 import type {
   CreateOrderRequest,
   OrderCursorPage,
+  OrderDetailDTO,
   OrderDTO,
   OrderListItemDTO,
   OrderSource,
@@ -12,6 +13,7 @@ import type {
 const ORDER_URL = `${GATEWAY_URL}/api/orders`
 
 type GetOrdersParams = {
+  userId?: number
   customerId?: number
   status?: OrderStatus
   source?: OrderSource
@@ -21,6 +23,7 @@ type GetOrdersParams = {
 }
 
 export const getOrders = async ({
+  userId,
   customerId,
   status,
   source,
@@ -30,6 +33,7 @@ export const getOrders = async ({
 }: GetOrdersParams = {}) => {
   const params: Record<string, number | string> = { size }
 
+  if (typeof userId === "number") params.userId = userId
   if (typeof customerId === "number") params.customerId = customerId
   if (status) params.status = status
   if (source) params.source = source
@@ -40,7 +44,7 @@ export const getOrders = async ({
 }
 
 export const getOrderById = async (id: number) => {
-  return api.get<OrderDTO>(`${ORDER_URL}/${id}`)
+  return api.get<OrderDetailDTO>(`${ORDER_URL}/${id}`)
 }
 
 export const createOrder = async (data: CreateOrderRequest) => {

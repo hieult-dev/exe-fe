@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
+import { useLocation } from "react-router-dom"
 import { Button } from "primereact/button"
 import { Calendar } from "primereact/calendar"
 import { Dialog } from "primereact/dialog"
@@ -11,7 +12,7 @@ import type { MenuItem } from "primereact/menuitem"
 import { Column } from "primereact/column"
 import type { ColumnBodyOptions } from "primereact/column"
 import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
-import { getBookings, updateBookingStatus, assignBooking, getBookingInvoice } from "@/apps/bookings/api/bookingApi"
+import { getBookingById, getBookings, updateBookingStatus, assignBooking, getBookingInvoice } from "@/apps/bookings/api/bookingApi"
 import { getActiveStaff, type ShopMemberDTO } from "@/apps/members/api/shopMemberApi"
 import type { BookingDTO, BookingStatus, BookingStatusFilter } from "@/apps/bookings/model"
 import { ShopBookingDetailModal } from "@/apps/bookings/ShopBookingDetailModal"
@@ -29,6 +30,15 @@ function getErrorMessage(error: unknown, fallback: string) {
   }
   if (error instanceof Error && error.message.trim()) return error.message
   return fallback
+}
+
+function getNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string" && value.trim()) {
+    const parsedValue = Number(value)
+    return Number.isFinite(parsedValue) ? parsedValue : null
+  }
+  return null
 }
 
 const STATUS_CONFIG: Record<BookingStatus, { label: string; bg: string; text: string }> = {
@@ -65,10 +75,26 @@ function isTodayBooking(booking: BookingDTO) {
   return date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate()
 }
 
+function getBookingCustomerName(booking: BookingDTO | null | undefined) {
+  if (!booking) return undefined
+  return booking.customerName || booking.userFullName || (booking.userId ? `User #${booking.userId}` : undefined)
+}
+
+function getBookingCustomerContact(booking: BookingDTO | null | undefined) {
+  if (!booking) return undefined
+  return booking.customerPhone || booking.userPhone || booking.userEmail || undefined
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function ShopBookingsPage() {
+  const location = useLocation()
   const { globalSearchQuery } = useShopOwnerContext()
+  const highlightedBookingId = useMemo(
+    () => getNumber(new URLSearchParams(location.search).get("bookingId")),
+    [location.search],
+  )
+  const highlightedBookingFetchRef = useRef<number | null>(null)
 
   // ── Debounce search ───────────────────────────────────────────────────────
   const [debouncedSearch, setDebouncedSearch] = useState(globalSearchQuery)
@@ -106,6 +132,14 @@ export function ShopBookingsPage() {
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false)
   const [isInvoiceLoading, setIsInvoiceLoading] = useState(false)
   const [todayConfirmedCount, setTodayConfirmedCount] = useState(0)
+
+  useEffect(() => {
+    if (highlightedBookingId === null) return
+
+    setStatusFilter("ALL")
+    setCreateDateFilter(null)
+    setAppointmentDateFilter(null)
+  }, [highlightedBookingId])
 
   // ── Load bookings (mirrors services pattern) ──────────────────────────────
   const loadBookings = async (isLoadMore = false) => {
@@ -171,6 +205,37 @@ export function ShopBookingsPage() {
 
   // ── Auto-load on search/filter change ─────────────────────────────────────
   useEffect(() => {
+    if (highlightedBookingId === null) return
+    if (bookings.some((booking) => booking.id === highlightedBookingId)) return
+    if (highlightedBookingFetchRef.current === highlightedBookingId) return
+
+    let cancelled = false
+    highlightedBookingFetchRef.current = highlightedBookingId
+
+    getBookingById(highlightedBookingId)
+      .then((booking) => {
+        if (cancelled || !booking || booking.id <= 0) return
+
+        setBookings((prev) => {
+          if (prev.some((item) => item.id === booking.id)) {
+            return prev.map((item) => (item.id === booking.id ? booking : item))
+          }
+          return [booking, ...prev]
+        })
+      })
+      .catch((error) => console.error("[BOOKING HIGHLIGHT]", error))
+      .finally(() => {
+        if (!cancelled && highlightedBookingFetchRef.current === highlightedBookingId) {
+          highlightedBookingFetchRef.current = null
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [highlightedBookingId, bookings])
+
+  useEffect(() => {
     loadBookings(false)
   }, [appointmentDateFilter, createDateFilter, debouncedSearch, statusFilter])
 
@@ -204,6 +269,16 @@ export function ShopBookingsPage() {
     const active = bookings.filter((b) => b.status === "IN_PROGRESS").length
     return { DRAFT, active }
   }, [bookings])
+
+  useEffect(() => {
+    if (highlightedBookingId === null || !bookings.some((booking) => booking.id === highlightedBookingId)) return
+
+    const frameId = window.requestAnimationFrame(() => {
+      document.querySelector(".booking-row-highlight")?.scrollIntoView({ behavior: "smooth", block: "center" })
+    })
+
+    return () => window.cancelAnimationFrame(frameId)
+  }, [highlightedBookingId, bookings])
 
   // ── Actions ───────────────────────────────────────────────────────────────
   const handleAccept = async (id: number) => {
@@ -352,8 +427,8 @@ export function ShopBookingsPage() {
 
   const customerBody = (booking: BookingDTO) => (
     <div>
-      <p className="text-sm font-semibold text-slate-800">{booking.customerName}</p>
-      <p className="text-xs text-slate-500">{booking.customerPhone}</p>
+      <p className="text-sm font-semibold text-slate-800">{getBookingCustomerName(booking) || "---"}</p>
+      <p className="text-xs text-slate-500">{getBookingCustomerContact(booking) || "---"}</p>
     </div>
   )
 
@@ -452,6 +527,10 @@ export function ShopBookingsPage() {
     }
 
     return <TableActionMenu items={actionItems} />
+  }
+
+  const bookingRowClassName = (booking: BookingDTO) => {
+    return highlightedBookingId !== null && booking.id === highlightedBookingId ? "booking-row-highlight" : ""
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -579,6 +658,7 @@ export function ShopBookingsPage() {
                 size="small"
                 stripedRows
                 rowHover
+                rowClassName={bookingRowClassName}
                 showGridlines
                 tableStyle={{ minWidth: "80rem" }}
                 emptyMessage={
@@ -628,8 +708,8 @@ export function ShopBookingsPage() {
         invoice={selectedInvoice}
         reference={{
           code: invoiceBooking?.bookingCode,
-          customerName: invoiceBooking?.customerName,
-          customerPhone: invoiceBooking?.customerPhone,
+          customerName: getBookingCustomerName(invoiceBooking),
+          customerPhone: getBookingCustomerContact(invoiceBooking),
           emptyMessage: "Không tìm thấy hóa đơn cho lịch hẹn này.",
         }}
         onHide={closeInvoice}

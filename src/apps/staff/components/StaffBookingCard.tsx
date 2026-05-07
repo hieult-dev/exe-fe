@@ -12,6 +12,8 @@ type StaffBookingCardProps = {
 
 export function StaffBookingCard({ booking, selected, onSelect }: StaffBookingCardProps) {
   const firstItems = booking.items.slice(0, 2)
+  const customerName = booking.customerName || booking.userFullName || `User #${booking.userId ?? booking.id}`
+  const customerPhone = booking.customerPhone || booking.userPhone || booking.userEmail || "---"
 
   return (
     <Card
@@ -26,8 +28,8 @@ export function StaffBookingCard({ booking, selected, onSelect }: StaffBookingCa
               <Tag value="Booking" severity="info" className="!h-6 !rounded-md !px-2 !py-0 !text-[11px] !font-semibold" />
               <span className="min-w-0 truncate font-mono text-xs font-semibold text-[#214388]">{booking.bookingCode}</span>
             </div>
-            <h3 className="m-0 truncate text-sm font-semibold text-slate-800">{booking.customerName}</h3>
-            <p className="m-0 mt-1 truncate text-xs text-slate-500">{booking.customerPhone}</p>
+            <h3 className="m-0 truncate text-sm font-semibold text-slate-800">{customerName}</h3>
+            <p className="m-0 mt-1 truncate text-xs text-slate-500">{customerPhone}</p>
           </div>
           <div className="shrink-0 text-right">
             <p className="m-0 text-sm font-bold text-[#214388]">{formatCurrencyVND(booking.totalAmount)}</p>

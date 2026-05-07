@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
+import { useLocation } from "react-router-dom"
 import { Button } from "primereact/button"
 import { Calendar } from "primereact/calendar"
 import { Dialog } from "primereact/dialog"
@@ -17,7 +18,7 @@ import { InvoiceDetailDialog } from "@/apps/invoices/components/InvoiceDetailDia
 import { ShopOrderDetailModal } from "@/apps/orders/components/ShopOrderDetailModal"
 import { SubmitGhtkOrderModal } from "@/apps/orders/components/SubmitGhtkOrderModal"
 import type {
-  OrderDTO,
+  OrderDetailDTO,
   OrderItemDTO,
   OrderListItemDTO,
   OrderSource,
@@ -39,10 +40,20 @@ function getErrorMessage(error: unknown, fallback: string) {
   return fallback
 }
 
+function getNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string" && value.trim()) {
+    const parsedValue = Number(value)
+    return Number.isFinite(parsedValue) ? parsedValue : null
+  }
+  return null
+}
+
 const STATUS_CONFIG: Record<OrderStatus, { label: string; bg: string; text: string }> = {
   PENDING: { label: "Chờ xác nhận", bg: "bg-amber-100", text: "text-amber-700" },
   CONFIRMED: { label: "Đã xác nhận", bg: "bg-sky-100", text: "text-sky-700" },
   PACKING: { label: "Đang đóng gói", bg: "bg-violet-100", text: "text-violet-700" },
+  WAITING_GHTK_PICKUP: { label: "Chờ GHTK đến lấy", bg: "bg-indigo-100", text: "text-indigo-700" },
   SHIPPING: { label: "Đang giao", bg: "bg-orange-100", text: "text-orange-700" },
   COMPLETED: { label: "Hoàn thành", bg: "bg-emerald-100", text: "text-emerald-700" },
   CANCELLED: { label: "Đã hủy", bg: "bg-slate-100", text: "text-slate-600" },
@@ -60,6 +71,7 @@ const SOURCE_BADGE_CONFIG: Record<OrderSource, { bg: string; text: string }> = {
 
 const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus>> = {
   CONFIRMED: "PACKING",
+  WAITING_GHTK_PICKUP: "SHIPPING",
   SHIPPING: "COMPLETED",
 }
 
@@ -68,6 +80,7 @@ const STATUS_FILTER_OPTIONS: { value: OrderStatusFilter; label: string }[] = [
   { value: "PENDING", label: STATUS_CONFIG.PENDING.label },
   { value: "CONFIRMED", label: STATUS_CONFIG.CONFIRMED.label },
   { value: "PACKING", label: STATUS_CONFIG.PACKING.label },
+  { value: "WAITING_GHTK_PICKUP", label: STATUS_CONFIG.WAITING_GHTK_PICKUP.label },
   { value: "SHIPPING", label: STATUS_CONFIG.SHIPPING.label },
   { value: "COMPLETED", label: STATUS_CONFIG.COMPLETED.label },
   { value: "CANCELLED", label: STATUS_CONFIG.CANCELLED.label },
@@ -105,13 +118,17 @@ function normalizeListItem(order: Partial<OrderListItemDTO>): OrderListItemDTO {
     id: Number(order.id ?? 0),
     orderCode: order.orderCode || `#${order.id ?? ""}`,
     shopId: Number(order.shopId ?? 0),
+    userId: order.userId ?? null,
+    userFullName: order.userFullName ?? null,
+    userPhone: order.userPhone ?? null,
+    userEmail: order.userEmail ?? null,
+    userAvatarUrlPreview: order.userAvatarUrlPreview ?? null,
     customerId: order.customerId ?? null,
     customer: order.customer ?? null,
     customerAddressId: order.customerAddressId ?? null,
     customerAddress: order.customerAddress ?? null,
-    receiverName: order.receiverName ?? null,
-    receiverPhone: order.receiverPhone ?? null,
-    shippingAddress: order.shippingAddress ?? null,
+    userAddressId: order.userAddressId ?? null,
+    shippingSnapshot: order.shippingSnapshot ?? null,
     items: Array.isArray(order.items) ? order.items.map(normalizeItem) : [],
     totalAmount: Number(order.totalAmount ?? 0),
     status,
@@ -121,8 +138,58 @@ function normalizeListItem(order: Partial<OrderListItemDTO>): OrderListItemDTO {
   }
 }
 
+function getOrderCustomerName(order: Pick<OrderListItemDTO, "customer" | "userFullName" | "userId"> | null | undefined) {
+  if (!order) return undefined
+  return order.customer?.fullName || order.userFullName || (order.userId ? `User #${order.userId}` : undefined)
+}
+
+function getOrderCustomerContact(
+  order: Pick<OrderListItemDTO, "customer" | "userPhone" | "userEmail"> | null | undefined,
+) {
+  if (!order) return undefined
+  return order.customer?.phone || order.userPhone || order.userEmail || undefined
+}
+
+function getOrderDelivery(order: OrderListItemDTO | OrderDetailDTO | null | undefined) {
+  if (!order) return null
+  if (order.customerAddress) {
+    return {
+      name: order.customerAddress.name,
+      tel: order.customerAddress.tel,
+      address: order.customerAddress.address,
+      hamlet: order.customerAddress.hamlet,
+      ward: order.customerAddress.ward,
+      district: order.customerAddress.district,
+      province: order.customerAddress.province,
+      street: null,
+    }
+  }
+
+  const snapshot = order.shippingSnapshot
+  if (snapshot) {
+    return {
+      name: snapshot.receiverName,
+      tel: snapshot.receiverPhone,
+      address: snapshot.address,
+      hamlet: snapshot.hamlet,
+      ward: snapshot.ward,
+      district: snapshot.district,
+      province: snapshot.province,
+      street: snapshot.street,
+    }
+  }
+
+  return null
+}
+
 export function ShopOrdersPage() {
+  const location = useLocation()
   const { globalSearchQuery } = useShopOwnerContext()
+  const highlightedOrderId = useMemo(
+    () => getNumber(new URLSearchParams(location.search).get("orderId")),
+    [location.search],
+  )
+  const highlightedOrderFetchRef = useRef<number | null>(null)
 
   const [debouncedSearch, setDebouncedSearch] = useState(globalSearchQuery)
 
@@ -142,7 +209,7 @@ export function ShopOrdersPage() {
   const [sourceFilter, setSourceFilter] = useState<OrderSourceFilter>("ALL")
   const [createdDateFilter, setCreatedDateFilter] = useState<Date | null>(null)
 
-  const [selectedDetailOrder, setSelectedDetailOrder] = useState<OrderDTO | null>(null)
+  const [selectedDetailOrder, setSelectedDetailOrder] = useState<OrderDetailDTO | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [isDetailLoading, setIsDetailLoading] = useState(false)
 
@@ -161,6 +228,13 @@ export function ShopOrdersPage() {
 
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<OrderListItemDTO | null>(null)
+
+  useEffect(() => {
+    if (!highlightedOrderId) return
+    setStatusFilter("ALL")
+    setSourceFilter("ALL")
+    setCreatedDateFilter(null)
+  }, [highlightedOrderId])
 
   const loadOrders = async (isLoadMore = false) => {
     if (isLoadMore) {
@@ -214,6 +288,40 @@ export function ShopOrdersPage() {
   }
 
   useEffect(() => {
+    if (!highlightedOrderId) return
+    if (orders.some((order) => order.id === highlightedOrderId)) return
+    if (highlightedOrderFetchRef.current === highlightedOrderId) return
+
+    let cancelled = false
+    highlightedOrderFetchRef.current = highlightedOrderId
+
+    getOrderById(highlightedOrderId)
+      .then((detail) => {
+        if (cancelled) return
+        const highlightedOrder = normalizeListItem(detail)
+        if (highlightedOrder.id <= 0) return
+
+        setOrders((prev) => {
+          if (prev.some((order) => order.id === highlightedOrder.id)) {
+            return prev.map((order) => (order.id === highlightedOrder.id ? highlightedOrder : order))
+          }
+
+          return [highlightedOrder, ...prev]
+        })
+      })
+      .catch((error) => console.error("[ORDER HIGHLIGHT]", error))
+      .finally(() => {
+        if (!cancelled && highlightedOrderFetchRef.current === highlightedOrderId) {
+          highlightedOrderFetchRef.current = null
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [highlightedOrderId, orders])
+
+  useEffect(() => {
     loadOrders(false)
   }, [createdDateFilter, statusFilter, sourceFilter])
 
@@ -248,11 +356,15 @@ export function ShopOrdersPage() {
     if (!keyword) return orders
 
     return orders.filter((order) => {
+      if (highlightedOrderId && order.id === highlightedOrderId) return true
+
       const searchable = [
         order.orderCode,
-        order.customer?.fullName,
-        order.customer?.phone,
-        order.shippingAddress,
+        getOrderCustomerName(order),
+        getOrderCustomerContact(order),
+        order.shippingSnapshot?.address,
+        order.shippingSnapshot?.receiverName,
+        order.shippingSnapshot?.receiverPhone,
       ]
         .filter(Boolean)
         .join(" ")
@@ -260,7 +372,20 @@ export function ShopOrdersPage() {
 
       return searchable.includes(keyword)
     })
-  }, [orders, debouncedSearch])
+  }, [orders, debouncedSearch, highlightedOrderId])
+
+  useEffect(() => {
+    if (!highlightedOrderId || !visibleOrders.some((order) => order.id === highlightedOrderId)) return
+
+    const frameId = window.requestAnimationFrame(() => {
+      document.querySelector(".order-row-highlight")?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      })
+    })
+
+    return () => window.cancelAnimationFrame(frameId)
+  }, [highlightedOrderId, visibleOrders])
 
   const patchOrderInState = (id: number, patch: Partial<OrderListItemDTO & { note?: string }>) => {
     setOrders((prev) =>
@@ -460,8 +585,8 @@ export function ShopOrdersPage() {
   )
 
   const customerBody = (order: OrderListItemDTO) => {
-    const name = order.customer?.fullName || "---"
-    const phone = order.customer?.phone || "---"
+    const name = getOrderCustomerName(order) || "---"
+    const phone = getOrderCustomerContact(order) || "---"
 
     return (
       <div>
@@ -574,6 +699,10 @@ export function ShopOrdersPage() {
     return <TableActionMenu items={actionItems} />
   }
 
+  const orderRowClassName = (order: OrderListItemDTO) => {
+    return highlightedOrderId && order.id === highlightedOrderId ? "order-row-highlight" : ""
+  }
+
   return (
     <>
       <div className="flex flex-1 flex-col gap-2">
@@ -682,6 +811,7 @@ export function ShopOrdersPage() {
                 size="small"
                 stripedRows
                 rowHover
+                rowClassName={orderRowClassName}
                 showGridlines
                 tableStyle={{ minWidth: "82rem" }}
                 emptyMessage={<div className="w-full py-2 text-center text-[#4c5f78]">Không có đơn hàng nào.</div>}
@@ -732,19 +862,9 @@ export function ShopOrdersPage() {
         invoice={selectedInvoice}
         reference={{
           code: selectedListOrder?.orderCode,
-          customerName: selectedListOrder?.customer?.fullName,
-          customerPhone: selectedListOrder?.customer?.phone,
-          delivery: selectedListOrder?.customerAddress
-            ? {
-                name: selectedListOrder.customerAddress.name,
-                tel: selectedListOrder.customerAddress.tel,
-                address: selectedListOrder.customerAddress.address,
-                hamlet: selectedListOrder.customerAddress.hamlet,
-                ward: selectedListOrder.customerAddress.ward,
-                district: selectedListOrder.customerAddress.district,
-                province: selectedListOrder.customerAddress.province,
-              }
-            : null,
+          customerName: getOrderCustomerName(selectedListOrder),
+          customerPhone: getOrderCustomerContact(selectedListOrder),
+          delivery: getOrderDelivery(selectedListOrder),
           emptyMessage: "Không tìm thấy hóa đơn cho đơn hàng này.",
         }}
         onHide={closeInvoice}

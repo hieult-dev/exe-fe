@@ -4,13 +4,13 @@ import { Column } from "primereact/column"
 import { DataTable } from "primereact/datatable"
 import { Dialog } from "primereact/dialog"
 import { Tag } from "primereact/tag"
-import type { OrderDTO, OrderItemDTO, OrderSource, OrderStatus } from "@/apps/orders/model"
+import type { OrderDetailDTO, OrderItemDTO, OrderSource, OrderStatus } from "@/apps/orders/model"
 import { formatCurrencyVND, formatDateTimeViVN } from "@/common/utils/format"
 
 type ShopOrderDetailModalProps = {
   visible: boolean
   loading: boolean
-  order: OrderDTO | null
+  order: OrderDetailDTO | null
   onHide: () => void
 }
 
@@ -18,6 +18,7 @@ const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   PENDING: "Chờ xác nhận",
   CONFIRMED: "Đã xác nhận",
   PACKING: "Đang đóng gói",
+  WAITING_GHTK_PICKUP: "Chờ GHTK đến lấy",
   SHIPPING: "Đang giao",
   COMPLETED: "Hoàn thành",
   CANCELLED: "Đã hủy",
@@ -27,6 +28,7 @@ const ORDER_STATUS_SEVERITY: Record<OrderStatus, "success" | "info" | "warning" 
   PENDING: "warning",
   CONFIRMED: "info",
   PACKING: "secondary",
+  WAITING_GHTK_PICKUP: "info",
   SHIPPING: "warning",
   COMPLETED: "success",
   CANCELLED: "danger",
@@ -37,10 +39,41 @@ const ORDER_SOURCE_LABEL: Record<OrderSource, string> = {
   STAFF: "Nhân viên",
 }
 
-function deliveryAddress(order: OrderDTO) {
+function getCustomerName(order: OrderDetailDTO) {
+  return order.customer?.fullName || order.userFullName || (order.userId ? `User #${order.userId}` : "---")
+}
+
+function getCustomerContact(order: OrderDetailDTO) {
+  return order.customer?.phone || order.userPhone || order.userEmail || "---"
+}
+
+function getCustomerEmail(order: OrderDetailDTO) {
+  return order.customer?.email || order.userEmail || "---"
+}
+
+function deliveryAddress(order: OrderDetailDTO) {
   const address = order.customerAddress
-  if (!address) return "---"
-  return [address.address, address.hamlet, address.ward, address.district, address.province].filter(Boolean).join(", ") || "---"
+  if (address) {
+    return [address.address, address.hamlet, address.ward, address.district, address.province].filter(Boolean).join(", ") || "---"
+  }
+
+  const snapshot = order.shippingSnapshot
+  if (snapshot) {
+    return [snapshot.address, snapshot.street, snapshot.hamlet, snapshot.ward, snapshot.district, snapshot.province]
+      .filter(Boolean)
+      .join(", ") || "---"
+  }
+
+  return [
+    order.shippingAddress,
+    order.shippingStreet,
+    order.shippingHamlet,
+    order.shippingWard,
+    order.shippingDistrict,
+    order.shippingProvince,
+  ]
+    .filter(Boolean)
+    .join(", ") || "---"
 }
 
 function itemNameBody(item: OrderItemDTO) {
@@ -62,6 +95,13 @@ function unitPriceBody(item: OrderItemDTO) {
 
 function amountBody(item: OrderItemDTO) {
   return <span className="font-semibold text-[#ef5c2c]">{formatCurrencyVND(item.amount)}</span>
+}
+
+function getOrderSubtotal(order: OrderDetailDTO) {
+  return order.subtotalAmount ?? order.items.reduce((sum, item) => {
+    const amount = item.amount ?? (item.unitPrice ?? 0) * Number(item.qty ?? 0)
+    return sum + Number(amount ?? 0)
+  }, 0)
 }
 
 function InfoItem({ label, value }: { label: string; value: ReactNode }) {
@@ -121,17 +161,17 @@ export function ShopOrderDetailModal({ visible, loading, order, onHide }: ShopOr
             <div className="rounded-xl border border-[#e2e8f0] bg-white p-4">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Khách hàng</p>
               <div className="space-y-3">
-                <InfoItem label="Họ tên" value={order.customer?.fullName || "---"} />
-                <InfoItem label="Số điện thoại" value={order.customer?.phone || "---"} />
-                <InfoItem label="Email" value={order.customer?.email || "---"} />
+                <InfoItem label="Họ tên" value={getCustomerName(order)} />
+                <InfoItem label="Số điện thoại" value={getCustomerContact(order)} />
+                <InfoItem label="Email" value={getCustomerEmail(order)} />
               </div>
             </div>
 
             <div className="rounded-xl border border-[#e2e8f0] bg-[#fbfdff] p-4">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Thông tin giao hàng</p>
               <div className="space-y-3">
-                <InfoItem label="Người nhận" value={order.customerAddress?.name || "---"} />
-                <InfoItem label="Số điện thoại" value={order.customerAddress?.tel || "---"} />
+                <InfoItem label="Người nhận" value={order.customerAddress?.name || order.shippingSnapshot?.receiverName || order.receiverName || "---"} />
+                <InfoItem label="Số điện thoại" value={order.customerAddress?.tel || order.shippingSnapshot?.receiverPhone || order.receiverPhone || "---"} />
                 <InfoItem label="Địa chỉ" value={<p className="m-0 leading-6">{deliveryAddress(order)}</p>} />
               </div>
             </div>
@@ -162,15 +202,15 @@ export function ShopOrderDetailModal({ visible, loading, order, onHide }: ShopOr
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between gap-3 text-slate-500">
                 <span>Tạm tính</span>
-                <span>{formatCurrencyVND(order.subtotalAmount)}</span>
+                <span>{formatCurrencyVND(getOrderSubtotal(order))}</span>
               </div>
               <div className="flex items-center justify-between gap-3 text-slate-500">
                 <span>Phí giao hàng</span>
-                <span>{formatCurrencyVND(order.shippingFee)}</span>
+                <span>{formatCurrencyVND(order.shippingFee ?? 0)}</span>
               </div>
               <div className="flex items-center justify-between gap-3 text-slate-500">
                 <span>Giảm giá</span>
-                <span>-{formatCurrencyVND(order.discountAmount)}</span>
+                <span>-{formatCurrencyVND(order.discountAmount ?? 0)}</span>
               </div>
               <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-3 text-base font-bold text-slate-900">
                 <span>Tổng tiền</span>

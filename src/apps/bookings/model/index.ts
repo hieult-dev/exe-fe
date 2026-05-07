@@ -14,14 +14,14 @@ export type BookingStatus =
 /**
  * Booking source enum matching backend BookingSource.
  */
-export type BookingSource = "ONLINE" | "WALK_IN" | "PHONE" | "STAFF"
+export type BookingSource = "STAFF" | "CUSTOMER" | "SYSTEM"
 export type BookingItemType = "SERVICE" | "PRODUCT" | "PACKAGE_REDEEM" | "ADJUSTMENT"
 
 /**
  * Line item within a booking.
  */
 export interface BookingLineItemDTO {
-  id: number
+  id?: number
   itemType: BookingItemType
   refId: number
   petId?: number | null
@@ -59,9 +59,14 @@ export interface BookingDTO {
   id: number
   bookingCode: string
   shopId: number
+  userId: number | null
+  userFullName: string | null
+  userPhone: string | null
+  userEmail: string | null
+  userAvatarUrlPreview: string | null
   customerId: number | null
-  customerName: string
-  customerPhone: string
+  customerName: string | null
+  customerPhone: string | null
   startAt: string
   endAt: string
   items: BookingLineItemDTO[]

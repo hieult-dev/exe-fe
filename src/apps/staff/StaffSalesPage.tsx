@@ -75,7 +75,8 @@ function isTodayBooking(booking: BookingDTO) {
 function matchesCustomerName(booking: BookingDTO, query: string) {
   const keyword = query.trim().toLowerCase()
   if (!keyword) return true
-  return booking.customerName.toLowerCase().includes(keyword)
+  const displayName = booking.customerName || booking.userFullName || ""
+  return displayName.toLowerCase().includes(keyword)
 }
 
 function matchesProductQuery(item: SaleCatalogItem, query: string) {
@@ -119,6 +120,7 @@ function toPaymentQr(
 
 async function createInvoiceForOrder(order: OrderDTO) {
   return createInvoice({
+    userId: order.userId,
     customerId: order.customerId,
     bookingId: null,
     orderId: order.id,
@@ -243,7 +245,7 @@ export function StaffSalesPage() {
       return {
         mode: "BOOKING",
         code: selectedBooking.bookingCode,
-        customerName: selectedBooking.customerName,
+        customerName: selectedBooking.customerName || selectedBooking.userFullName || undefined,
         lines: [...bookingLines, ...productLines],
         subtotal: nextSubtotal,
         discountAmount: 0,

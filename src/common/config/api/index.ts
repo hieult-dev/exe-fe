@@ -3,6 +3,12 @@
 const GATEWAY_URL = rawGateway ? rawGateway.replace(/\/+$/, "") : ""
 const isGatewayConfigured = Boolean(GATEWAY_URL)
 
+function toWebSocketUrl(httpUrl: string) {
+  const url = new URL(httpUrl)
+  url.protocol = url.protocol === "https:" ? "wss:" : "ws:"
+  return url.toString().replace(/\/+$/, "")
+}
+
 function assertGatewayConfigured() {
   if (isGatewayConfigured) {
     return
@@ -22,9 +28,11 @@ if (!isGatewayConfigured && import.meta.env.DEV) {
 const AUTH_URL = `${GATEWAY_URL}/api/auth`
 const USER_URL = `${GATEWAY_URL}/api/user`
 const REFRESH_TOKEN_URL = `${GATEWAY_URL}/api/auth/refreshToken`
+const GATEWAY_WEBSOCKET_URL = isGatewayConfigured ? `${toWebSocketUrl(GATEWAY_URL)}/ws` : ""
 
 export {
   GATEWAY_URL,
+  GATEWAY_WEBSOCKET_URL,
   AUTH_URL,
   USER_URL,
   REFRESH_TOKEN_URL,

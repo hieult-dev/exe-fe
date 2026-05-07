@@ -54,6 +54,14 @@ function InfoItem({ icon, label, value }: { icon: ReactNode; label: string; valu
   )
 }
 
+function getBookingCustomerName(booking: BookingDTO) {
+  return booking.customerName || booking.userFullName || (booking.userId ? `User #${booking.userId}` : "---")
+}
+
+function getBookingCustomerContact(booking: BookingDTO) {
+  return booking.customerPhone || booking.userPhone || booking.userEmail || "---"
+}
+
 function getBookingItemMeta(itemType: BookingItemType) {
   if (itemType === "PRODUCT") {
     return {
@@ -251,8 +259,8 @@ export function ShopBookingDetailModal({
               <div className="rounded-xl border border-[#e2e8f0] p-4">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Khách hàng</p>
                 <div className="space-y-3">
-                  <InfoItem icon={<i className="pi pi-user h-4 w-4" />} label="Họ tên" value={detail.customerName} />
-                  <InfoItem icon={<i className="pi pi-phone h-4 w-4" />} label="Điện thoại" value={detail.customerPhone} />
+                  <InfoItem icon={<i className="pi pi-user h-4 w-4" />} label="Họ tên" value={getBookingCustomerName(detail)} />
+                  <InfoItem icon={<i className="pi pi-phone h-4 w-4" />} label="Điện thoại" value={getBookingCustomerContact(detail)} />
                 </div>
               </div>
 
