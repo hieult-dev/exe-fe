@@ -24,14 +24,8 @@ type AppHeaderProps = {
   center?: ReactNode
   showActionButtons?: boolean
   notificationBadgeCount?: number
-  userMenuItems?: AppHeaderUserMenuItem[]
 }
 
-export type AppHeaderUserMenuItem = {
-  label: string
-  icon: string
-  to: string
-}
 
 export function AppHeader({
   user,
@@ -41,7 +35,6 @@ export function AppHeader({
   center,
   showActionButtons = true,
   notificationBadgeCount = 0,
-  userMenuItems = [],
 }: AppHeaderProps) {
   const navigate = useNavigate()
   const avatarUrl = resolveAvatarUrl(user.avatarUrlPreview)
@@ -77,7 +70,7 @@ export function AppHeader({
             </>
           )}
 
-          <UserDropdown user={user} avatarUrl={avatarUrl} menuItems={userMenuItems} />
+          <UserDropdown user={user} avatarUrl={avatarUrl} />
         </div>
       </div>
     </header>
@@ -478,13 +471,11 @@ function NotificationItem({
 type UserDropdownProps = {
   user: { fullName?: string | null; email?: string | null; avatarUrlPreview?: string | null }
   avatarUrl: string | null
-  menuItems: AppHeaderUserMenuItem[]
 }
 
-function UserDropdown({ user, avatarUrl, menuItems }: UserDropdownProps) {
+function UserDropdown({ user, avatarUrl }: UserDropdownProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  const navigate = useNavigate()
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -500,11 +491,6 @@ function UserDropdown({ user, avatarUrl, menuItems }: UserDropdownProps) {
     setOpen(false)
     await logout().catch(() => { })
     resetStoreAndRedirectToLogin()
-  }
-
-  const handleNavigate = (to: string) => {
-    setOpen(false)
-    navigate(to)
   }
 
   return (
