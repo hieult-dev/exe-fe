@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Dropdown } from "primereact/dropdown"
 import { InputSwitch } from "primereact/inputswitch"
@@ -19,6 +19,33 @@ type GhtkConfigFormProps = {
   config: GhtkConfigDTO | null
   onSubmit: (request: GhtkConfigRequest) => void
 }
+
+type ProvinceOption = {
+  code: number
+  name: string
+}
+
+type DistrictOption = {
+  code: number
+  name: string
+}
+
+type WardOption = {
+  code: number
+  name: string
+}
+
+type ProvinceDetailResponse = ProvinceOption & {
+  districts?: DistrictOption[]
+}
+
+type DistrictDetailResponse = DistrictOption & {
+  wards?: WardOption[]
+}
+
+const PROVINCES_API_BASE_URL = "https://provinces.open-api.vn/api/v1"
+
+const ADMINISTRATIVE_PREFIX_REGEX = /^(Tỉnh|Thành phố|Quận|Huyện|Thị xã|Thành phố thuộc tỉnh|Phường|Xã|Thị trấn)\s+/i
 
 const pickOptionOptions: { label: string; value: GhtkPickOption }[] = [
   { label: "COD", value: "cod" },
@@ -97,6 +124,12 @@ const defaultFormState: GhtkConfigFormState = {
 const inputClassName =
   "w-full rounded-lg border border-transparent bg-[#f8fafc] px-3 py-2 text-sm text-[#24364d] outline-none focus:!border-[#d9e1eb] focus:!bg-white focus:!shadow-none focus:!ring-0"
 
+const dropdownClassName =
+  "!h-[42px] !w-full !rounded-lg !border !border-transparent !bg-[#f8fafc] !text-sm !text-[#24364d] !shadow-none hover:!border-[#d9e1eb] focus-within:!border-[#d9e1eb] focus-within:!bg-white [&_.p-dropdown-label]:!flex [&_.p-dropdown-label]:!items-center [&_.p-dropdown-label]:!px-3 [&_.p-dropdown-label]:!py-2 [&_.p-dropdown-label]:!text-sm [&_.p-dropdown-label]:!text-[#24364d] [&_.p-dropdown-label.p-placeholder]:!text-[#94a3b8] [&_.p-dropdown-trigger]:!w-10 [&_.p-dropdown-trigger]:!text-[#64748b]"
+
+const dropdownPanelClassName =
+  "overflow-hidden rounded-lg border border-slate-200 bg-white text-sm shadow-lg [&_.p-dropdown-filter-container]:border-b [&_.p-dropdown-filter-container]:border-slate-100 [&_.p-dropdown-filter-container]:px-2 [&_.p-dropdown-filter-container]:py-2 [&_.p-dropdown-filter]:!w-full [&_.p-dropdown-filter]:!rounded-md [&_.p-dropdown-filter]:!border-slate-200 [&_.p-dropdown-filter]:!px-3 [&_.p-dropdown-filter]:!py-2 [&_.p-dropdown-filter]:!text-sm [&_.p-dropdown-items]:!py-1 [&_.p-dropdown-item]:!px-4 [&_.p-dropdown-item]:!py-2 [&_.p-dropdown-item]:!text-sm [&_.p-dropdown-item]:!text-[#24364d] [&_.p-dropdown-item.p-highlight]:!bg-[#e8f0ff] [&_.p-dropdown-item.p-highlight]:!text-[#214388]"
+
 function toFormState(config: GhtkConfigDTO | null): GhtkConfigFormState {
   if (!config) return defaultFormState
 
@@ -135,7 +168,17 @@ function toRequest(formState: GhtkConfigFormState): GhtkConfigRequest {
   }
 }
 
+function normalizeAdministrativeName(value: string) {
+  return value.trim().replace(ADMINISTRATIVE_PREFIX_REGEX, "")
+}
+
 export function GhtkConfigForm({ formId, config, onSubmit }: GhtkConfigFormProps) {
+  const [provinceOptions, setProvinceOptions] = useState<ProvinceOption[]>([])
+  const [districtOptions, setDistrictOptions] = useState<DistrictOption[]>([])
+  const [wardOptions, setWardOptions] = useState<WardOption[]>([])
+  const [isLoadingProvinces, setIsLoadingProvinces] = useState(false)
+  const [isLoadingDistricts, setIsLoadingDistricts] = useState(false)
+  const [isLoadingWards, setIsLoadingWards] = useState(false)
   const {
     handleSubmit,
     reset,
@@ -149,10 +192,145 @@ export function GhtkConfigForm({ formId, config, onSubmit }: GhtkConfigFormProps
     reValidateMode: "onChange",
   })
   const formState = watch()
+  const selectedProvince = useMemo(
+    () =>
+      provinceOptions.find((province) => normalizeAdministrativeName(province.name) === formState.pickProvince.trim()) ?? null,
+    [provinceOptions, formState.pickProvince],
+  )
+  const selectedDistrict = useMemo(
+    () =>
+      districtOptions.find((district) => normalizeAdministrativeName(district.name) === formState.pickDistrict.trim()) ?? null,
+    [districtOptions, formState.pickDistrict],
+  )
 
   useEffect(() => {
     reset(toFormState(config))
   }, [config, reset])
+
+  useEffect(() => {
+    let isMounted = true
+
+    const loadProvinces = async () => {
+      setIsLoadingProvinces(true)
+
+      try {
+        const response = await fetch(`${PROVINCES_API_BASE_URL}/p/`)
+        if (!response.ok) {
+          throw new Error("Failed to load provinces")
+        }
+
+        const data = (await response.json()) as ProvinceOption[]
+        if (isMounted) {
+          setProvinceOptions(data)
+        }
+      } catch {
+        if (isMounted) {
+          setProvinceOptions([])
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingProvinces(false)
+        }
+      }
+    }
+
+    void loadProvinces()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!selectedProvince) {
+      setDistrictOptions([])
+      setWardOptions([])
+      return
+    }
+
+    let isMounted = true
+
+    const loadDistricts = async () => {
+      setIsLoadingDistricts(true)
+
+      try {
+        const response = await fetch(`${PROVINCES_API_BASE_URL}/p/${selectedProvince.code}?depth=2`)
+        if (!response.ok) {
+          throw new Error("Failed to load districts")
+        }
+
+        const data = (await response.json()) as ProvinceDetailResponse
+        if (!isMounted) return
+
+        const districts = data.districts ?? []
+        setDistrictOptions(districts)
+
+        const hasMatchingDistrict = districts.some(
+          (district) => normalizeAdministrativeName(district.name) === formState.pickDistrict.trim(),
+        )
+        if (!hasMatchingDistrict && formState.pickDistrict) {
+          updateForm({ pickDistrict: "", pickWard: "" })
+        }
+      } catch {
+        if (!isMounted) return
+        setDistrictOptions([])
+      } finally {
+        if (isMounted) {
+          setIsLoadingDistricts(false)
+        }
+      }
+    }
+
+    void loadDistricts()
+
+    return () => {
+      isMounted = false
+    }
+  }, [selectedProvince])
+
+  useEffect(() => {
+    if (!selectedDistrict) {
+      setWardOptions([])
+      return
+    }
+
+    let isMounted = true
+
+    const loadWards = async () => {
+      setIsLoadingWards(true)
+
+      try {
+        const response = await fetch(`${PROVINCES_API_BASE_URL}/d/${selectedDistrict.code}?depth=2`)
+        if (!response.ok) {
+          throw new Error("Failed to load wards")
+        }
+
+        const data = (await response.json()) as DistrictDetailResponse
+        if (!isMounted) return
+
+        const wards = data.wards ?? []
+        setWardOptions(wards)
+
+        const hasMatchingWard = wards.some((ward) => normalizeAdministrativeName(ward.name) === formState.pickWard.trim())
+        if (!hasMatchingWard && formState.pickWard) {
+          updateForm({ pickWard: "" })
+        }
+      } catch {
+        if (!isMounted) return
+        setWardOptions([])
+      } finally {
+        if (isMounted) {
+          setIsLoadingWards(false)
+        }
+      }
+    }
+
+    void loadWards()
+
+    return () => {
+      isMounted = false
+    }
+  }, [selectedDistrict])
 
   const updateForm = (patch: Partial<GhtkConfigFormState>) => {
     Object.entries(patch).forEach(([key, value]) => {
@@ -166,6 +344,19 @@ export function GhtkConfigForm({ formId, config, onSubmit }: GhtkConfigFormProps
   const submitForm = (values: GhtkConfigFormState) => {
     onSubmit(toRequest(values))
   }
+
+  const provinceDropdownOptions = provinceOptions.map((province) => ({
+    label: normalizeAdministrativeName(province.name),
+    value: normalizeAdministrativeName(province.name),
+  }))
+  const districtDropdownOptions = districtOptions.map((district) => ({
+    label: normalizeAdministrativeName(district.name),
+    value: normalizeAdministrativeName(district.name),
+  }))
+  const wardDropdownOptions = wardOptions.map((ward) => ({
+    label: normalizeAdministrativeName(ward.name),
+    value: normalizeAdministrativeName(ward.name),
+  }))
 
   return (
     <form id={formId} onSubmit={handleSubmit(submitForm)} className="space-y-6">
@@ -235,28 +426,50 @@ export function GhtkConfigForm({ formId, config, onSubmit }: GhtkConfigFormProps
             error={errors.pickTel?.message}
             onChange={(value) => updateForm({ pickTel: value })}
           />
-          <ConfigInput
+          <LocationDropdown
             label="Tỉnh/thành"
             required={formState.enabled}
             value={formState.pickProvince}
-            maxLength={120}
+            options={provinceDropdownOptions}
             error={errors.pickProvince?.message}
-            onChange={(value) => updateForm({ pickProvince: value })}
+            loading={isLoadingProvinces}
+            placeholder="Chọn tỉnh/thành"
+            emptyMessage="Không có tỉnh/thành"
+            onChange={(value) =>
+              updateForm({
+                pickProvince: value,
+                pickDistrict: "",
+                pickWard: "",
+              })
+            }
           />
-          <ConfigInput
+          <LocationDropdown
             label="Quận/huyện"
             required={formState.enabled}
             value={formState.pickDistrict}
-            maxLength={120}
+            options={districtDropdownOptions}
             error={errors.pickDistrict?.message}
-            onChange={(value) => updateForm({ pickDistrict: value })}
+            loading={isLoadingDistricts}
+            disabled={!selectedProvince}
+            placeholder={selectedProvince ? "Chọn quận/huyện" : "Chọn tỉnh/thành trước"}
+            emptyMessage="Không có quận/huyện"
+            onChange={(value) =>
+              updateForm({
+                pickDistrict: value,
+                pickWard: "",
+              })
+            }
           />
-          <ConfigInput
+          <LocationDropdown
             label="Phường/xã"
             required={formState.enabled}
             value={formState.pickWard}
-            maxLength={120}
+            options={wardDropdownOptions}
             error={errors.pickWard?.message}
+            loading={isLoadingWards}
+            disabled={!selectedDistrict}
+            placeholder={selectedDistrict ? "Chọn phường/xã" : "Chọn quận/huyện trước"}
+            emptyMessage="Không có phường/xã"
             onChange={(value) => updateForm({ pickWard: value })}
           />
         </div>
@@ -400,9 +613,61 @@ function ConfigDropdown({
         filterPlaceholder={`Tìm ${label.toLowerCase()}`}
         emptyFilterMessage="Không tìm thấy lựa chọn"
         onChange={(event) => onChange(String(event.value))}
-        className="!h-10 !w-full !rounded-lg !border-transparent !bg-[#f8fafc] !text-sm !shadow-none focus:!border-[#d9e1eb] [&_.p-dropdown-label]:!flex [&_.p-dropdown-label]:!items-center [&_.p-dropdown-label]:!py-0 [&_.p-dropdown-label]:!text-sm [&_.p-dropdown-trigger]:!w-9"
-        panelClassName="text-sm"
+        className={dropdownClassName}
+        panelClassName={dropdownPanelClassName}
       />
+    </label>
+  )
+}
+
+function LocationDropdown({
+  label,
+  required = false,
+  value,
+  options,
+  error,
+  loading = false,
+  disabled = false,
+  placeholder,
+  emptyMessage,
+  onChange,
+}: {
+  label: string
+  required?: boolean
+  value: string
+  options: { label: string; value: string }[]
+  error?: string
+  loading?: boolean
+  disabled?: boolean
+  placeholder: string
+  emptyMessage: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="block text-sm text-slate-700">
+      <div className="mb-1">
+        {label}
+        {required && <span className="text-rose-500"> *</span>}
+      </div>
+      <Dropdown
+        value={value || null}
+        options={options}
+        optionLabel="label"
+        optionValue="value"
+        filter
+        filterBy="label,value"
+        filterPlaceholder={`Tìm ${label.toLowerCase()}`}
+        placeholder={placeholder}
+        emptyMessage={emptyMessage}
+        emptyFilterMessage="Không tìm thấy lựa chọn"
+        loading={loading}
+        disabled={disabled}
+        showClear={!disabled}
+        onChange={(event) => onChange(String(event.value ?? ""))}
+        className={`${dropdownClassName} ${error ? "!border-rose-400" : ""}`}
+        panelClassName={dropdownPanelClassName}
+      />
+      {error && <p className="mt-1 text-xs text-rose-500">{error}</p>}
     </label>
   )
 }

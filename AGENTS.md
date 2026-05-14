@@ -8,6 +8,16 @@ This file defines the working rules for AI agents in this repository.
 - Define preferred behavior for changes, code style, and project conventions.
 - Keep interactions focused, practical, and aligned with the user request.
 
+## Vietnamese UI Text Rule
+
+- Tất cả chữ hiển thị trên giao diện người dùng phải dùng tiếng Việt có dấu.
+- Áp dụng cho: tiêu đề trang, nhãn form, placeholder, tooltip, nút bấm, tab, menu, breadcrumb, thông báo lỗi, thông báo thành công, confirm dialog, empty state, table header, filter label và mọi text mà người dùng nhìn thấy.
+- Không dùng tiếng Việt không dấu trong UI, ví dụ dùng `Cấu hình GHTK`, không dùng `Cau hinh GHTK`.
+- Không hard-code text tiếng Anh trên UI nếu màn hình dành cho người dùng Việt, ví dụ dùng `Lưu`, `Hủy`, `Tìm kiếm`, `Đang tải...`, `Không có dữ liệu`.
+- Chỉ giữ tiếng Anh cho tên biến, tên hàm, tên class, tên file, API path, enum, package, keyword kỹ thuật và giá trị kỹ thuật không hiển thị trực tiếp cho người dùng.
+- Nếu backend trả về enum hoặc mã trạng thái tiếng Anh, frontend phải map sang nhãn tiếng Việt có dấu trước khi hiển thị, ví dụ `PENDING` → `Đang chờ`, `CONFIRMED` → `Đã xác nhận`.
+- Khi thêm hoặc sửa component, phải rà soát các text hiển thị trong phần component đó và chuyển sang tiếng Việt có dấu nếu còn thiếu.
+
 ## Rules for the Agent
 
 1. **Follow user instructions carefully.**
