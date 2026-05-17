@@ -1,337 +1,526 @@
-import { useState, type FormEvent } from "react"
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react"
+import { Avatar } from "primereact/avatar"
 import { Button } from "primereact/button"
 import { Dialog } from "primereact/dialog"
+import { Menu } from "primereact/menu"
+import { Skeleton } from "primereact/skeleton"
+import { Tag } from "primereact/tag"
 import { Toolbar } from "primereact/toolbar"
-import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
-import type { ShopInfo, ShopStatus } from "@/common/store/shopOwnerStore"
+import { getShopProfile, updateShopProfile } from "@/apps/profile/api/shopProfileApi"
+import { ShopProfileEditorSidebar } from "@/apps/profile/components/ShopProfileEditorSidebar"
+import type { ShopDTO, ShopLocationSource, ShopProfileUpdateRequest } from "@/apps/profile/model"
+import { notify } from "@/common/toast/ToastHelper"
 import { formatDateTimeViVN } from "@/common/utils/format"
+import { buildUploadPublicUrl } from "@/common/utils/url"
 
-const statusOptions: ShopStatus[] = ["ACTIVE", "INACTIVE", "SUSPENDED"]
+const fallbackCoverImage = "/modern-pet-grooming-salon.png"
+const fallbackAvatarImage = "/logo.png"
+const acceptedImageTypes = "image/png,image/jpeg,image/jpg,image/webp,image/gif"
 
-type ShopFormState = {
-  name: string
-  addressText: string
-  lat: string
-  lng: string
-  status: ShopStatus
-  locationSource: ShopInfo["locationSource"]
-}
+type ProfileImageTarget = "avatar" | "cover"
 
-function toFormState(shop: ShopInfo): ShopFormState {
-  return {
-    name: shop.name,
-    addressText: shop.addressText,
-    lat: String(shop.lat),
-    lng: String(shop.lng),
-    status: shop.status,
-    locationSource: shop.locationSource,
+type ViewedProfileImage = {
+  title: string
+  url: string
+} | null
+
+type PendingProfileImage = {
+  target: ProfileImageTarget
+  file: File
+} | null
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message?: unknown }).message
+    if (typeof message === "string" && message.trim()) return message
   }
+  if (error instanceof Error && error.message.trim()) return error.message
+  return fallback
 }
 
-function statusText(status: ShopStatus) {
+function statusText(status: string) {
   if (status === "ACTIVE") return "Đang hoạt động"
   if (status === "INACTIVE") return "Tạm dừng"
-  return "Bị khóa"
+  if (status === "SUSPENDED") return "Bị khóa"
+  return status || "Chưa xác định"
 }
 
-function statusClass(status: ShopStatus) {
-  if (status === "ACTIVE") return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20"
-  if (status === "INACTIVE") return "bg-slate-50 text-slate-700 ring-1 ring-slate-600/20"
-  return "bg-amber-50 text-amber-700 ring-1 ring-amber-600/20"
+function statusSeverity(status: string) {
+  if (status === "ACTIVE") return "success" as const
+  if (status === "SUSPENDED") return "warning" as const
+  return "info" as const
+}
+
+function locationSourceText(source: ShopLocationSource) {
+  if (source === "BROWSER_GEO") return "Định vị trình duyệt"
+  if (source === "PLACE_PICKER") return "Chọn trên bản đồ"
+  return "Nhập thủ công"
+}
+
+function optionalText(value: string | number | null | undefined, fallback = "Chưa cập nhật") {
+  if (value === null || value === undefined || value === "") return fallback
+  return String(value)
+}
+
+function formatCoordinate(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) ? value.toFixed(6) : "Chưa cập nhật"
+}
+
+function hasValidCoordinates(shop: ShopDTO) {
+  return typeof shop.lat === "number" && Number.isFinite(shop.lat) && typeof shop.lng === "number" && Number.isFinite(shop.lng)
+}
+
+function toProfileUpdateRequest(shop: ShopDTO): ShopProfileUpdateRequest | null {
+  if (!hasValidCoordinates(shop)) return null
+
+  return {
+    name: shop.name,
+    addressText: shop.addressText ?? undefined,
+    imageUrl: shop.imageUrl ?? undefined,
+    coverImageUrl: shop.coverImageUrl ?? undefined,
+    phone: shop.phone ?? undefined,
+    email: shop.email ?? undefined,
+    description: shop.description ?? undefined,
+    openingHours: shop.openingHours ?? undefined,
+    closingHours: shop.closingHours ?? undefined,
+    facebookUrl: shop.facebookUrl ?? undefined,
+    lat: shop.lat,
+    lng: shop.lng,
+    locationSource: shop.locationSource,
+    locationAccuracyM: shop.locationAccuracyM ?? undefined,
+  }
 }
 
 export function ShopOverviewPage() {
-  const { data, setShop } = useShopOwnerContext()
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [formError, setFormError] = useState("")
-  const [formState, setFormState] = useState<ShopFormState>(() => toFormState(data.shop))
+  const [shop, setShopProfile] = useState<ShopDTO | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [imageSavingTarget, setImageSavingTarget] = useState<ProfileImageTarget | null>(null)
+  const [isEditorOpen, setIsEditorOpen] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
 
-  const openDialog = () => {
-    setFormError("")
-    setFormState(toFormState(data.shop))
-    setIsDialogOpen(true)
+  const loadProfile = useCallback(async () => {
+    setIsLoading(true)
+    setErrorMessage("")
+    try {
+      const result = await getShopProfile()
+      setShopProfile(result)
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, "Không thể tải hồ sơ cửa hàng."))
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadProfile()
+  }, [loadProfile])
+
+  const handleSubmit = async (request: ShopProfileUpdateRequest) => {
+    setIsSaving(true)
+    try {
+      const result = await updateShopProfile(request)
+      setShopProfile(result)
+      setIsEditorOpen(false)
+      notify.success("Đã cập nhật hồ sơ cửa hàng.")
+    } catch (error) {
+      notify.error(getErrorMessage(error, "Không thể cập nhật hồ sơ cửa hàng."))
+    } finally {
+      setIsSaving(false)
+    }
   }
 
-  const closeDialog = () => {
-    setFormError("")
-    setIsDialogOpen(false)
-  }
-
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault()
-
-    const name = formState.name.trim()
-    const addressText = formState.addressText.trim()
-    const lat = Number(formState.lat)
-    const lng = Number(formState.lng)
-
-    if (!name || !addressText) {
-      setFormError("Tên cửa hàng và địa chỉ là bắt buộc.")
-      return
+  const handleImageSubmit = async (target: ProfileImageTarget, file: File) => {
+    if (!shop) return false
+    if (!file.type.startsWith("image/")) {
+      notify.error("Vui lòng chọn tệp ảnh hợp lệ.")
+      return false
     }
 
-    if (Number.isNaN(lat) || lat < -90 || lat > 90) {
-      setFormError("Vĩ độ phải trong khoảng -90 đến 90.")
-      return
+    const request = toProfileUpdateRequest(shop)
+    if (!request) {
+      notify.error("Không thể cập nhật ảnh khi hồ sơ chưa có tọa độ hợp lệ.")
+      return false
     }
 
-    if (Number.isNaN(lng) || lng < -180 || lng > 180) {
-      setFormError("Kinh độ phải trong khoảng -180 đến 180.")
-      return
+    setImageSavingTarget(target)
+    try {
+      const result = await updateShopProfile({
+        ...request,
+        avatar: target === "avatar" ? file : undefined,
+        cover_img: target === "cover" ? file : undefined,
+      })
+      setShopProfile(result)
+      notify.success(target === "avatar" ? "Đã cập nhật ảnh đại diện." : "Đã cập nhật ảnh bìa.")
+      return true
+    } catch (error) {
+      notify.error(getErrorMessage(error, target === "avatar" ? "Không thể cập nhật ảnh đại diện." : "Không thể cập nhật ảnh bìa."))
+      return false
+    } finally {
+      setImageSavingTarget(null)
     }
-
-    setShop({
-      ...data.shop,
-      name,
-      addressText,
-      lat,
-      lng,
-      status: formState.status,
-      locationSource: formState.locationSource,
-      locationUpdatedAt: new Date().toISOString(),
-    })
-
-    closeDialog()
   }
 
   return (
     <>
-    <div className="flex flex-1 flex-col gap-2">
-      <Toolbar
-        className="rounded-xl border-none bg-white shadow-[0_2px_12px_rgba(15,23,42,0.04)]"
-        start={<h1 className="text-lg font-semibold text-slate-800">Hồ sơ Cửa Hàng</h1>}
-        end={
-          <button
-            onClick={openDialog}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-all"
-          >
-            <i className="pi pi-pencil h-4 w-4" />
-            Cập nhật hồ sơ
-          </button>
-        }
-      />
-
-      <div className="flex-1 rounded-xl bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:p-4">
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Left Column - Main Info */}
-        <div className="xl:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 lg:p-8 relative overflow-hidden group">
-            {/* Decorative background element */}
-            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-indigo-50 rounded-full blur-3xl opacity-70 pointer-events-none transition-transform duration-700 group-hover:scale-150"></div>
-            
-            <div className="flex flex-col sm:flex-row sm:items-center gap-5 mb-8 relative z-10">
-              <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50 text-indigo-600 flex items-center justify-center text-3xl sm:text-4xl shrink-0 shadow-sm ring-1 ring-indigo-100/50">
-                <i className="pi pi-building" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold text-slate-900">{data.shop.name}</h2>
-                <div className="flex flex-wrap items-center gap-3 mt-2">
-                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(data.shop.status)}`}>
-                    <span className="relative flex h-2 w-2">
-                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${data.shop.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-transparent'}`}></span>
-                      <span className={`relative inline-flex rounded-full h-2 w-2 ${data.shop.status === 'ACTIVE' ? 'bg-emerald-500' : data.shop.status === 'INACTIVE' ? 'bg-slate-500' : 'bg-amber-500'}`}></span>
-                    </span>
-                    {statusText(data.shop.status)}
-                  </span>
-                  <span className="text-sm text-slate-500">ID: #{data.shop.id || "TBD"}</span>
-                </div>
-              </div>
+      <div className="flex flex-1 flex-col gap-2">
+        <Toolbar
+          className="rounded-xl border-none bg-white shadow-[0_2px_12px_rgba(15,23,42,0.04)]"
+          start={
+            <div>
+              <h1 className="text-lg font-semibold text-slate-800">Hồ sơ cửa hàng</h1>
+              <p className="mt-0.5 text-sm text-slate-500">Quản lý thông tin hiển thị, liên hệ và vị trí kinh doanh.</p>
             </div>
-
-            <div className="grid sm:grid-cols-2 gap-4 relative z-10">
-              <div className="bg-slate-50/80 p-5 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-3">
-                  <i className="pi pi-map-marker text-indigo-500" /> Địa chỉ
-                </div>
-                <div className="text-slate-800 font-medium text-sm leading-relaxed">{data.shop.addressText}</div>
-              </div>
-              <div className="bg-slate-50/80 p-5 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-3">
-                  <i className="pi pi-compass text-indigo-500" /> Vị trí tọa độ
-                </div>
-                <div className="text-slate-800 font-medium text-sm space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Vĩ độ</span>
-                    <span>{data.shop.lat}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Kinh độ</span>
-                    <span>{data.shop.lng}</span>
-                  </div>
-                </div>
-              </div>
+          }
+          end={
+            <div className="flex items-center gap-2">
+              <Button
+                label="Làm mới"
+                icon="pi pi-refresh"
+                outlined
+                loading={isLoading}
+                onClick={loadProfile}
+                className="!h-9 !rounded-md !border-[#d9e1eb] !bg-white !px-4 !py-0 !text-sm !font-medium !text-[#40526b] hover:!bg-[#f8fafc]"
+              />
+              <Button
+                label="Cập nhật hồ sơ"
+                icon="pi pi-pencil"
+                disabled={!shop}
+                onClick={() => setIsEditorOpen(true)}
+                className="!h-9 !rounded-md !border-[#214388] !bg-[#214388] !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-[#19356a] [&_.p-button-icon]:!text-white [&_.p-button-label]:!text-white"
+              />
             </div>
-          </div>
-        </div>
+          }
+        />
 
-        {/* Right Column - Secondary Info */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 h-full">
-            <h3 className="text-sm font-bold text-slate-900 mb-5 pb-4 border-b border-slate-100 uppercase tracking-wider">Hệ thống & Cập nhật</h3>
-            
-            <div className="space-y-5">
-              <div className="group">
-                <div className="text-xs font-semibold text-slate-500 mb-2 transition-colors group-hover:text-indigo-600">Cập nhật lần cuối</div>
-                <div className="flex items-center gap-3 text-slate-800 font-medium text-sm bg-slate-50/80 px-4 py-3 rounded-xl border border-slate-100 transition-colors group-hover:border-indigo-100 group-hover:bg-indigo-50/30">
-                  <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm">
-                    <i className="pi pi-clock text-indigo-500" />
-                  </div>
-                  {formatDateTimeViVN(data.shop.locationUpdatedAt)}
-                </div>
-              </div>
-
-              <div className="group">
-                <div className="text-xs font-semibold text-slate-500 mb-2 transition-colors group-hover:text-indigo-600">Nguồn vị trí</div>
-                <div className="flex items-center gap-3 text-slate-800 font-medium text-sm bg-slate-50/80 px-4 py-3 rounded-xl border border-slate-100 transition-colors group-hover:border-indigo-100 group-hover:bg-indigo-50/30">
-                  <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm">
-                    <i className="pi pi-sitemap text-indigo-500" />
-                  </div>
-                  {data.shop.locationSource}
-                </div>
-              </div>
+        <div className="flex-1 rounded-xl bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:p-4">
+          {errorMessage && (
+            <div className="mb-4 flex flex-col gap-3 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700 md:flex-row md:items-center md:justify-between">
+              <span>{errorMessage}</span>
+              <Button label="Thử lại" icon="pi pi-refresh" text onClick={loadProfile} className="!h-8 !px-2 !py-0 !text-sm !font-semibold !text-rose-700" />
             </div>
-          </div>
+          )}
+
+          {isLoading ? (
+            <ProfileSkeleton />
+          ) : shop ? (
+            <ProfileContent shop={shop} imageSavingTarget={imageSavingTarget} onImageSubmit={handleImageSubmit} />
+          ) : (
+            <EmptyProfile />
+          )}
         </div>
       </div>
-      </div>
-    </div>
 
-      <Dialog
-        visible={isDialogOpen}
-        onHide={closeDialog}
-        header="Cập nhật thông tin cửa hàng"
-        style={{ width: '100%', maxWidth: '48rem' }}
-        footer={
-          <div className="mt-4 flex w-full flex-col-reverse items-center justify-center gap-2 sm:flex-row">
+      <ShopProfileEditorSidebar visible={isEditorOpen} shop={shop} saving={isSaving} onClose={() => setIsEditorOpen(false)} onSubmit={handleSubmit} />
+    </>
+  )
+}
+
+function ProfileContent({
+  shop,
+  imageSavingTarget,
+  onImageSubmit,
+}: {
+  shop: ShopDTO
+  imageSavingTarget: ProfileImageTarget | null
+  onImageSubmit: (target: ProfileImageTarget, file: File) => Promise<boolean>
+}) {
+  const coverImage = buildUploadPublicUrl(shop.coverImageUrl) || fallbackCoverImage
+  const avatarImage = buildUploadPublicUrl(shop.imageUrl) || fallbackAvatarImage
+  const canOpenMap = hasValidCoordinates(shop)
+  const avatarMenuRef = useRef<Menu>(null)
+  const coverMenuRef = useRef<Menu>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
+  const [viewedImage, setViewedImage] = useState<ViewedProfileImage>(null)
+  const [pendingImage, setPendingImage] = useState<PendingProfileImage>(null)
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState("")
+  const isUploadingImage = Boolean(imageSavingTarget)
+
+  useEffect(() => {
+    if (!pendingImage) {
+      setPendingPreviewUrl("")
+      return
+    }
+
+    const url = URL.createObjectURL(pendingImage.file)
+    setPendingPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [pendingImage])
+
+  const handleImageChange = (target: ProfileImageTarget) => (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ""
+    if (!file) return
+    if (!file.type.startsWith("image/")) {
+      notify.error("Vui lòng chọn tệp ảnh hợp lệ.")
+      return
+    }
+    setPendingImage({ target, file })
+  }
+
+  const closePendingImage = () => {
+    if (isUploadingImage) return
+    setPendingImage(null)
+  }
+
+  const savePendingImage = async () => {
+    if (!pendingImage) return
+
+    const isSaved = await onImageSubmit(pendingImage.target, pendingImage.file)
+    if (isSaved) setPendingImage(null)
+  }
+
+  const avatarMenuItems = [
+    {
+      label: "Xem ảnh",
+      icon: "pi pi-eye",
+      command: () => setViewedImage({ title: "Ảnh đại diện", url: avatarImage }),
+    },
+    {
+      label: "Đổi ảnh",
+      icon: "pi pi-upload",
+      disabled: isUploadingImage,
+      command: () => avatarInputRef.current?.click(),
+    },
+  ]
+
+  const coverMenuItems = [
+    {
+      label: "Xem ảnh",
+      icon: "pi pi-eye",
+      command: () => setViewedImage({ title: "Ảnh bìa", url: coverImage }),
+    },
+    {
+      label: "Đổi ảnh",
+      icon: "pi pi-upload",
+      disabled: isUploadingImage,
+      command: () => coverInputRef.current?.click(),
+    },
+  ]
+
+  return (
+    <>
+      <div className="grid gap-4 xl:grid-cols-[1.4fr_.9fr]">
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="relative min-h-[18rem] bg-slate-100">
+            <Menu ref={coverMenuRef} model={coverMenuItems} popup />
+            <Menu ref={avatarMenuRef} model={avatarMenuItems} popup />
+            <input ref={coverInputRef} type="file" accept={acceptedImageTypes} disabled={isUploadingImage} onChange={handleImageChange("cover")} className="sr-only" />
+            <img
+              src={coverImage}
+              alt={`Ảnh bìa ${shop.name}`}
+              className="absolute inset-0 h-full w-full object-cover"
+              onError={(event) => {
+                event.currentTarget.src = fallbackCoverImage
+              }}
+            />
+            <button
+              type="button"
+              aria-label="Tùy chọn ảnh bìa"
+              disabled={isUploadingImage}
+              onClick={(event) => coverMenuRef.current?.toggle(event)}
+              className="absolute inset-0 z-10 cursor-pointer bg-transparent disabled:cursor-wait"
+            />
+            <div className="pointer-events-none absolute inset-0 z-20 bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-transparent" />
             <Button
               type="button"
-              label="Hủy bỏ"
-              icon="pi pi-times"
-              onClick={closeDialog}
-              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#d9e1eb] !bg-white !px-4 !py-0 !text-sm !font-semibold !text-[#40526b] hover:!bg-[#f8fafc]"
+              label="Ảnh bìa"
+              icon={imageSavingTarget === "cover" ? "pi pi-spin pi-spinner" : "pi pi-camera"}
+              disabled={isUploadingImage}
+              onClick={(event) => coverMenuRef.current?.toggle(event)}
+              className="!absolute !right-4 !top-4 !z-40 !h-9 !rounded-md !border-none !bg-white/95 !px-3 !py-0 !text-sm !font-semibold !text-[#214388] !shadow-sm hover:!bg-white [&_.p-button-icon]:!text-[#214388] [&_.p-button-label]:!text-[#214388]"
+            />
+            <div className="absolute bottom-5 left-5 right-5 z-30">
+              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end">
+                  <input ref={avatarInputRef} type="file" accept={acceptedImageTypes} disabled={isUploadingImage} onChange={handleImageChange("avatar")} className="sr-only" />
+                  <button
+                    type="button"
+                    disabled={isUploadingImage}
+                    onClick={(event) => avatarMenuRef.current?.toggle(event)}
+                    className="group relative block shrink-0 cursor-pointer rounded-full bg-transparent p-0 disabled:cursor-wait"
+                    aria-label="Tùy chọn ảnh đại diện"
+                  >
+                    <Avatar
+                      image={avatarImage}
+                      shape="circle"
+                      className="!h-24 !w-24 !border-4 !border-white !bg-white !shadow-lg"
+                      imageAlt={`Ảnh đại diện ${shop.name}`}
+                    />
+                    <span className="absolute inset-0 flex items-center justify-center rounded-full bg-slate-950/0 text-white transition group-hover:bg-slate-950/45">
+                      <i className={imageSavingTarget === "avatar" ? "pi pi-spin pi-spinner text-lg opacity-100" : "pi pi-ellipsis-h text-lg opacity-0 group-hover:opacity-100"} />
+                    </span>
+                  </button>
+                  <div className="min-w-0">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <Tag value={statusText(shop.status)} severity={statusSeverity(shop.status)} />
+                      <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700">Mã cửa hàng #{shop.id}</span>
+                    </div>
+                    <h2 className="m-0 break-words text-3xl font-bold text-white">{shop.name}</h2>
+                    <p className="mt-2 max-w-3xl text-sm text-slate-100">{optionalText(shop.description, "Chưa cập nhật mô tả cửa hàng.")}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-3 p-4 md:grid-cols-2">
+            <InfoTile icon="pi pi-map-marker" label="Địa chỉ" value={optionalText(shop.addressText)} wide />
+            <InfoTile icon="pi pi-phone" label="Số điện thoại" value={optionalText(shop.phone)} />
+            <InfoTile icon="pi pi-envelope" label="Email" value={optionalText(shop.email)} />
+            <InfoTile icon="pi pi-clock" label="Giờ hoạt động" value={`${optionalText(shop.openingHours, "--:--")} - ${optionalText(shop.closingHours, "--:--")}`} />
+            <InfoTile icon="pi pi-facebook" label="Facebook" value={optionalText(shop.facebookUrl)} />
+          </div>
+        </section>
+
+        <div className="space-y-4">
+          <section className="rounded-xl border border-slate-200 bg-white p-5">
+            <h3 className="m-0 text-sm font-bold uppercase tracking-wide text-slate-900">Vị trí cửa hàng</h3>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <Metric label="Vĩ độ" value={formatCoordinate(shop.lat)} />
+              <Metric label="Kinh độ" value={formatCoordinate(shop.lng)} />
+              <Metric label="Nguồn vị trí" value={locationSourceText(shop.locationSource)} />
+              <Metric label="Độ chính xác" value={shop.locationAccuracyM ? `${shop.locationAccuracyM} m` : "Chưa cập nhật"} />
+            </div>
+            {canOpenMap && (
+              <a
+                href={`https://www.google.com/maps?q=${shop.lat},${shop.lng}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-flex h-9 items-center gap-2 rounded-md border border-[#d9e1eb] bg-white px-3 text-sm font-semibold text-[#214388] hover:bg-[#f8fafc]"
+              >
+                <i className="pi pi-map" />
+                Xem trên bản đồ
+              </a>
+            )}
+          </section>
+
+          <section className="rounded-xl border border-slate-200 bg-white p-5">
+            <h3 className="m-0 text-sm font-bold uppercase tracking-wide text-slate-900">Hệ thống</h3>
+            <div className="mt-4 space-y-3">
+              <SystemRow icon="pi pi-calendar-plus" label="Ngày tạo" value={formatDateTimeViVN(shop.createdAt)} />
+              <SystemRow icon="pi pi-history" label="Cập nhật lần cuối" value={formatDateTimeViVN(shop.updatedAt)} />
+              <SystemRow icon="pi pi-shield" label="Trạng thái hệ thống" value={statusText(shop.status)} />
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <Dialog
+        visible={Boolean(viewedImage)}
+        onHide={() => setViewedImage(null)}
+        header={viewedImage?.title}
+        modal
+        className="w-[min(92vw,56rem)]"
+        contentClassName="!p-0"
+      >
+        {viewedImage && (
+          <div className="flex max-h-[78vh] items-center justify-center bg-slate-950">
+            <img src={viewedImage.url} alt={viewedImage.title} className="max-h-[78vh] max-w-full object-contain" />
+          </div>
+        )}
+      </Dialog>
+
+      <Dialog
+        visible={Boolean(pendingImage)}
+        onHide={closePendingImage}
+        header={pendingImage?.target === "avatar" ? "Xem trước ảnh đại diện" : "Xem trước ảnh bìa"}
+        modal
+        className="w-[min(92vw,44rem)]"
+        footer={
+          <div className="flex items-center justify-center gap-3">
+            <Button
+              type="button"
+              label="Hủy"
+              disabled={isUploadingImage}
+              onClick={closePendingImage}
+              className="!m-0 !h-10 !rounded-lg !border-none !bg-[#f4f7fb] !px-4 !py-0 !text-sm !font-medium !text-slate-700 hover:!bg-[#ecf1f8]"
             />
             <Button
-              type="submit"
-              form="shop-info-form"
-              label="Lưu thay đổi"
+              type="button"
+              label="Lưu ảnh"
               icon="pi pi-save"
-              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#214388] !bg-[#214388] !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-[#19356a] [&_.p-button-icon]:!text-white [&_.p-button-label]:!text-white"
+              loading={isUploadingImage}
+              onClick={savePendingImage}
+              className="!m-0 !h-10 !rounded-lg !border-none !bg-[#214388] !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-[#19356a] [&_.p-button-icon]:!text-white [&_.p-button-label]:!text-white"
             />
           </div>
         }
       >
-        <p className="mb-4 mt-0 text-sm text-[#73849b]">Bạn có thể chỉnh tên, địa chỉ, vị trí và trạng thái hoạt động.</p>
-        <form id="shop-info-form" onSubmit={handleSubmit} className="space-y-6 mt-4">
-          {formError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 flex items-start gap-3">
-              <i className="pi pi-exclamation-circle text-red-600 mt-0.5 text-lg" />
-              <div className="text-sm text-red-700 font-medium">{formError}</div>
-            </div>
-          )}
-
-          <div className="grid gap-5 md:grid-cols-2">
-            <div className="md:col-span-2">
-              <InputField
-                label="Tên cửa hàng"
-                value={formState.name}
-                required
-                onChange={(value) => setFormState((prev) => ({ ...prev, name: value }))}
+        {pendingImage && (
+          <div className="space-y-3">
+            <div className="flex max-h-[62vh] items-center justify-center overflow-hidden rounded-xl bg-slate-100">
+              <img
+                src={pendingPreviewUrl}
+                alt={pendingImage.target === "avatar" ? "Xem trước ảnh đại diện" : "Xem trước ảnh bìa"}
+                className={pendingImage.target === "avatar" ? "max-h-[58vh] max-w-full rounded-full object-cover" : "max-h-[62vh] max-w-full object-contain"}
               />
             </div>
-            <div className="md:col-span-2">
-              <InputField
-                label="Địa chỉ"
-                value={formState.addressText}
-                required
-                onChange={(value) => setFormState((prev) => ({ ...prev, addressText: value }))}
-              />
-            </div>
-            <InputField
-              label="Vĩ độ (Latitude)"
-              value={formState.lat}
-              type="number"
-              onChange={(value) => setFormState((prev) => ({ ...prev, lat: value }))}
-            />
-            <InputField
-              label="Kinh độ (Longitude)"
-              value={formState.lng}
-              type="number"
-              onChange={(value) => setFormState((prev) => ({ ...prev, lng: value }))}
-            />
-
-            <SelectField
-              label="Trạng thái hoạt động"
-              value={formState.status}
-              options={statusOptions}
-              onChange={(value) => setFormState((prev) => ({ ...prev, status: value as ShopStatus }))}
-              optionRenderer={(opt) => statusText(opt as ShopStatus)}
-            />
-            <SelectField
-              label="Nguồn vị trí"
-              value={formState.locationSource}
-              options={["MANUAL", "BROWSER_GEO", "PLACE_PICKER"]}
-              onChange={(value) => setFormState((prev) => ({ ...prev, locationSource: value as ShopInfo["locationSource"] }))}
-            />
+            <p className="m-0 truncate text-center text-sm text-slate-500">{pendingImage.file.name}</p>
           </div>
-        </form>
+        )}
       </Dialog>
     </>
   )
 }
 
-type InputFieldProps = {
-  label: string
-  value: string
-  required?: boolean
-  type?: "text" | "number"
-  onChange: (value: string) => void
-}
-
-function InputField({ label, value, required = false, type = "text", onChange }: InputFieldProps) {
+function InfoTile({ icon, label, value, wide = false }: { icon: string; label: string; value: string; wide?: boolean }) {
   return (
-    <label className="block text-sm font-medium text-slate-700">
-      <div className="mb-1.5 flex items-center gap-1">
-        {label}
-        {required && <span className="text-red-500">*</span>}
+    <div className={`rounded-xl border border-slate-200 bg-[#f8fafc] p-4 ${wide ? "md:col-span-2" : ""}`}>
+      <div className="flex items-start gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+          <i className={icon} />
+        </span>
+        <div className="min-w-0">
+          <p className="m-0 text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
+          <p className="mt-1 break-words text-sm font-semibold text-slate-800">{value}</p>
+        </div>
       </div>
-      <input
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-      />
-    </label>
+    </div>
   )
 }
 
-type SelectFieldProps = {
-  label: string
-  value: string
-  options: string[]
-  onChange: (value: string) => void
-  optionRenderer?: (option: string) => string
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-[#f8fafc] px-4 py-3">
+      <p className="m-0 text-xs font-semibold text-slate-500">{label}</p>
+      <p className="m-0 mt-1 text-sm font-bold text-slate-900">{value}</p>
+    </div>
+  )
 }
 
-function SelectField({ label, value, options, onChange, optionRenderer }: SelectFieldProps) {
+function SystemRow({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
-    <label className="block text-sm font-medium text-slate-700">
-      <div className="mb-1.5 flex items-center gap-1">{label}</div>
-      <div className="relative">
-        <select
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="w-full appearance-none rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 pr-10 text-sm text-slate-900 shadow-sm outline-none transition-colors hover:bg-slate-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-        >
-          {options.map((option) => (
-            <option key={option} value={option}>
-              {optionRenderer ? optionRenderer(option) : option}
-            </option>
-          ))}
-        </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-          <i className="pi pi-chevron-down text-xs" />
-        </div>
+    <div className="flex items-center gap-3 rounded-lg bg-[#f8fafc] px-4 py-3">
+      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-indigo-600 shadow-sm">
+        <i className={icon} />
+      </span>
+      <div>
+        <p className="m-0 text-xs text-slate-500">{label}</p>
+        <p className="m-0 mt-0.5 text-sm font-semibold text-slate-800">{value}</p>
       </div>
-    </label>
+    </div>
+  )
+}
+
+function ProfileSkeleton() {
+  return (
+    <div className="grid gap-4 xl:grid-cols-[1.4fr_.9fr]">
+      <Skeleton height="30rem" borderRadius="12px" />
+      <div className="space-y-4">
+        <Skeleton height="14rem" borderRadius="12px" />
+        <Skeleton height="14rem" borderRadius="12px" />
+      </div>
+    </div>
+  )
+}
+
+function EmptyProfile() {
+  return (
+    <div className="flex min-h-[24rem] flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 text-center">
+      <i className="pi pi-building text-3xl text-slate-300" />
+      <p className="mt-3 text-sm font-semibold text-slate-600">Chưa có hồ sơ cửa hàng</p>
+    </div>
   )
 }

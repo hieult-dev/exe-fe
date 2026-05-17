@@ -151,7 +151,7 @@ function getWithFile<T>(path: string, config?: AxiosRequestConfig) {
 }
 
 function put<T>(path: string, data: object | undefined, config?: AxiosRequestConfig) {
-    return request<T>('put', path, data, false, true, false, config);
+    return request<T>('put', path, data, false, false, false, config);
 }
 
 function del<T>(path: string, data: object | undefined, config?: AxiosRequestConfig) {
