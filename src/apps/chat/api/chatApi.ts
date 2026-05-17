@@ -1,5 +1,4 @@
 import api from "@/common/api/baseApi"
-import { GATEWAY_URL } from "@/common/config/api"
 import type {
   ConversationCreateRequest,
   ConversationDTO,
@@ -10,7 +9,7 @@ import type {
   MessageScrollResponse,
 } from "@/apps/chat/model"
 
-const CONVERSATION_URL = `${GATEWAY_URL}/api/conversations`
+const CONVERSATION_URL = `/conversations`
 
 export const getConversations = async () => {
   return api.get<ConversationDTO[]>(CONVERSATION_URL)

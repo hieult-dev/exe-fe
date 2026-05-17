@@ -1,8 +1,7 @@
 import api from "@/common/api/baseApi"
-import { GATEWAY_URL } from "@/common/config/api"
 import type { ShopPaymentConfigDTO, ShopPaymentConfigRequest } from "@/apps/payment_config/model"
 
-const SHOP_PAYMENT_CONFIG_URL = `${GATEWAY_URL}/api/shop-payment-configs`
+const SHOP_PAYMENT_CONFIG_URL = `/shop-payment-configs`
 
 type GetShopPaymentConfigsParams = {
   active?: boolean | null

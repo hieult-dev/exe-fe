@@ -1,5 +1,4 @@
 import api from "@/common/api/baseApi"
-import { GATEWAY_URL } from "@/common/config/api"
 import type {
   DashboardSummaryDTO,
   InventoryStatusDTO,
@@ -9,7 +8,7 @@ import type {
   ServiceCategoryStatDTO,
 } from "@/apps/dashboard/model"
 
-const DASHBOARD_URL = `${GATEWAY_URL}/api/shop-owner/dashboard`
+const DASHBOARD_URL = `/shop-owner/dashboard`
 
 type DashboardMonthParams = {
   year: number

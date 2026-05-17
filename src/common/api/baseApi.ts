@@ -1,12 +1,12 @@
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import axios from 'axios';
-import { GATEWAY_URL } from '@/common/config/api';
+import { API_BASE_URL, AUTH_URL } from '@/common/config/api';
 import { useUserStore } from '@/apps/user/store/UserStore';
 import { resetStoreAndRedirectToLogin } from '@/common/auth/store/ResetStore';
 import { refreshToken } from '@/common/auth/api/authApi';
 import { REFRESH_TOKEN_URL } from "@/common/config/api";
 
-const LOGIN_URL = `${GATEWAY_URL}/api/auth/authenticate`;
+const LOGIN_URL = `${AUTH_URL}/shop/login`;
 
 export function initialClient(
     hasFile: boolean,
@@ -14,6 +14,7 @@ export function initialClient(
     isSync = false
 ) {
     const axiosInstance = axios.create({
+        baseURL: API_BASE_URL,
         headers: {
             Accept: '*/*',
             'Content-Type': hasFile

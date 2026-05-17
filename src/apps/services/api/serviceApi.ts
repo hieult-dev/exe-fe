@@ -1,9 +1,8 @@
 import api from '@/common/api/baseApi';
-import { GATEWAY_URL } from '@/common/config/api';
 import type { ServiceCategoryDTO, ServiceDTO } from '@/apps/services/model';
 
-const SERVICE_URL = `${GATEWAY_URL}/api/services`;
-const SERVICE_CATEGORY_URL = `${GATEWAY_URL}/api/service-categories`;
+const SERVICE_URL = `/services`;
+const SERVICE_CATEGORY_URL = `/service-categories`;
 
 export const getServices = async (size = 20, cursor: string | null = null, keyword: string = "") => {
     const params: Record<string, any> = { size };

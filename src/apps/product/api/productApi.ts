@@ -1,5 +1,4 @@
 import api from "@/common/api/baseApi"
-import { GATEWAY_URL } from "@/common/config/api"
 import type {
   ProductCategoryDTO,
   ProductCreateRequest,
@@ -7,8 +6,8 @@ import type {
   ProductScrollResponse,
 } from "@/apps/product/model"
 
-const PRODUCT_URL = `${GATEWAY_URL}/api/products`
-const PRODUCT_CATEGORY_URL = `${GATEWAY_URL}/api/product-categories`
+const PRODUCT_URL = `/products`
+const PRODUCT_CATEGORY_URL = `/product-categories`
 
 function toProductFormData(request: ProductCreateRequest) {
   const formData = new FormData()

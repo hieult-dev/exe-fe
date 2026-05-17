@@ -1,9 +1,8 @@
 import api from '@/common/api/baseApi';
-import { GATEWAY_URL } from '@/common/config/api';
 import type { BookingCheckoutRequest, BookingCheckoutResponse, BookingCursorPage, BookingDTO } from '@/apps/bookings/model';
 import type { InvoiceDetailDTO } from '@/apps/invoices/model';
 
-const BOOKING_URL = `${GATEWAY_URL}/api/bookings`;
+const BOOKING_URL = `/bookings`;
 
 /**
  * Fetch bookings with cursor-based pagination.
