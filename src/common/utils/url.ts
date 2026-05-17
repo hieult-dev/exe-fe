@@ -3,10 +3,12 @@ export const SUPABASE_UPLOADS_PUBLIC_URL =
 export const NOT_FOUND_IMAGE_URL = "/image/not-found.jpg"
 
 export function buildUploadPublicUrl(path: string | null | undefined) {
-  if (!path) return ""
-  if (/^https?:\/\//i.test(path)) return path
+  const trimmedPath = path?.trim()
+  if (!trimmedPath) return ""
+  if (/^https?:\/\//i.test(trimmedPath)) return trimmedPath
 
-  return `${SUPABASE_UPLOADS_PUBLIC_URL}/${path.replace(/^\/+/, "")}`
+  const uploadPath = trimmedPath.replace(/^\/+/, "").replace(/^uploads\/+/, "")
+  return `${SUPABASE_UPLOADS_PUBLIC_URL}/${uploadPath}`
 }
 
 export function getImageUrlOrNotFound(path: string | null | undefined) {
