@@ -1,8 +1,7 @@
 import type { NotificationScrollResponse, RealtimeNotificationDTO } from "@/apps/notifications/model"
 import api, { initialClient } from "@/common/api/baseApi"
-import { GATEWAY_URL } from "@/common/config/api"
 
-const NOTIFICATION_URL = `${GATEWAY_URL}/api/notifications`
+const NOTIFICATION_URL = `/notifications`
 
 type UnreadCountResponse = number | { unreadCount?: number; count?: number }
 

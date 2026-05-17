@@ -1,8 +1,7 @@
 import api from "@/common/api/baseApi"
-import { GATEWAY_URL } from "@/common/config/api"
 import type { ShopDTO, ShopProfileUpdateRequest } from "@/apps/profile/model"
 
-const SHOP_PROFILE_URL = `${GATEWAY_URL}/api/shop-owner/shop-profile`
+const SHOP_PROFILE_URL = `/shop-owner/shop-profile`
 
 export const getShopProfile = () => {
   return api.get<ShopDTO>(SHOP_PROFILE_URL)

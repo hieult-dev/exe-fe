@@ -1,5 +1,4 @@
 import api from "@/common/api/baseApi"
-import { GATEWAY_URL } from "@/common/config/api"
 import type {
   CreateOrderRequest,
   OrderCursorPage,
@@ -10,7 +9,7 @@ import type {
   OrderStatus,
 } from "@/apps/orders/model"
 
-const ORDER_URL = `${GATEWAY_URL}/api/orders`
+const ORDER_URL = `/orders`
 
 type GetOrdersParams = {
   userId?: number

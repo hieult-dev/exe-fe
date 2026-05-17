@@ -1,4 +1,4 @@
-import { GATEWAY_URL } from "@/common/config/api"
+import { buildUploadPublicUrl } from "@/common/utils/url"
 
 export function formatProfileValue(value: string | number | null | undefined, fallback = "Chưa cập nhật") {
   if (value === null || value === undefined || value === "") {
@@ -13,10 +13,5 @@ export function resolveAvatarUrl(avatarPath: string | null | undefined) {
     return null
   }
 
-  if (avatarPath.startsWith("http")) {
-    return avatarPath
-  }
-
-  return `${GATEWAY_URL}/${avatarPath.replace(/^\/+/, "")}`
+  return buildUploadPublicUrl(avatarPath)
 }
-

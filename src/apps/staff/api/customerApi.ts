@@ -1,8 +1,7 @@
 import api from "@/common/api/baseApi"
-import { GATEWAY_URL } from "@/common/config/api"
 import type { CustomerCreateRequest, CustomerDTO } from "@/apps/staff/model"
 
-const CUSTOMER_URL = `${GATEWAY_URL}/api/customers`
+const CUSTOMER_URL = `/customers`
 
 export const createCustomer = async (request: CustomerCreateRequest) => {
   return api.post<CustomerDTO>(CUSTOMER_URL, request)

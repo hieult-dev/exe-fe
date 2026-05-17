@@ -1,5 +1,4 @@
 import api from "@/common/api/baseApi"
-import { GATEWAY_URL } from "@/common/config/api"
 import type {
   ShopMemberCreateRequest,
   ShopMemberDTO,
@@ -24,8 +23,8 @@ type ShopMemberListParams = {
   keyword?: string
 }
 
-const SHOP_MEMBER_URL = `${GATEWAY_URL}/api/shop-members`
-const SHOP_URL = `${GATEWAY_URL}/api/shops`
+const SHOP_MEMBER_URL = `/shop-members`
+const SHOP_URL = `/shops`
 
 export const getShopMembers = async ({ role, status, keyword }: ShopMemberListParams = {}) => {
   const params: Record<string, string> = {}
