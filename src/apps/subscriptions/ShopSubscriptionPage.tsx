@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Button } from "primereact/button"
 import { Column } from "primereact/column"
 import { confirmDialog, ConfirmDialog } from "primereact/confirmdialog"
@@ -114,11 +114,37 @@ function CurrentPlanMetric({ label, value, icon }: { label: string; value: strin
   )
 }
 
-function CompactDateRow({ label, value }: { label: string; value: string }) {
+function CompactDateRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="min-w-0">
       <p className="m-0 text-xs font-medium text-slate-500">{label}</p>
       <p className="m-0 mt-1 text-sm font-semibold text-slate-900">{value}</p>
+    </div>
+  )
+}
+
+function MilestoneCard({
+  title,
+  icon,
+  accentClassName,
+  children,
+}: {
+  title: string
+  icon: string
+  accentClassName: string
+  children: ReactNode
+}) {
+  return (
+    <div className="rounded-xl border border-[#e5edf6] bg-[#fbfcfe] p-3">
+      <div className="mb-3 flex items-center gap-2">
+        <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${accentClassName}`}>
+          <i className={`${icon} text-sm`} />
+        </span>
+        <div>
+          <p className="m-0 text-sm font-semibold text-slate-900">{title}</p>
+        </div>
+      </div>
+      <div className="grid gap-3">{children}</div>
     </div>
   )
 }
@@ -506,24 +532,38 @@ export function ShopSubscriptionPage() {
                     />
                   </div>
 
-                  <div className="mt-4 rounded-lg border border-[#e5edf6] bg-white px-3 py-3">
-                    <h3 className="m-0 text-sm font-semibold text-slate-800">Mốc thời gian</h3>
-                    <div className="mt-3 grid gap-4 md:grid-cols-3">
-                      <div className="space-y-3 border-b border-[#eef2f6] pb-3 md:border-b-0 md:border-r md:pb-0 md:pr-4">
-                        <p className="m-0 text-xs font-bold uppercase text-[#5068ff]">{currentPeriodLabel}</p>
+                  <div className="mt-4 rounded-xl border border-[#e5edf6] bg-white p-4">
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#eef3ff] text-[#5068ff]">
+                        <i className="pi pi-calendar-clock text-sm" />
+                      </span>
+                      <div>
+                        <h3 className="m-0 text-sm font-semibold text-slate-800">Mốc thời gian</h3>
+                        <p className="m-0 mt-0.5 text-xs text-slate-500">Theo dõi kỳ trả phí, dùng thử và quyền sử dụng hiện có.</p>
+                      </div>
+                    </div>
+                    <div className="grid gap-3 xl:grid-cols-[1.2fr,1fr,1fr]">
+                      <MilestoneCard title={currentPeriodLabel} icon="pi pi-calendar" accentClassName="bg-[#eef3ff] text-[#5068ff]">
                         <CompactDateRow label="Bắt đầu" value={formatDateOnlyViVN(overview.currentPeriodStart)} />
                         <CompactDateRow label="Kết thúc" value={formatDateOnlyViVN(overview.currentPeriodEnd)} />
-                      </div>
-                      <div className="space-y-3 border-b border-[#eef2f6] pb-3 md:border-b-0 md:border-r md:pb-0 md:pr-4">
-                        <p className="m-0 text-xs font-bold uppercase text-amber-600">Kỳ dùng thử</p>
+                      </MilestoneCard>
+                      <MilestoneCard title="Kỳ dùng thử" icon="pi pi-hourglass" accentClassName="bg-amber-50 text-amber-600">
                         <CompactDateRow label="Bắt đầu đăng ký" value={formatDateOnlyViVN(overview.subscriptionStartedAt)} />
                         <CompactDateRow label="Kết thúc dùng thử" value={formatDateOnlyViVN(overview.trialEndsAt)} />
-                      </div>
-                      <div className="space-y-3">
-                        <p className="m-0 text-xs font-bold uppercase text-emerald-600">Quyền sử dụng</p>
+                      </MilestoneCard>
+                      <MilestoneCard title="Quyền sử dụng" icon="pi pi-verified" accentClassName="bg-emerald-50 text-emerald-600">
                         <CompactDateRow label="Hết hạn quyền dùng" value={formatDateOnlyViVN(overview.expiredAt)} />
-                        <CompactDateRow label="Trạng thái" value={getSubscriptionStatusLabel(overview.status)} />
-                      </div>
+                        <CompactDateRow
+                          label="Trạng thái"
+                          value={
+                            <Tag
+                              value={getSubscriptionStatusLabel(overview.status)}
+                              severity={getSubscriptionStatusSeverity(overview.status)}
+                              rounded
+                            />
+                          }
+                        />
+                      </MilestoneCard>
                     </div>
                   </div>
               </section>
