@@ -7,6 +7,7 @@ import AuthRedirect from "@/common/auth/guard/AuthRedirect"
 import { RoleHomeRedirect } from "@/common/auth/guard/RoleHomeRedirect"
 
 import { ShopConsoleLayout, ShopConsoleDefaultRedirect } from "@/common/layout/ShopOwnerLayout"
+import { AdminDefaultRedirect, AdminLayout } from "@/common/layout/AdminLayout"
 import { ShopDashboardPage } from "@/apps/dashboard/ShopDashboardPage"
 import { ShopOverviewPage } from "@/apps/profile/ShopOverviewPage"
 import { ShopServiceManager } from "@/apps/services/ShopServiceManager"
@@ -15,11 +16,13 @@ import { ShopOrdersPage } from "@/apps/orders/ShopOrdersPage"
 import { ShopBookingsPage } from "@/apps/bookings/ShopBookingsPage"
 import { ShopPaymentConfigPage } from "@/apps/payment_config/ShopPaymentConfigPage"
 import { ShopGhtkConfigPage } from "@/apps/ghtk_config/ShopGhtkConfigPage"
+import { ShopSubscriptionPage } from "@/apps/subscriptions/ShopSubscriptionPage"
 import { ShopChatPage } from "@/apps/chat/ShopChatPage"
 import { StaffCustomerDisplayPage } from "@/apps/staff/StaffCustomerDisplayPage"
 import { StaffSalesPage } from "@/apps/staff/StaffSalesPage"
 import { NotificationRealtimeBridge } from "@/apps/notifications/NotificationRealtimeBridge"
 import ToastProvider from "@/common/toast/ToastProvider"
+import { AdminShopApprovalPage } from "@/apps/admin/AdminShopApprovalPage"
 function App() {
   return (
     <>
@@ -55,6 +58,12 @@ function App() {
               <Route path="/shop/bookings" element={<ShopBookingsPage />} />
               <Route path="/shop/payment-config" element={<ShopPaymentConfigPage />} />
               <Route path="/shop/ghtk-config" element={<ShopGhtkConfigPage />} />
+              <Route path="/shop/subscriptions" element={<ShopSubscriptionPage />} />
+            </Route>
+
+            <Route element={<AdminLayout />}>
+              <Route path="/admin" element={<AdminDefaultRedirect />} />
+              <Route path="/admin/shops" element={<AdminShopApprovalPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

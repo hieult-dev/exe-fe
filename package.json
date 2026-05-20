@@ -6,7 +6,7 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc && vite build",
     "dev": "vite --mode remote",
-    "dev-local": "vite --mode local",
+    "dev-local": "vite --mode devlocal",
     "preview": "vite preview"
   },
   "dependencies": {
