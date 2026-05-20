@@ -29,18 +29,26 @@ import type {
 import { notify } from "@/common/toast/ToastHelper"
 import { formatCurrency, formatDateOnlyViVN, formatDateTimeViVN } from "@/common/utils/format"
 
-const planFeatures = [
-  "Quản lý shop",
-  "Quản lý dịch vụ",
-  "Quản lý sản phẩm",
-  "Quản lý lịch đặt",
-  "Tin nhắn với khách hàng",
-  "AI chat hỗ trợ khách hàng",
-]
+const DAY_IN_MS = 24 * 60 * 60 * 1000
 
 function getErrorMessage(error: unknown, fallback: string) {
   const apiError = error as { message?: string; error?: string } | undefined
   return apiError?.message || apiError?.error || fallback
+}
+
+function startOfLocalDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function getRemainingDaysUntil(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+
+  const today = startOfLocalDay(new Date())
+  const targetDate = startOfLocalDay(date)
+  const remainingDays = Math.ceil((targetDate.getTime() - today.getTime()) / DAY_IN_MS)
+
+  return remainingDays > 0 ? remainingDays : null
 }
 
 function getPaymentStatusLabel(status: SepayPaymentStatus) {
@@ -60,8 +68,25 @@ function getPaymentStatusSeverity(status: SepayPaymentStatus) {
 
 function getPlanTypeLabel(planType: SubscriptionPlanType) {
   if (planType === "TRIAL") return "Dùng thử"
-  if (planType === "MONTHLY") return "Monthly"
+  if (planType === "MONTHLY") return "Theo tháng"
   return planType
+}
+
+function getPlanNameLabel(planName: string) {
+  if (planName === "Monthly" || planName === "MONTHLY") return "Gói theo tháng"
+  if (planName === "Trial" || planName === "TRIAL") return "Gói dùng thử"
+  return planName
+}
+
+function getSubscriptionNotice(overview: SubscriptionOverviewResponse) {
+  const planLabel = getPlanTypeLabel(overview.planType).toLowerCase()
+  const baseMessage = `Gói ${planLabel} của bạn còn ${overview.currentPeriodRemainingDays} ngày.`
+
+  if (overview.planType !== "TRIAL") return baseMessage
+
+  return `${baseMessage} Sau thời gian này, bạn cần thanh toán ${formatCurrency(
+    overview.monthlyPrice
+  )}/tháng để tiếp tục sử dụng hệ thống.`
 }
 
 function getSubscriptionStatusLabel(status: SubscriptionStatus) {
@@ -77,11 +102,50 @@ function getSubscriptionStatusSeverity(status: SubscriptionStatus) {
   return "info" as const
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function CurrentPlanMetric({ label, value, icon }: { label: string; value: string; icon: string }) {
   return (
-    <div className="grid grid-cols-[140px,1fr] border-b border-[#edf1f6] py-2 text-sm last:border-b-0">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-semibold text-slate-800">{value}</span>
+    <div className="rounded-lg border border-[#e5edf6] bg-[#f8fafc] px-3 py-3">
+      <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-500">
+        <i className={`${icon} text-[#5068ff]`} />
+        <span>{label}</span>
+      </div>
+      <p className="m-0 text-base font-bold text-slate-900">{value}</p>
+    </div>
+  )
+}
+
+function CompactDateRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="m-0 text-xs font-medium text-slate-500">{label}</p>
+      <p className="m-0 mt-1 text-sm font-semibold text-slate-900">{value}</p>
+    </div>
+  )
+}
+
+function PeriodProgress({
+  label,
+  totalDays,
+  remainingDays,
+  usedPercent,
+  className = "bg-[#f8fafc]",
+}: {
+  label: string
+  totalDays: number
+  remainingDays: number
+  usedPercent: number
+  className?: string
+}) {
+  return (
+    <div className={`rounded-lg px-3 py-3 ${className}`}>
+      <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold text-slate-600">
+        <span>
+          {label}: {totalDays} ngày
+        </span>
+        <span>Còn lại: {remainingDays} ngày</span>
+      </div>
+      <div className="mb-2 flex justify-end text-xs text-slate-500">{usedPercent}%</div>
+      <ProgressBar value={usedPercent} showValue={false} className="h-2 overflow-hidden rounded-full bg-[#e8edf5]" />
     </div>
   )
 }
@@ -114,10 +178,18 @@ export function ShopSubscriptionPage() {
   const [cancelingCurrentPaymentId, setCancelingCurrentPaymentId] = useState<number | null>(null)
 
   const monthlyPrice = overview?.monthlyPrice ?? 500000
-  const trialTotalDays = overview?.trialTotalDays ?? 0
-  const remainingDays = overview?.remainingDays ?? 0
-  const trialPercent = trialTotalDays > 0 ? Math.round((remainingDays / trialTotalDays) * 100) : 0
+  const planTotalDays = overview?.planTotalDays ?? 0
+  const usedDays = overview?.usedDays ?? 0
+  const currentPeriodUsedPercent = planTotalDays > 0 ? Math.min(100, Math.max(0, Math.round((usedDays / planTotalDays) * 100))) : 0
   const currentPendingPayment = currentPayment?.status === "PENDING" ? currentPayment : null
+  const isTrialPlan = overview?.planType === "TRIAL"
+  const trialRemainingDays = overview ? getRemainingDaysUntil(overview.trialEndsAt) : null
+  const hasActiveTrial = !!overview && overview.trialTotalDays > 0 && trialRemainingDays !== null
+  const trialUsedDays = overview && hasActiveTrial ? Math.max(0, overview.trialTotalDays - (trialRemainingDays ?? 0)) : 0
+  const trialUsedPercent =
+    overview && overview.trialTotalDays > 0 ? Math.min(100, Math.max(0, Math.round((trialUsedDays / overview.trialTotalDays) * 100))) : 0
+  const currentPeriodLabel = isTrialPlan ? "Kỳ dùng thử" : "Kỳ trả phí"
+  const shouldShowExpirationNotice = !!overview && overview.currentPeriodRemainingDays < 15
 
   const stopPolling = useCallback(() => {
     if (pollingTimerRef.current) {
@@ -373,85 +445,88 @@ export function ShopSubscriptionPage() {
             </div>
           ) : overview ? (
             <div className="space-y-4">
-              <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
-                    <i className="pi pi-exclamation-triangle text-sm" />
-                  </span>
-                  <p className="m-0 text-sm font-medium text-amber-900">
-                    {overview.message ||
-                      `Gói dùng thử của bạn còn ${overview.remainingDays} ngày. Sau thời gian này, bạn cần thanh toán ${formatCurrency(
-                        overview.monthlyPrice
-                      )}/tháng để tiếp tục sử dụng hệ thống.`}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  label="Nâng cấp ngay"
-                  disabled={!overview.canRenew}
-                  onClick={() => openRenewModal(3)}
-                  className="!h-9 !rounded-md !border-amber-300 !bg-white !px-4 !py-0 !text-sm !font-semibold !text-amber-700 hover:!bg-amber-100 disabled:!opacity-60 [&_.p-button-label]:!text-amber-700"
-                />
-              </div>
-
-              <div className="grid gap-4 xl:grid-cols-[1.05fr,0.95fr]">
-                <section className="rounded-xl border border-[#dce4ee] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
-                  {sectionHeader("pi pi-calendar", "Gói hiện tại")}
-                  <div className="space-y-1">
-                    <DetailRow label="Loại gói" value={getPlanTypeLabel(overview.planType)} />
-                    <div className="grid grid-cols-[140px,1fr] border-b border-[#edf1f6] py-2 text-sm">
-                      <span className="text-slate-500">Trạng thái</span>
-                      <span>
-                        <Tag value={getSubscriptionStatusLabel(overview.status)} severity={getSubscriptionStatusSeverity(overview.status)} rounded />
-                      </span>
-                    </div>
-                    <DetailRow label="Ngày bắt đầu" value={formatDateOnlyViVN(overview.startedAt)} />
-                    <DetailRow label="Ngày hết hạn" value={formatDateOnlyViVN(overview.expiredAt)} />
-                    <DetailRow label="Thời gian còn lại" value={`${overview.remainingDays} ngày`} />
-                    <DetailRow label="Giá sau dùng thử" value={`${formatCurrency(overview.monthlyPrice)} / tháng`} />
-                  </div>
-                  <div className="mt-4">
-                    <div className="mb-2 flex items-center justify-between text-xs font-semibold text-slate-600">
-                      <span>
-                        {overview.remainingDays}/{overview.trialTotalDays} ngày
-                      </span>
-                      <span>{trialPercent}%</span>
-                    </div>
-                    <ProgressBar value={trialPercent} showValue={false} className="h-2 overflow-hidden rounded-full bg-[#e8edf5]" />
-                  </div>
-                </section>
-
-                <section className="relative overflow-hidden rounded-xl border border-[#dce4ee] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
-                  <div className="pointer-events-none absolute right-6 top-10 h-40 w-40 rounded-full bg-emerald-100/70" />
-                  <div className="pointer-events-none absolute right-12 top-16 flex h-28 w-28 items-center justify-center rounded-full bg-white/70 text-emerald-500">
-                    <i className="pi pi-calendar-plus text-5xl opacity-90" />
-                  </div>
-                  <div className="relative">
-                    {sectionHeader("pi pi-shield", "Gói Monthly")}
-                    <p className="m-0 text-2xl font-bold text-slate-900">
-                      {formatCurrency(overview.monthlyPrice)}
-                      <span className="ml-1 text-sm font-semibold text-slate-500">/ tháng</span>
+              {shouldShowExpirationNotice && (
+                <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-start gap-3">
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                      <i className="pi pi-exclamation-triangle text-sm" />
+                    </span>
+                    <p className="m-0 text-sm font-medium text-amber-900">
+                      {getSubscriptionNotice(overview)}
                     </p>
-                    <ul className="mt-4 space-y-2 p-0">
-                      {planFeatures.map((feature) => (
-                        <li key={feature} className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                            <i className="pi pi-check text-[10px]" />
-                          </span>
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                    <Button
-                      type="button"
-                      label="Gia hạn 1 tháng"
-                      disabled={!overview.canRenew}
-                      onClick={() => openRenewModal(1)}
-                      className="mt-5 !h-10 w-full !rounded-md !border-emerald-500 !bg-emerald-500 !py-0 !text-sm !font-semibold !text-white hover:!bg-emerald-600 disabled:!opacity-60 [&_.p-button-label]:!text-white"
+                  </div>
+                  <Button
+                    type="button"
+                    label={overview.planType === "TRIAL" ? "Nâng cấp ngay" : "Gia hạn ngay"}
+                    disabled={!overview.canRenew}
+                    onClick={() => openRenewModal(3)}
+                    className="!h-9 !rounded-md !border-amber-300 !bg-white !px-4 !py-0 !text-sm !font-semibold !text-amber-700 hover:!bg-amber-100 disabled:!opacity-60 [&_.p-button-label]:!text-amber-700"
+                  />
+                </div>
+              )}
+
+              <section className="rounded-xl border border-[#dce4ee] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#eef3ff] text-[#5068ff]">
+                        <i className="pi pi-calendar text-sm" />
+                      </span>
+                      <div>
+                        <h2 className="m-0 text-base font-semibold text-slate-800">Gói hiện tại</h2>
+                        <p className="m-0 mt-1 text-xs font-medium text-slate-500">
+                          {formatDateOnlyViVN(overview.currentPeriodStart)} - {formatDateOnlyViVN(overview.currentPeriodEnd)}
+                        </p>
+                      </div>
+                    </div>
+                    <Tag value={getSubscriptionStatusLabel(overview.status)} severity={getSubscriptionStatusSeverity(overview.status)} rounded />
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <CurrentPlanMetric label="Loại gói" value={getPlanTypeLabel(overview.planType)} icon="pi pi-bookmark" />
+                    <CurrentPlanMetric label={`Còn lại ${currentPeriodLabel.toLowerCase()}`} value={`${overview.currentPeriodRemainingDays} ngày`} icon="pi pi-clock" />
+                    <CurrentPlanMetric label="Giá theo tháng" value={`${formatCurrency(overview.monthlyPrice)} / tháng`} icon="pi pi-wallet" />
+                    <CurrentPlanMetric label="Hết hạn quyền dùng" value={formatDateOnlyViVN(overview.expiredAt)} icon="pi pi-calendar-times" />
+                  </div>
+
+                  <div className={`mt-4 grid gap-3 ${hasActiveTrial ? "lg:grid-cols-2" : ""}`}>
+                    {hasActiveTrial && overview.trialTotalDays > 0 && trialRemainingDays !== null && (
+                      <PeriodProgress
+                        label="Kỳ dùng thử"
+                        totalDays={overview.trialTotalDays}
+                        remainingDays={trialRemainingDays}
+                        usedPercent={trialUsedPercent}
+                        className="border border-amber-100 bg-amber-50"
+                      />
+                    )}
+                    <PeriodProgress
+                      label={currentPeriodLabel}
+                      totalDays={overview.planTotalDays}
+                      remainingDays={overview.currentPeriodRemainingDays}
+                      usedPercent={currentPeriodUsedPercent}
                     />
                   </div>
-                </section>
-              </div>
+
+                  <div className="mt-4 rounded-lg border border-[#e5edf6] bg-white px-3 py-3">
+                    <h3 className="m-0 text-sm font-semibold text-slate-800">Mốc thời gian</h3>
+                    <div className="mt-3 grid gap-4 md:grid-cols-3">
+                      <div className="space-y-3 border-b border-[#eef2f6] pb-3 md:border-b-0 md:border-r md:pb-0 md:pr-4">
+                        <p className="m-0 text-xs font-bold uppercase text-[#5068ff]">{currentPeriodLabel}</p>
+                        <CompactDateRow label="Bắt đầu" value={formatDateOnlyViVN(overview.currentPeriodStart)} />
+                        <CompactDateRow label="Kết thúc" value={formatDateOnlyViVN(overview.currentPeriodEnd)} />
+                      </div>
+                      <div className="space-y-3 border-b border-[#eef2f6] pb-3 md:border-b-0 md:border-r md:pb-0 md:pr-4">
+                        <p className="m-0 text-xs font-bold uppercase text-amber-600">Kỳ dùng thử</p>
+                        <CompactDateRow label="Bắt đầu đăng ký" value={formatDateOnlyViVN(overview.subscriptionStartedAt)} />
+                        <CompactDateRow label="Kết thúc dùng thử" value={formatDateOnlyViVN(overview.trialEndsAt)} />
+                      </div>
+                      <div className="space-y-3">
+                        <p className="m-0 text-xs font-bold uppercase text-emerald-600">Quyền sử dụng</p>
+                        <CompactDateRow label="Hết hạn quyền dùng" value={formatDateOnlyViVN(overview.expiredAt)} />
+                        <CompactDateRow label="Trạng thái" value={getSubscriptionStatusLabel(overview.status)} />
+                      </div>
+                    </div>
+                  </div>
+              </section>
 
               {currentPendingPayment && (
                 <section className="rounded-xl border border-[#dce4ee] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
@@ -498,7 +573,12 @@ export function ShopSubscriptionPage() {
                   tableStyle={{ minWidth: "56rem" }}
                 >
                   <Column field="invoiceNumber" header="Mã giao dịch" style={{ minWidth: "180px" }} />
-                  <Column field="planName" header="Gói" style={{ minWidth: "130px" }} />
+                  <Column
+                    field="planName"
+                    header="Gói"
+                    body={(row) => getPlanNameLabel((row as SubscriptionPaymentHistoryItem).planName)}
+                    style={{ minWidth: "130px" }}
+                  />
                   <Column
                     field="amount"
                     header="Số tiền"

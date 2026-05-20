@@ -19,6 +19,12 @@ export interface SubscriptionOverviewResponse {
   remainingDays: number
   trialTotalDays: number
   usedDays: number
+  planTotalDays: number
+  subscriptionStartedAt: string
+  trialEndsAt: string
+  currentPeriodStart: string
+  currentPeriodEnd: string
+  currentPeriodRemainingDays: number
   monthlyPrice: number
   currency: "VND"
   canRenew: boolean
