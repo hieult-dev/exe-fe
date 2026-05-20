@@ -79,6 +79,12 @@ const shopConsoleNav: NavEntry[] = [
       { to: "/shop/ghtk-config", label: "GHTK", icon: "pi pi-truck" },
     ],
   },
+  {
+    type: "single",
+    to: "/shop/subscriptions",
+    railLabel: "Gói sử dụng",
+    icon: "pi pi-credit-card",
+  },
 ]
 
 export function ShopConsoleLayout() {

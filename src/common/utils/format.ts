@@ -2,6 +2,10 @@ export function formatCurrencyVND(value: number | null | undefined) {
   return `${Number(value ?? 0).toLocaleString("vi-VN")}đ`
 }
 
+export function formatCurrency(value: number | null | undefined) {
+  return formatCurrencyVND(value)
+}
+
 export function formatDateTimeViVN(value: string | null | undefined, fallback = "—") {
   if (!value) return fallback
 

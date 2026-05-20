@@ -11,7 +11,6 @@ import { Button } from "primereact/button"
 import { Dialog } from "primereact/dialog"
 import { notify } from "@/common/toast/ToastHelper"
 import { register as registerApi } from "@/common/auth/api/authApi"
-import { applyAuthSession } from "@/common/auth/utils/session"
 import { getBrowserGeoLocation } from "@/common/utils/location"
 
 export function ShopRegisterPage() {
@@ -127,21 +126,10 @@ export function ShopRegisterPage() {
             formData.append("locationSource", values.locationSource)
             if (avatar) formData.append("avatarUrlPreview", avatar)
 
-            const res = await registerApi(formData)
-            applyAuthSession(
-                {
-                    accessToken: res.accessToken,
-                    refreshToken: res.refreshToken,
-                    role: res.role,
-                    user: res.user,
-                    currentShopId: res.currentShopId,
-                    shops: res.shops,
-                },
-                false
-            )
+            await registerApi(formData)
 
-            notify.success("Đăng ký thành công!")
-            setTimeout(() => navigate("/", { replace: true }), 600)
+            notify.success("Đăng ký thành công. Vui lòng theo dõi email để nhận phản hồi.")
+            setTimeout(() => navigate("/login", { replace: true }), 1800)
         } catch (err: any) {
             const message =
                 err?.response?.data?.message ??
