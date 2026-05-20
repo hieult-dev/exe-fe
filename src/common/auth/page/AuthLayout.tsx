@@ -127,7 +127,7 @@ export function AuthLayout({
             )}
 
             <p className="mt-5 text-center text-[11px] text-blue-300/40">
-              Copyright @PetPees 2024
+              Copyright @Pawly 2024
             </p>
           </div>
         </div>

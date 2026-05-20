@@ -103,18 +103,17 @@ export function ShopConsoleLayout() {
     return <Navigate to="/unauthorized" replace />
   }
 
-  const ownerKey = user.email?.trim().toLowerCase() || "default"
   const isSalesPage = location.pathname.startsWith("/shop/sales")
   const isChatPage = location.pathname.startsWith("/shop/chat")
 
   return (
-    <ShopOwnerProvider ownerKey={ownerKey}>
+    <ShopOwnerProvider>
       <StaffSalesSearchProvider>
         <div className="flex h-screen flex-col overflow-hidden bg-[#eef2f6]">
           <AppHeader
             user={user}
             homePath="/shop/dashboard"
-            title={currentShop?.name ?? "PetPees"}
+            title={currentShop?.name ?? "Pawly"}
             center={isSalesPage ? <StaffSaleHeaderSearch /> : isChatPage ? null : <GlobalSearchBar />}
             notificationBadgeCount={notificationBadgeCount}
           />

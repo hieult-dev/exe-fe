@@ -629,7 +629,7 @@ export function ShopChatPage() {
             <InputText
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Tìm kiếm trên PetPees"
+              placeholder="Tìm kiếm trên Pawly"
               className="!w-full !border-0 !bg-transparent !p-0 !text-sm !shadow-none focus:!shadow-none"
             />
           </div>

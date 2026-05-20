@@ -24,10 +24,11 @@ import type {
   ShopPaymentConfigDTO,
   ShopPaymentConfigRequest,
 } from "@/apps/payment_config/model"
+import { useUserStore } from "@/apps/user/store/UserStore"
+import { resolveCurrentAuthShop } from "@/common/auth/utils/shopAccess"
 import { TableActionMenu } from "@/common/component/TableActionMenu"
 import { notify } from "@/common/toast/ToastHelper"
 import { formatDateTimeViVN } from "@/common/utils/format"
-import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
 
 type ActiveFilter = "ALL" | "ACTIVE" | "INACTIVE"
 
@@ -49,7 +50,9 @@ function activeParamFromFilter(filter: ActiveFilter) {
 }
 
 export function ShopPaymentConfigPage() {
-  const { data } = useShopOwnerContext()
+  const currentShopId = useUserStore((state) => state.currentShopId)
+  const shops = useUserStore((state) => state.shops)
+  const currentShop = resolveCurrentAuthShop(shops, currentShopId)
   const [configs, setConfigs] = useState<ShopPaymentConfigDTO[]>([])
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("ALL")
   const [editorMode, setEditorMode] = useState<PaymentConfigEditorMode>(null)
@@ -228,7 +231,7 @@ export function ShopPaymentConfigPage() {
           start={
             <div>
               <h1 className="text-lg font-semibold text-slate-800">Cấu hình ngân hàng</h1>
-              <p className="mt-0.5 text-sm text-slate-500">Tài khoản nhận chuyển khoản của {data.shop.name}.</p>
+              <p className="mt-0.5 text-sm text-slate-500">Tài khoản nhận chuyển khoản của {currentShop?.name ?? "cửa hàng hiện tại"}.</p>
             </div>
           }
           end={

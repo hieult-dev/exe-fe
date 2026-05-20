@@ -11,6 +11,8 @@ import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
 import { deleteService, getServiceById, getServiceCategories, getServices, updateService } from "@/apps/services/api/serviceApi"
 import type { ServiceCategoryDTO, ServiceDTO, ServiceVisibilityFilter } from "@/apps/services/model"
 import { ShopServiceForm, type FormMode } from "@/apps/services/components/ShopServiceForm"
+import { useUserStore } from "@/apps/user/store/UserStore"
+import { resolveCurrentAuthShop } from "@/common/auth/utils/shopAccess"
 import { notify } from "@/common/toast/ToastHelper"
 import { formatCurrencyVND } from "@/common/utils/format"
 
@@ -48,8 +50,11 @@ function serviceStatusClass(isActive: boolean) {
 
 export function ShopServiceManager() {
   const location = useLocation()
-  const { data, globalSearchQuery } = useShopOwnerContext()
-  const shopId = Number(String(data.shop.id).replace(/\D/g, "")) || 1
+  const { globalSearchQuery } = useShopOwnerContext()
+  const currentShopId = useUserStore((state) => state.currentShopId)
+  const shops = useUserStore((state) => state.shops)
+  const currentShop = resolveCurrentAuthShop(shops, currentShopId)
+  const shopId = currentShop?.id ?? currentShopId ?? 0
   const highlightedServiceId = useMemo(
     () => getNumber(new URLSearchParams(location.search).get("serviceId")),
     [location.search],

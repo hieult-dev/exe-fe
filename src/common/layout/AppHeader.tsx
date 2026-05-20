@@ -30,8 +30,8 @@ type AppHeaderProps = {
 export function AppHeader({
   user,
   homePath,
-  eyebrow = "PetPees Admin",
-  title = "PetPees",
+  eyebrow = "Pawly Admin",
+  title = "Pawly",
   center,
   showActionButtons = true,
   notificationBadgeCount = 0,
