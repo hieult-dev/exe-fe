@@ -1,9 +1,6 @@
 const rawGateway = import.meta.env.VITE_GATEWAY?.trim()
 
-const API_BASE_URL = "/api"
-
-// Backend thật chỉ dùng cho local/dev hoặc các chỗ cần so sánh origin.
-const DEFAULT_BACKEND_ORIGIN = "http://103.107.182.64:8080"
+const DEFAULT_BACKEND_ORIGIN = "https://api.pawply.site"
 
 function normalizeHttpUrl(value: string | undefined) {
   if (!value) return ""
@@ -17,7 +14,11 @@ function normalizeHttpUrl(value: string | undefined) {
   }
 }
 
-const BACKEND_ORIGIN = import.meta.env.PROD ? "" : normalizeHttpUrl(rawGateway) || DEFAULT_BACKEND_ORIGIN
+const GATEWAY_URL = normalizeHttpUrl(rawGateway) || DEFAULT_BACKEND_ORIGIN
+
+const API_BASE_URL = `${GATEWAY_URL}/api`
+
+const BACKEND_ORIGIN = GATEWAY_URL
 
 function toWebSocketUrl(httpUrl: string) {
   const url = new URL(httpUrl)
@@ -36,8 +37,7 @@ if (rawGateway && !normalizeHttpUrl(rawGateway)) {
 const AUTH_URL = "/auth"
 const USER_URL = "/user"
 const REFRESH_TOKEN_URL = "/auth/refreshToken"
-const GATEWAY_WEBSOCKET_URL =
-  !import.meta.env.PROD && BACKEND_ORIGIN ? `${toWebSocketUrl(BACKEND_ORIGIN)}/ws` : ""
+const GATEWAY_WEBSOCKET_URL = `${toWebSocketUrl(GATEWAY_URL)}/ws`
 
 export {
   API_BASE_URL,
