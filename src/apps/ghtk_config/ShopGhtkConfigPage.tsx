@@ -8,8 +8,8 @@ import {
 import { GhtkConfigForm } from "@/apps/ghtk_config/components/GhtkConfigForm"
 import type { GhtkConfigApiError, GhtkConfigDTO, GhtkConfigRequest } from "@/apps/ghtk_config/model"
 import { useUserStore } from "@/apps/user/store/UserStore"
+import { resolveCurrentAuthShop } from "@/common/auth/utils/shopAccess"
 import { notify } from "@/common/toast/ToastHelper"
-import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
 
 const formId = "shop-ghtk-config-form"
 
@@ -19,8 +19,9 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export function ShopGhtkConfigPage() {
-  const { data } = useShopOwnerContext()
   const currentShopId = useUserStore((state) => state.currentShopId)
+  const shops = useUserStore((state) => state.shops)
+  const currentShop = resolveCurrentAuthShop(shops, currentShopId)
   const [config, setConfig] = useState<GhtkConfigDTO | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -75,7 +76,7 @@ export function ShopGhtkConfigPage() {
         start={
           <div>
             <h1 className="text-lg font-semibold text-slate-800">Cấu hình GHTK</h1>
-            <p className="mt-0.5 text-sm text-slate-500">{data.shop.name}</p>
+            <p className="mt-0.5 text-sm text-slate-500">{currentShop?.name ?? "Cửa hàng hiện tại"}</p>
           </div>
         }
         end={

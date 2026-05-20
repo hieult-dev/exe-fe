@@ -1,71 +1,25 @@
-﻿import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
-import {
-  loadShopOwnerData,
-  saveShopOwnerData,
-  type ShopInventoryMaterial,
-  type ShopInventoryProduct,
-  type ShopInfo,
-  type ShopMember,
-  type ShopOwnerData,
-  type ShopService,
-} from "@/common/store/shopOwnerStore"
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react"
 
 type ShopOwnerContextValue = {
   globalSearchQuery: string
   setGlobalSearchQuery: (query: string) => void
-  data: ShopOwnerData
-  setShop: (shop: ShopInfo) => void
-  setServices: (services: ShopService[]) => void
-  setMembers: (members: ShopMember[]) => void
-  setInventoryProducts: (products: ShopInventoryProduct[]) => void
-  setInventoryMaterials: (materials: ShopInventoryMaterial[]) => void
 }
 
 const ShopOwnerContext = createContext<ShopOwnerContextValue | null>(null)
 
 type ShopOwnerProviderProps = {
-  ownerKey: string
   children: ReactNode
 }
 
-export function ShopOwnerProvider({ ownerKey, children }: ShopOwnerProviderProps) {
-  const [data, setData] = useState<ShopOwnerData>(() => loadShopOwnerData(ownerKey))
+export function ShopOwnerProvider({ children }: ShopOwnerProviderProps) {
   const [globalSearchQuery, setGlobalSearchQuery] = useState("")
-
-  useEffect(() => {
-    setData(loadShopOwnerData(ownerKey))
-  }, [ownerKey])
-
-  useEffect(() => {
-    saveShopOwnerData(ownerKey, data)
-  }, [ownerKey, data])
 
   const value = useMemo<ShopOwnerContextValue>(
     () => ({
       globalSearchQuery,
       setGlobalSearchQuery,
-      data,
-      setShop: (shop) => setData((prev) => ({ ...prev, shop })),
-      setServices: (services) => setData((prev) => ({ ...prev, services })),
-      setMembers: (members) => setData((prev) => ({ ...prev, members })),
-      setInventoryProducts: (products) =>
-        setData((prev) => ({
-          ...prev,
-          inventory: {
-            ...prev.inventory,
-            products,
-          },
-        })),
-      setInventoryMaterials: (materials) =>
-        setData((prev) => ({
-          ...prev,
-          inventory: {
-            ...prev.inventory,
-            materials,
-          },
-        })),
     }),
-    [data, globalSearchQuery]
+    [globalSearchQuery],
   )
 
   return <ShopOwnerContext.Provider value={value}>{children}</ShopOwnerContext.Provider>
@@ -80,4 +34,3 @@ export function useShopOwnerContext() {
 
   return context
 }
-
