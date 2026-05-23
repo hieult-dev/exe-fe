@@ -7,14 +7,16 @@ import { TableActionMenu } from "@/common/component/TableActionMenu"
 import type { ColumnBodyOptions } from "primereact/column"
 import { Toolbar } from "primereact/toolbar"
 import { Dialog } from "primereact/dialog"
+import { TabPanel, TabView } from "primereact/tabview"
 import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
 import { deleteService, getServiceById, getServiceCategories, getServices, updateService } from "@/apps/services/api/serviceApi"
-import type { ServiceCategoryDTO, ServiceDTO, ServiceVisibilityFilter } from "@/apps/services/model"
+import type { ServiceCategoryDTO, ServiceDTO, ServiceType, ServiceVisibilityFilter } from "@/apps/services/model"
 import { ShopServiceForm, type FormMode } from "@/apps/services/components/ShopServiceForm"
 import { useUserStore } from "@/apps/user/store/UserStore"
 import { resolveCurrentAuthShop } from "@/common/auth/utils/shopAccess"
 import { notify } from "@/common/toast/ToastHelper"
 import { formatCurrencyVND } from "@/common/utils/format"
+import { getImageUrlOrNotFound, NOT_FOUND_IMAGE_URL } from "@/common/utils/url"
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (typeof error === "object" && error !== null && "message" in error) {
@@ -48,6 +50,8 @@ function serviceStatusClass(isActive: boolean) {
   return isActive ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-700"
 }
 
+const serviceTabTypes: ServiceType[] = ["GENERAL", "VETERINARY"]
+
 export function ShopServiceManager() {
   const location = useLocation()
   const { globalSearchQuery } = useShopOwnerContext()
@@ -73,7 +77,7 @@ export function ShopServiceManager() {
   const [services, setServices] = useState<ServiceDTO[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [nextCursor, setNextCursor] = useState<number | null>(null)
   const [hasNext, setHasNext] = useState<boolean>(false)
   const observerTarget = React.useRef<HTMLDivElement>(null)
 
@@ -86,6 +90,8 @@ export function ShopServiceManager() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
 
   const [statusFilter, setStatusFilter] = useState<ServiceVisibilityFilter>("ALL")
+  const [activeServiceType, setActiveServiceType] = useState<ServiceType>("GENERAL")
+  const activeTabIndex = activeServiceType === "VETERINARY" ? 1 : 0
 
   useEffect(() => {
     if (highlightedServiceId === null) return
@@ -104,8 +110,7 @@ export function ShopServiceManager() {
       let nextCategories = categories
       if (!isLoadMore) {
         try {
-          const categoryResult = await getServiceCategories(true) as any
-          nextCategories = Array.isArray(categoryResult) ? categoryResult : (categoryResult?.data || categoryResult?.content || categoryResult?.items || [])
+          nextCategories = await getServiceCategories(true, activeServiceType)
           setCategories(nextCategories)
         } catch (err) {
           notify.error(getErrorMessage(err, "Không tải được danh sách nhóm dịch vụ."))
@@ -120,24 +125,34 @@ export function ShopServiceManager() {
       )
 
       const currentCursor = isLoadMore ? nextCursor : null
-      const result = await getServices(20, currentCursor, debouncedSearch) as any
+      const result = await getServices({
+        size: 20,
+        cursor: currentCursor,
+        search: debouncedSearch,
+        serviceType: activeServiceType,
+      })
       if (result) {
-        const payload = result?.data || result
-        const servicesArray = Array.isArray(payload) ? payload : (payload?.content || payload?.items || [])
+        const servicesArray = result.content
 
-        const newCursor = payload?.nextCursor || null
-        const newHasNext = payload?.hasNext ?? false
+        const newCursor = result.nextCursor ?? null
+        const newHasNext = result.hasNext ?? false
 
         if (Array.isArray(servicesArray)) {
           const mappedServices = servicesArray.map((s: ServiceDTO) => ({
             id: s.id!,
             shopId: s.shopId || shopId,
             name: s.name,
-            category: s.category || (s.categoryId ? categoryNameById.get(s.categoryId) ?? "Chưa phân nhóm" : "Chưa phân nhóm"),
+            category: s.categoryName || s.category || (s.categoryId ? categoryNameById.get(s.categoryId) ?? "Chưa phân nhóm" : "Chưa phân nhóm"),
             categoryId: s.categoryId ?? null,
+            categoryName: s.categoryName ?? null,
             basePrice: s.basePrice,
             durationMin: s.durationMin,
             active: s.active,
+            serviceType: s.serviceType,
+            veterinaryServiceType: s.veterinaryServiceType ?? null,
+            vaccineId: s.vaccineId ?? null,
+            vaccineName: s.vaccineName ?? null,
+            imageUrl: s.imageUrl ?? null,
           }))
 
           if (isLoadMore) {
@@ -168,7 +183,7 @@ export function ShopServiceManager() {
 
   useEffect(() => {
     loadServices(false)
-  }, [debouncedSearch])
+  }, [debouncedSearch, activeServiceType])
 
   useEffect(() => {
     if (isLoading || isLoadingMore || !hasNext) return
@@ -189,7 +204,7 @@ export function ShopServiceManager() {
     return () => {
       observer.disconnect()
     }
-  }, [hasNext, isLoading, isLoadingMore, nextCursor])
+  }, [hasNext, isLoading, isLoadingMore, nextCursor, activeServiceType])
 
   const activeCount = useMemo(() => services.filter((item) => item.active).length, [services])
   const inactiveCount = services.length - activeCount
@@ -218,9 +233,15 @@ export function ShopServiceManager() {
       name: merged.name || "",
       category: category || "Chưa phân nhóm",
       categoryId,
+      categoryName: merged.categoryName ?? category ?? null,
       basePrice: Number(merged.basePrice ?? 0),
       durationMin: Number(merged.durationMin ?? 0),
       active: typeof merged.active === "boolean" ? merged.active : true,
+      serviceType: merged.serviceType ?? "GENERAL",
+      veterinaryServiceType: merged.veterinaryServiceType ?? null,
+      vaccineId: merged.vaccineId ?? null,
+      vaccineName: merged.vaccineName ?? null,
+      imageUrl: merged.imageUrl ?? null,
     }
   }
 
@@ -235,9 +256,12 @@ export function ShopServiceManager() {
     getServiceById(highlightedServiceId)
       .then((result) => {
         if (cancelled) return
-        const detail = ((result as any)?.data || result) as ServiceDTO
+        const detail = result
         if (!detail || !detail.id) return
         const nextService = buildServiceWithCategory(detail)
+        if (nextService.serviceType !== activeServiceType) {
+          setActiveServiceType(nextService.serviceType)
+        }
 
         setServices((prev) => {
           if (prev.some((item) => item.id === nextService.id)) {
@@ -256,7 +280,7 @@ export function ShopServiceManager() {
     return () => {
       cancelled = true
     }
-  }, [highlightedServiceId, services, categories, shopId])
+  }, [highlightedServiceId, services, categories, shopId, activeServiceType])
 
   useEffect(() => {
     if (highlightedServiceId === null || !visibleServices.some((service) => service.id === highlightedServiceId)) return
@@ -277,8 +301,7 @@ export function ShopServiceManager() {
 
     setServiceDetailLoadingId(Number(service.id))
     try {
-      const result = await getServiceById(Number(service.id)) as any
-      const detail = result?.data || result
+      const detail = await getServiceById(Number(service.id))
       setTargetService(buildServiceWithCategory(detail, service))
       setFormMode(mode)
     } catch (err) {
@@ -313,7 +336,7 @@ export function ShopServiceManager() {
   }
 
   // ================= STATUS & DELETE ACTIONS =================
-  const toggleServiceStatus = async (service: any) => {
+  const toggleServiceStatus = async (service: ServiceDTO) => {
     if (!service.id) return
     try {
       await updateService(Number(service.id), {
@@ -323,6 +346,10 @@ export function ShopServiceManager() {
         basePrice: service.basePrice,
         active: !service.active,
         categoryId: service.categoryId ?? null,
+        serviceType: service.serviceType ?? activeServiceType,
+        veterinaryServiceType: service.serviceType === "VETERINARY" ? service.veterinaryServiceType ?? null : null,
+        vaccineId: service.serviceType === "VETERINARY" && service.veterinaryServiceType === "VACCINATION" ? service.vaccineId ?? null : null,
+        imageUrl: service.imageUrl ?? null,
       })
       setServices((prev) => prev.map((s) => s.id === service.id ? { ...s, active: !s.active } : s))
     } catch (err) {
@@ -365,10 +392,25 @@ export function ShopServiceManager() {
     return <div className="w-full text-center">{options.rowIndex + 1}</div>
   }
 
-  const serviceNameBody = (service: any) => {
+  const serviceImageBody = (service: ServiceDTO) => {
+    return (
+      <div className="flex w-full justify-center">
+        <img
+          src={getImageUrlOrNotFound(service.imageUrl)}
+          alt={service.name}
+          className="h-10 w-10 shrink-0 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] object-cover"
+          onError={(event) => {
+            event.currentTarget.src = NOT_FOUND_IMAGE_URL
+          }}
+        />
+      </div>
+    )
+  }
+
+  const serviceNameBody = (service: ServiceDTO) => {
     return (
       <div className="w-full text-center">
-        <p className="font-semibold text-[#24364d]">{service.name}</p>
+        <p className="m-0 font-semibold text-[#24364d]">{service.name}</p>
       </div>
     )
   }
@@ -471,94 +513,190 @@ export function ShopServiceManager() {
                 disabled={isLoading}
               >
                 <i className={`pi pi-refresh h-4 w-4 ${isLoading ? 'pi-spin' : ''}`} />
-                Refresh
+                Làm mới
               </button>
             </div>
           }
         />
 
         <div className="flex-1 rounded-xl bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:p-4">
-          <div className="space-y-5">
+          <TabView
+            activeIndex={activeTabIndex}
+            onTabChange={(event) => {
+              setStatusFilter("ALL")
+              setActiveServiceType(serviceTabTypes[event.index] ?? "GENERAL")
+            }}
+            className="shop-service-tabview [&_.p-tabview-nav]:!mb-5 [&_.p-tabview-nav]:!grid [&_.p-tabview-nav]:!grid-cols-1 [&_.p-tabview-nav]:!gap-0 [&_.p-tabview-nav]:!overflow-hidden [&_.p-tabview-nav]:!rounded-lg [&_.p-tabview-nav]:!border [&_.p-tabview-nav]:!border-[#dbe5f2] [&_.p-tabview-nav]:!bg-white sm:[&_.p-tabview-nav]:!grid-cols-2 [&_.p-tabview-nav>li]:!m-0 [&_.p-tabview-nav>li]:!border-0 [&_.p-tabview-nav-link]:!h-12 [&_.p-tabview-nav-link]:!justify-center [&_.p-tabview-nav-link]:!gap-2 [&_.p-tabview-nav-link]:!rounded-none [&_.p-tabview-nav-link]:!border-0 [&_.p-tabview-nav-link]:!bg-white [&_.p-tabview-nav-link]:!text-sm [&_.p-tabview-nav-link]:!font-semibold [&_.p-tabview-nav-link]:!text-slate-600 [&_.p-tabview-panels]:!bg-transparent [&_.p-tabview-panels]:!p-0 [&_.p-tabview-selected_.p-tabview-nav-link]:!bg-[#eef5ff] [&_.p-tabview-selected_.p-tabview-nav-link]:!text-[#0f5fff] [&_.p-tabview-selected_.p-tabview-nav-link]:!shadow-[inset_0_0_0_1px_#93b8ff] [&_.p-highlight_.p-tabview-nav-link]:!bg-[#eef5ff] [&_.p-highlight_.p-tabview-nav-link]:!text-[#0f5fff] [&_.p-highlight_.p-tabview-nav-link]:!shadow-[inset_0_0_0_1px_#93b8ff]"
+            panelContainerClassName="!px-0 !pb-0"
+          >
+            <TabPanel header="Dịch vụ Spa" leftIcon="pi pi-star mr-2">
+              <div className="space-y-5">
+                <div className="grid gap-3 md:grid-cols-3">
+                  <SummaryCard icon={<i className="pi pi-list h-5 w-5 text-sky-500" />} label="Tổng dịch vụ" value={String(services.length)} color="sky" />
+                  <SummaryCard icon={<i className="pi pi-check-circle h-5 w-5 text-emerald-500" />} label="Đang hoạt động" value={String(activeCount)} color="emerald" />
+                  <SummaryCard icon={<i className="pi pi-pause-circle h-5 w-5 text-orange-500" />} label="Tạm dừng" value={String(inactiveCount)} color="orange" />
+                </div>
 
-            <div className="grid gap-3 md:grid-cols-3">
-              <SummaryCard icon={<i className="pi pi-list h-5 w-5 text-sky-500" />} label="Tổng dịch vụ" value={String(services.length)} color="sky" />
-              <SummaryCard icon={<i className="pi pi-check-circle h-5 w-5 text-emerald-500" />} label="Đang hoạt động" value={String(activeCount)} color="emerald" />
-              <SummaryCard icon={<i className="pi pi-pause-circle h-5 w-5 text-orange-500" />} label="Tạm dừng" value={String(inactiveCount)} color="orange" />
-            </div>
-
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-base font-bold text-[#24364d]">Quản lý dịch vụ</p>
-                <p className="text-sm text-[#73849b]">Bảng bên dưới là danh sách dịch vụ hiện có của cửa hàng.</p>
-              </div>
-              <p className="text-sm text-[#73849b]">Hiển thị {visibleServices.length}/{services.length} dịch vụ</p>
-            </div>
-
-            <div className="overflow-hidden rounded-xl border border-[#e2e8f0] bg-white">
-              <DataTable
-                value={visibleServices}
-                dataKey="id"
-                size="small"
-                stripedRows
-                rowHover
-                rowClassName={serviceRowClassName}
-                showGridlines
-                tableStyle={{ minWidth: "68rem" }}
-                emptyMessage={
-                  <div className="w-full py-2 text-center text-[#4c5f78]">
-                    Chưa có dịch vụ nào.
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-base font-bold text-[#24364d]">Quản lý dịch vụ Spa</p>
+                    <p className="text-sm text-[#73849b]">Bảng bên dưới là danh sách dịch vụ Spa hiện có của cửa hàng.</p>
                   </div>
-                }
-                loading={isLoading}
-              >
-                <Column
-                  header="TT"
-                  body={indexBody}
-                  style={{ width: "64px" }}
-                  alignHeader="center"
-                  bodyStyle={{ textAlign: "center" }}
-                />
-                <Column field="name" header="Tên dịch vụ" body={serviceNameBody} style={{ minWidth: "240px" }} alignHeader="center" />
-                <Column field="category" header="Nhóm" body={categoryBody} style={{ minWidth: "140px" }} alignHeader="center" />
-                <Column
-                  field="basePrice"
-                  header="Giá"
-                  body={priceBody}
-                  alignHeader="center"
-                  bodyStyle={{ textAlign: "center" }}
-                />
-                <Column
-                  field="durationMin"
-                  header="Thời lượng"
-                  body={durationBody}
-                  alignHeader="center"
-                  bodyStyle={{ textAlign: "center" }}
-                />
-                <Column
-                  field="active"
-                  header="Trạng thái"
-                  body={statusBody}
-                  alignHeader="center"
-                  bodyStyle={{ textAlign: "center" }}
-                />
-                <Column
-                  header="Thao tác"
-                  body={actionsBody}
-                  alignHeader="center"
-                  bodyStyle={{ textAlign: "center" }}
-                />
-              </DataTable>
-              {(hasNext || isLoadingMore) && (
-                <div ref={observerTarget} className="flex h-12 w-full items-center justify-center p-4">
-                  {isLoadingMore ? (
-                    <i className="pi pi-spinner pi-spin text-[#4c5f78] text-xl" />
-                  ) : (
-                    <span className="text-sm text-slate-500 text-transparent">Cuộn xuống để xem thêm</span>
+                  <p className="text-sm text-[#73849b]">Hiển thị {visibleServices.length}/{services.length} dịch vụ</p>
+                </div>
+
+                <div className="overflow-hidden rounded-xl border border-[#e2e8f0] bg-white">
+                  <DataTable
+                    value={visibleServices}
+                    dataKey="id"
+                    size="small"
+                    stripedRows
+                    rowHover
+                    rowClassName={serviceRowClassName}
+                    showGridlines
+                    tableStyle={{ minWidth: "68rem" }}
+                    emptyMessage={
+                      <div className="w-full py-2 text-center text-[#4c5f78]">
+                        Chưa có dịch vụ nào.
+                      </div>
+                    }
+                    loading={isLoading}
+                  >
+                    <Column
+                      header="TT"
+                      body={indexBody}
+                      style={{ width: "64px" }}
+                      alignHeader="center"
+                      bodyStyle={{ textAlign: "center" }}
+                    />
+                    <Column body={serviceImageBody} style={{ width: "72px" }} bodyStyle={{ textAlign: "center" }} />
+                    <Column field="name" header="Tên dịch vụ" body={serviceNameBody} style={{ minWidth: "220px" }} alignHeader="center" />
+                    <Column field="category" header="Nhóm" body={categoryBody} style={{ minWidth: "140px" }} alignHeader="center" />
+                    <Column
+                      field="basePrice"
+                      header="Giá"
+                      body={priceBody}
+                      alignHeader="center"
+                      bodyStyle={{ textAlign: "center" }}
+                    />
+                    <Column
+                      field="durationMin"
+                      header="Thời lượng"
+                      body={durationBody}
+                      alignHeader="center"
+                      bodyStyle={{ textAlign: "center" }}
+                    />
+                    <Column
+                      field="active"
+                      header="Trạng thái"
+                      body={statusBody}
+                      alignHeader="center"
+                      bodyStyle={{ textAlign: "center" }}
+                    />
+                    <Column
+                      header="Thao tác"
+                      body={actionsBody}
+                      alignHeader="center"
+                      bodyStyle={{ textAlign: "center" }}
+                    />
+                  </DataTable>
+                  {(hasNext || isLoadingMore) && (
+                    <div ref={observerTarget} className="flex h-12 w-full items-center justify-center p-4">
+                      {isLoadingMore ? (
+                        <i className="pi pi-spinner pi-spin text-[#4c5f78] text-xl" />
+                      ) : (
+                        <span className="text-sm text-slate-500 text-transparent">Cuộn xuống để xem thêm</span>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
+            </TabPanel>
+
+            <TabPanel header="Dịch vụ thú y" leftIcon="pi pi-heart mr-2">
+              <div className="space-y-5">
+                <div className="grid gap-3 md:grid-cols-3">
+                  <SummaryCard icon={<i className="pi pi-list h-5 w-5 text-sky-500" />} label="Tổng dịch vụ" value={String(services.length)} color="sky" />
+                  <SummaryCard icon={<i className="pi pi-check-circle h-5 w-5 text-emerald-500" />} label="Đang hoạt động" value={String(activeCount)} color="emerald" />
+                  <SummaryCard icon={<i className="pi pi-pause-circle h-5 w-5 text-orange-500" />} label="Tạm dừng" value={String(inactiveCount)} color="orange" />
+                </div>
+
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-base font-bold text-[#24364d]">Quản lý dịch vụ thú y</p>
+                    <p className="text-sm text-[#73849b]">Bảng bên dưới là danh sách dịch vụ thú y hiện có của cửa hàng.</p>
+                  </div>
+                  <p className="text-sm text-[#73849b]">Hiển thị {visibleServices.length}/{services.length} dịch vụ</p>
+                </div>
+
+                <div className="overflow-hidden rounded-xl border border-[#e2e8f0] bg-white">
+                  <DataTable
+                    value={visibleServices}
+                    dataKey="id"
+                    size="small"
+                    stripedRows
+                    rowHover
+                    rowClassName={serviceRowClassName}
+                    showGridlines
+                    tableStyle={{ minWidth: "68rem" }}
+                    emptyMessage={
+                      <div className="w-full py-2 text-center text-[#4c5f78]">
+                        Chưa có dịch vụ thú y nào.
+                      </div>
+                    }
+                    loading={isLoading}
+                  >
+                    <Column
+                      header="TT"
+                      body={indexBody}
+                      style={{ width: "64px" }}
+                      alignHeader="center"
+                      bodyStyle={{ textAlign: "center" }}
+                    />
+                    <Column body={serviceImageBody} style={{ width: "72px" }} bodyStyle={{ textAlign: "center" }} />
+                    <Column field="name" header="Tên dịch vụ" body={serviceNameBody} style={{ minWidth: "220px" }} alignHeader="center" />
+                    <Column field="category" header="Nhóm" body={categoryBody} style={{ minWidth: "140px" }} alignHeader="center" />
+                    <Column
+                      field="basePrice"
+                      header="Giá"
+                      body={priceBody}
+                      alignHeader="center"
+                      bodyStyle={{ textAlign: "center" }}
+                    />
+                    <Column
+                      field="durationMin"
+                      header="Thời lượng"
+                      body={durationBody}
+                      alignHeader="center"
+                      bodyStyle={{ textAlign: "center" }}
+                    />
+                    <Column
+                      field="active"
+                      header="Trạng thái"
+                      body={statusBody}
+                      alignHeader="center"
+                      bodyStyle={{ textAlign: "center" }}
+                    />
+                    <Column
+                      header="Thao tác"
+                      body={actionsBody}
+                      alignHeader="center"
+                      bodyStyle={{ textAlign: "center" }}
+                    />
+                  </DataTable>
+                  {(hasNext || isLoadingMore) && (
+                    <div ref={observerTarget} className="flex h-12 w-full items-center justify-center p-4">
+                      {isLoadingMore ? (
+                        <i className="pi pi-spinner pi-spin text-[#4c5f78] text-xl" />
+                      ) : (
+                        <span className="text-sm text-slate-500 text-transparent">Cuộn xuống để xem thêm</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabPanel>
+          </TabView>
         </div>
       </div>
 
@@ -594,6 +732,7 @@ export function ShopServiceManager() {
         shopId={shopId}
         mode={formMode}
         service={targetService}
+        initialServiceType={activeServiceType}
         onClose={closeFormDialog}
         onSaved={handleFormSaved}
       />

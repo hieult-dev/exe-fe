@@ -15,6 +15,7 @@ import { SidebarConfig } from "@/common/config/sidebar.config"
 import { formatCurrencyVND, formatFileSize, formatVndInput, readVndAmount, toDigitsOnly } from "@/common/utils/format"
 import { NOT_FOUND_IMAGE_URL, getImageUrlOrNotFound } from "@/common/utils/url"
 import { createProduct, getProductById, getProductCategories, updateProductMultipart } from "@/apps/product/api/productApi"
+import { ProductCategoryManagerDialog } from "@/apps/product/components/ProductCategoryManagerDialog"
 import {
   PRODUCT_UNIT_OPTIONS,
   emptyProductForm,
@@ -142,6 +143,7 @@ export function ProductForm({ mode, productId, onClose, onEdit, onSaved }: Produ
   const imageInputRef = useRef<HTMLInputElement>(null)
   const [product, setProduct] = useState<ProductDTO | null>(null)
   const [categories, setCategories] = useState<ProductCategoryDTO[]>([])
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false)
   const [imagePreviewItems, setImagePreviewItems] = useState<ImagePreviewItem[]>([])
   const [formError, setFormError] = useState("")
   const [isLoadingDetail, setIsLoadingDetail] = useState(false)
@@ -239,6 +241,13 @@ export function ProductForm({ mode, productId, onClose, onEdit, onSaved }: Produ
       notify.error(message)
     } finally {
       setIsLoadingCategories(false)
+    }
+  }
+
+  const handleProductCategoryChanged = (category?: ProductCategoryDTO) => {
+    loadCategories()
+    if (category?.active) {
+      updateForm({ categoryId: category.id })
     }
   }
 
@@ -430,19 +439,28 @@ export function ProductForm({ mode, productId, onClose, onEdit, onSaved }: Produ
                 </FormField>
 
                 <FormField label="Danh mục" required error={errors.categoryId?.message}>
-                  <Dropdown
-                    value={formState.categoryId}
-                    options={categories}
-                    optionLabel="name"
-                    optionValue="id"
-                    showClear
-                    filter
-                    filterBy="name"
-                    emptyFilterMessage="Không tìm thấy danh mục"
-                    loading={isLoadingCategories}
-                    onChange={(event) => updateForm({ categoryId: event.value ?? null })}
-                    className={dropdownClassName}
-                  />
+                  <div className="flex gap-2">
+                    <Dropdown
+                      value={formState.categoryId}
+                      options={categories}
+                      optionLabel="name"
+                      optionValue="id"
+                      showClear
+                      filter
+                      filterBy="name"
+                      emptyFilterMessage="Không tìm thấy danh mục"
+                      loading={isLoadingCategories}
+                      onChange={(event) => updateForm({ categoryId: event.value ?? null })}
+                      className={dropdownClassName}
+                    />
+                    <Button
+                      type="button"
+                      icon="pi pi-plus"
+                      aria-label="Quản lý danh mục sản phẩm"
+                      onClick={() => setIsCategoryManagerOpen(true)}
+                      className="!m-0 !h-10 !w-10 !shrink-0 !rounded-lg !border-none !bg-[#214388] !p-0 !text-white hover:!bg-[#19356a] [&_.p-button-icon]:!text-white"
+                    />
+                  </div>
                 </FormField>
 
                 <FormField label="SKU (mã sản phẩm)" required error={errors.sku?.message}>
@@ -622,6 +640,12 @@ export function ProductForm({ mode, productId, onClose, onEdit, onSaved }: Produ
           </div>
         </div>
       </Sidebar>
+
+      <ProductCategoryManagerDialog
+        visible={isCategoryManagerOpen}
+        onHide={() => setIsCategoryManagerOpen(false)}
+        onChanged={handleProductCategoryChanged}
+      />
     </>
   )
 

@@ -35,6 +35,12 @@ export const getBookings = async (
     return api.get<BookingCursorPage>(BOOKING_URL, { params });
 };
 
+export const getBookingsByDay = async (currentDate: string) => {
+    return api.get<BookingDTO[]>(`${BOOKING_URL}/by-day`, {
+        params: { currentDate },
+    });
+};
+
 /**
  * Get a single booking by ID.
  */
@@ -47,13 +53,6 @@ export const getBookingById = async (id: number) => {
  */
 export const updateBookingStatus = async (id: number, status: string, note?: string) => {
     return api.put<any>(`${BOOKING_URL}/${id}/status`, { status, note });
-};
-
-/**
- * Assign staff members to a booking.
- */
-export const assignBooking = async (bookingId: number, staffUserIds: number[]) => {
-    return api.put<any>(`${BOOKING_URL}/${bookingId}/staff`, { staffUserIds });
 };
 
 export const checkoutBooking = async (bookingId: number, data: BookingCheckoutRequest) => {

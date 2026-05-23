@@ -1,6 +1,7 @@
 import api from "@/common/api/baseApi"
 import type {
   ProductCategoryDTO,
+  ProductCategoryWriteRequest,
   ProductCreateRequest,
   ProductDTO,
   ProductScrollResponse,
@@ -63,11 +64,11 @@ export const getProductCategoryById = async (id: number) => {
   return api.get<ProductCategoryDTO>(`${PRODUCT_CATEGORY_URL}/${id}`)
 }
 
-export const createProductCategory = async (dto: ProductCategoryDTO) => {
+export const createProductCategory = async (dto: ProductCategoryWriteRequest) => {
   return api.post<ProductCategoryDTO>(PRODUCT_CATEGORY_URL, dto)
 }
 
-export const updateProductCategory = async (id: number, dto: ProductCategoryDTO) => {
+export const updateProductCategory = async (id: number, dto: ProductCategoryWriteRequest) => {
   return api.request<ProductCategoryDTO>("put", `${PRODUCT_CATEGORY_URL}/${id}`, dto)
 }
 

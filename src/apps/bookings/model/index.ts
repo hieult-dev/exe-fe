@@ -22,10 +22,18 @@ export type BookingItemType = "SERVICE" | "PRODUCT" | "PACKAGE_REDEEM" | "ADJUST
  */
 export interface BookingLineItemDTO {
   id?: number
+  bookingItemId?: number
   itemType: BookingItemType
   refId: number
+  productId?: number | null
+  serviceId?: number | null
   petId?: number | null
+  petName?: string | null
   name: string
+  serviceType?: "GENERAL" | "VETERINARY" | null
+  veterinaryServiceType?: "VACCINATION" | "EXAMINATION" | "TREATMENT" | "TEST" | "SURGERY" | "CONSULTATION" | "OTHER" | null
+  vaccineId?: number | null
+  vaccineName?: string | null
   quantity: number
   unitPrice: number
   amount: number
@@ -44,14 +52,6 @@ export type BookingCheckoutRequest = {
   issuedAt: string
 }
 
-export interface BookingStaffDTO {
-  bookingId?: number
-  userId: number
-  fullName?: string | null
-  email?: string | null
-  avatarUrlPreview?: string | null
-}
-
 /**
  * Data Transfer Object matching backend BookingDTO.
  */
@@ -65,8 +65,11 @@ export interface BookingDTO {
   userEmail: string | null
   userAvatarUrlPreview: string | null
   customerId: number | null
+  customerFullName?: string | null
   customerName: string | null
   customerPhone: string | null
+  petId?: number | null
+  petName?: string | null
   startAt: string
   endAt: string
   items: BookingLineItemDTO[]
@@ -76,10 +79,6 @@ export interface BookingDTO {
   source: BookingSource
   note: string | null
   createdBy: number | null
-  assigneeId: number | null
-  assigneeName: string | null
-  assignedStaffIds: number[]
-  assignedStaffs: BookingStaffDTO[]
   time: string
   createdAt: string
   updatedAt: string
