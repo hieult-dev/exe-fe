@@ -3,7 +3,7 @@ import { Button } from "primereact/button"
 import { InputText } from "primereact/inputtext"
 import { ProgressSpinner } from "primereact/progressspinner"
 import { TabPanel, TabView } from "primereact/tabview"
-import { checkoutBooking, getBookings } from "@/apps/bookings/api/bookingApi"
+import { checkoutBooking, getBookingsByDay, updateBookingStatus } from "@/apps/bookings/api/bookingApi"
 import type { BookingCheckoutItemRequest, BookingDTO } from "@/apps/bookings/model"
 import { createInvoice } from "@/apps/invoices/api/invoiceApi"
 import { manualConfirmPayment } from "@/apps/payments/api/paymentApi"
@@ -61,22 +61,18 @@ function toProductSaleItem(product: ProductDTO): SaleCatalogItem {
   }
 }
 
-function isTodayBooking(booking: BookingDTO) {
-  const value = booking.startAt || booking.time
-  if (!value) return false
-
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return false
-
-  const today = new Date()
-  return date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate()
-}
-
 function matchesCustomerName(booking: BookingDTO, query: string) {
   const keyword = query.trim().toLowerCase()
   if (!keyword) return true
-  const displayName = booking.customerName || booking.userFullName || ""
+  const displayName = booking.customerFullName || booking.customerName || booking.userFullName || ""
   return displayName.toLowerCase().includes(keyword)
+}
+
+function toLocalDateParam(date = new Date()) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
 }
 
 function matchesProductQuery(item: SaleCatalogItem, query: string) {
@@ -188,10 +184,8 @@ export function StaffSalesPage() {
   const [addOnProductQuery, setAddOnProductQuery] = useState("")
 
   const [bookings, setBookings] = useState<BookingDTO[]>([])
-  const [bookingCursor, setBookingCursor] = useState<number | null>(null)
-  const [bookingHasNext, setBookingHasNext] = useState(false)
   const [bookingsLoading, setBookingsLoading] = useState(false)
-  const [bookingsLoadingMore, setBookingsLoadingMore] = useState(false)
+  const [startingBookingId, setStartingBookingId] = useState<number | null>(null)
   const [selectedBooking, setSelectedBooking] = useState<BookingDTO | null>(null)
 
   const [cart, setCart] = useState<SaleCartItem[]>([])
@@ -245,7 +239,7 @@ export function StaffSalesPage() {
       return {
         mode: "BOOKING",
         code: selectedBooking.bookingCode,
-        customerName: selectedBooking.customerName || selectedBooking.userFullName || undefined,
+        customerName: selectedBooking.customerFullName || selectedBooking.customerName || selectedBooking.userFullName || undefined,
         lines: [...bookingLines, ...productLines],
         subtotal: nextSubtotal,
         discountAmount: 0,
@@ -364,37 +358,16 @@ export function StaffSalesPage() {
     }
   }
 
-  const loadBookings = async (isLoadMore = false) => {
-    if (isLoadMore) {
-      if (!bookingHasNext || bookingsLoadingMore || bookingCursor === null) return
-      setBookingsLoadingMore(true)
-    } else {
-      setBookingsLoading(true)
-    }
+  const loadBookings = async () => {
+    setBookingsLoading(true)
 
     try {
-      const result = await getBookings(100, isLoadMore ? bookingCursor : null, "", "CONFIRMED")
-      const mapped = result.content.filter(isTodayBooking)
-
-      if (isLoadMore) {
-        setBookings((prev) => {
-          const prevIds = new Set(prev.map((booking) => booking.id))
-          return [...prev, ...mapped.filter((booking) => !prevIds.has(booking.id))]
-        })
-      } else {
-        setBookings(mapped)
-      }
-
-      setBookingCursor(result.nextCursor ?? null)
-      setBookingHasNext(result.hasNext ?? false)
+      const result = await getBookingsByDay(toLocalDateParam())
+      setBookings(result)
     } catch (error) {
       notify.error(getErrorMessage(error, "Không tải được booking dịch vụ hôm nay."))
     } finally {
-      if (isLoadMore) {
-        setBookingsLoadingMore(false)
-      } else {
-        setBookingsLoading(false)
-      }
+      setBookingsLoading(false)
     }
   }
 
@@ -405,7 +378,7 @@ export function StaffSalesPage() {
   }, [activeTab, debouncedSearchQuery])
 
   useEffect(() => {
-    loadBookings(false)
+    loadBookings()
   }, [])
 
   useEffect(() => {
@@ -520,11 +493,42 @@ export function StaffSalesPage() {
   }
 
   function selectBooking(booking: BookingDTO) {
+    if (booking.status !== "IN_PROGRESS") {
+      notify.error("Chỉ có thể thanh toán lịch hẹn đang thực hiện.")
+      return
+    }
+
     setSelectedBooking(booking)
     setCart([])
     setDiscountAmount(0)
     setPaymentQr(null)
     setNote(booking.note ?? "")
+  }
+
+  const startBooking = async (booking: BookingDTO) => {
+    if (booking.status !== "CONFIRMED") return
+
+    setStartingBookingId(booking.id)
+    try {
+      await updateBookingStatus(booking.id, "IN_PROGRESS")
+      const updatedBooking = {
+        ...booking,
+        status: "IN_PROGRESS" as const,
+        statusLabel: "Đang thực hiện",
+      }
+
+      setBookings((prev) => prev.map((item) => (item.id === booking.id ? updatedBooking : item)))
+      setSelectedBooking((prev) => (prev?.id === booking.id ? updatedBooking : prev))
+      notify.success(`Đã xác nhận tiến hành lịch hẹn ${booking.bookingCode}.`)
+    } catch (error) {
+      notify.error(getErrorMessage(error, "Không thể xác nhận tiến hành lịch hẹn."))
+    } finally {
+      setStartingBookingId(null)
+    }
+  }
+
+  const removeBookingFromList = (bookingId: number) => {
+    setBookings((prev) => prev.filter((booking) => booking.id !== bookingId))
   }
 
   const openCustomerDisplay = () => {
@@ -686,7 +690,7 @@ export function StaffSalesPage() {
         setDiscountAmount(0)
         setPaymentQr(null)
         setNote("")
-        loadBookings(false)
+        removeBookingFromList(selectedBooking.id)
         if (cart.length > 0) loadProducts(false)
       } catch (error) {
         notify.error(getErrorMessage(error, "Không hoàn tất được booking dịch vụ."))
@@ -769,7 +773,7 @@ export function StaffSalesPage() {
         setDiscountAmount(0)
         setPaymentQr(null)
         setNote("")
-        loadBookings(false)
+        removeBookingFromList(selectedBooking.id)
         if (cart.length > 0) loadProducts(false)
       } catch (error) {
         notify.error(getErrorMessage(error, "Không xác nhận được thanh toán QR cho booking."))
@@ -897,7 +901,7 @@ export function StaffSalesPage() {
         ) : filteredBookings.length === 0 ? (
           <div className="flex min-h-[320px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white text-center">
             <i className="pi pi-calendar mb-3 text-3xl text-slate-300" />
-            <p className="m-0 text-sm font-semibold text-slate-600">Không có booking đã xác nhận hôm nay</p>
+            <p className="m-0 text-sm font-semibold text-slate-600">Không có booking dịch vụ hôm nay</p>
             <p className="mb-0 mt-1 text-xs text-slate-400">Danh sách trống</p>
           </div>
         ) : (
@@ -908,22 +912,12 @@ export function StaffSalesPage() {
                   key={booking.id}
                   booking={booking}
                   selected={selectedBooking?.id === booking.id}
+                  starting={startingBookingId === booking.id}
                   onSelect={selectBooking}
+                  onStart={startBooking}
                 />
               ))}
             </div>
-            {bookingHasNext && (
-              <div className="flex justify-center">
-                <Button
-                  type="button"
-                  label={bookingsLoadingMore ? "Đang tải" : "Tải thêm"}
-                  icon="pi pi-angle-down"
-                  outlined
-                  loading={bookingsLoadingMore}
-                  onClick={() => loadBookings(true)}
-                />
-              </div>
-            )}
           </>
         )}
 
