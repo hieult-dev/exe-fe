@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "primereact/button"
 import { Calendar } from "primereact/calendar"
+import { Checkbox } from "primereact/checkbox"
 import { Dialog } from "primereact/dialog"
 import { InputTextarea } from "primereact/inputtextarea"
 import type { SubmitGhtkOrderRequest } from "@/apps/orders/model"
@@ -29,6 +30,7 @@ function defaultPickDate() {
 export function SubmitGhtkOrderModal({ visible, submitting, orderCode, onHide, onSubmit }: SubmitGhtkOrderModalProps) {
   const [pickDate, setPickDate] = useState<Date | null>(() => defaultPickDate())
   const [note, setNote] = useState("")
+  const [isFreeship, setIsFreeship] = useState(false)
   const [error, setError] = useState("")
   const minPickDate = useMemo(() => startOfDay(), [])
 
@@ -36,6 +38,7 @@ export function SubmitGhtkOrderModal({ visible, submitting, orderCode, onHide, o
     if (!visible) return
     setPickDate(defaultPickDate())
     setNote("")
+    setIsFreeship(false)
     setError("")
   }, [visible])
 
@@ -65,7 +68,7 @@ export function SubmitGhtkOrderModal({ visible, submitting, orderCode, onHide, o
     setError("")
     onSubmit({
       pickDate: formattedPickDate,
-      isFreeship: 0,
+      isFreeship: isFreeship ? 1 : 0,
       note: trimmedNote || undefined,
     })
   }
@@ -122,6 +125,21 @@ export function SubmitGhtkOrderModal({ visible, submitting, orderCode, onHide, o
             <span className="font-medium text-slate-500">Ngày đã chọn</span>
             <span className="font-semibold text-[#214388]">{formatDateOnlyViVN(pickDate, "---")}</span>
           </div>
+        </div>
+
+        <div className="rounded-lg border border-[#d9e1eb] bg-[#f8fafc] px-3 py-3">
+          <label htmlFor="ghtk-is-freeship" className="flex cursor-pointer items-start gap-3">
+            <Checkbox
+              inputId="ghtk-is-freeship"
+              checked={isFreeship}
+              onChange={(event) => setIsFreeship(event.checked === true)}
+              disabled={submitting}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="block text-sm font-semibold text-slate-700">Shop trả phí vận chuyển</span>
+            </span>
+          </label>
         </div>
 
         <div>

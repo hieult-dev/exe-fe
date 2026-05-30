@@ -165,6 +165,34 @@ export interface SubmitGhtkOrderResponse {
   warning: string | null
 }
 
+export interface CancelGhtkOrderResponse {
+  success: boolean
+  message: string
+  orderId: number
+  labelId: string | null
+  partnerId: string | null
+  shippingStatus: string
+  orderStatus: OrderStatus
+}
+
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
+
+export interface OrderShipmentLogDTO {
+  id: number
+  carrier: string
+  shipmentId: number
+  shopId: number
+  orderId: number
+  partnerId: string | null
+  labelId: string | null
+  statusId: number | null
+  actionTime: string | null
+  processingStatus: string | null
+  errorMessage: string | null
+  rawPayloadJson: JsonValue | null
+  createdAt: string
+}
+
 export interface ScrollResponse<T> {
   content: T[]
   size: number

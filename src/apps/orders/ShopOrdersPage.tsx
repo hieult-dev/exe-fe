@@ -13,8 +13,9 @@ import { getInvoiceByOrderId } from "@/apps/invoices/api/invoiceApi"
 import type { InvoiceDetailDTO } from "@/apps/invoices/model"
 import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
 import { deleteOrder, getOrderById, getOrders, updateOrder } from "@/apps/orders/api/orderApi"
-import { submitGhtkOrder } from "@/apps/orders/api/ghtkOrderApi"
+import { cancelGhtkOrder, submitGhtkOrder } from "@/apps/orders/api/ghtkOrderApi"
 import { InvoiceDetailDialog } from "@/apps/invoices/components/InvoiceDetailDialog"
+import { OrderShipmentLogsDialog } from "@/apps/orders/components/OrderShipmentLogsDialog"
 import { ShopOrderDetailModal } from "@/apps/orders/components/ShopOrderDetailModal"
 import { SubmitGhtkOrderModal } from "@/apps/orders/components/SubmitGhtkOrderModal"
 import type {
@@ -71,7 +72,6 @@ const SOURCE_BADGE_CONFIG: Record<OrderSource, { bg: string; text: string }> = {
 
 const STATUS_FLOW: Partial<Record<OrderStatus, OrderStatus>> = {
   CONFIRMED: "PACKING",
-  WAITING_GHTK_PICKUP: "SHIPPING",
   SHIPPING: "COMPLETED",
 }
 
@@ -216,6 +216,8 @@ export function ShopOrdersPage() {
   const [ghtkTarget, setGhtkTarget] = useState<OrderListItemDTO | null>(null)
   const [isGhtkOpen, setIsGhtkOpen] = useState(false)
   const [isGhtkSubmitting, setIsGhtkSubmitting] = useState(false)
+  const [shipmentLogsTarget, setShipmentLogsTarget] = useState<OrderListItemDTO | null>(null)
+  const [isShipmentLogsOpen, setIsShipmentLogsOpen] = useState(false)
 
   const [selectedListOrder, setSelectedListOrder] = useState<OrderListItemDTO | null>(null)
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceDetailDTO | null>(null)
@@ -223,8 +225,8 @@ export function ShopOrdersPage() {
   const [isInvoiceLoading, setIsInvoiceLoading] = useState(false)
 
   const [isCancelOpen, setIsCancelOpen] = useState(false)
-  const [cancelNote, setCancelNote] = useState("")
   const [cancelTargetId, setCancelTargetId] = useState<number | null>(null)
+  const [isCancelSubmitting, setIsCancelSubmitting] = useState(false)
 
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<OrderListItemDTO | null>(null)
@@ -424,27 +426,32 @@ export function ShopOrdersPage() {
 
   const openCancel = (id: number) => {
     setCancelTargetId(id)
-    setCancelNote("")
     setIsCancelOpen(true)
+  }
+
+  const closeCancel = () => {
+    if (isCancelSubmitting) return
+    setIsCancelOpen(false)
+    setCancelTargetId(null)
   }
 
   const confirmCancel = async () => {
     if (!cancelTargetId) return
 
+    setIsCancelSubmitting(true)
     try {
-      await updateOrder(cancelTargetId, {
-        status: "CANCELLED",
-        note: cancelNote || undefined,
-      })
+      const response = await cancelGhtkOrder(cancelTargetId)
       patchOrderInState(cancelTargetId, {
-        status: "CANCELLED",
-        note: cancelNote || undefined,
+        status: response.orderStatus || "CANCELLED",
       })
       setIsCancelOpen(false)
       setCancelTargetId(null)
-      notify.success("Đã hủy đơn hàng.")
+      notify.success(response.message || "Đã hủy đơn hàng.")
+      loadOrders(false)
     } catch (err) {
       notify.error(getErrorMessage(err, "Không thể hủy đơn hàng."))
+    } finally {
+      setIsCancelSubmitting(false)
     }
   }
 
@@ -491,6 +498,16 @@ export function ShopOrdersPage() {
     if (isGhtkSubmitting) return
     setIsGhtkOpen(false)
     setGhtkTarget(null)
+  }
+
+  const openShipmentLogs = (order: OrderListItemDTO) => {
+    setShipmentLogsTarget(order)
+    setIsShipmentLogsOpen(true)
+  }
+
+  const closeShipmentLogs = () => {
+    setIsShipmentLogsOpen(false)
+    setShipmentLogsTarget(null)
   }
 
   const confirmGhtkSubmit = async (data: SubmitGhtkOrderRequest) => {
@@ -557,6 +574,7 @@ export function ShopOrdersPage() {
       setOrders((prev) => prev.filter((order) => order.id !== deleteTarget.id))
       if (selectedDetailOrder?.id === deleteTarget.id) closeDetail()
       if (ghtkTarget?.id === deleteTarget.id) closeGhtkSubmit()
+      if (shipmentLogsTarget?.id === deleteTarget.id) closeShipmentLogs()
       if (selectedListOrder?.id === deleteTarget.id) closeInvoice()
       closeDelete()
       notify.success("Đã xóa đơn hàng.")
@@ -642,6 +660,13 @@ export function ShopOrdersPage() {
       label: "Xem chi tiết",
       icon: "pi pi-info-circle",
       command: () => openDetail(order),
+    })
+
+    actionItems.push({
+      label: "Xem lịch sử GHTK",
+      icon: "pi pi-history",
+      className: "text-[#214388]",
+      command: () => openShipmentLogs(order),
     })
 
     if (order.status === "COMPLETED") {
@@ -777,7 +802,7 @@ export function ShopOrdersPage() {
               <Button
                 type="button"
                 icon={`pi pi-refresh ${isLoading ? "pi-spin" : ""}`}
-                label="Refresh"
+                label="Làm mới"
                 onClick={handleRefreshView}
                 disabled={isLoading}
                 className="!m-0 !inline-flex !h-9 !items-center !justify-center !rounded-md !border !border-[#d9e1eb] !bg-white !px-4 !py-0 !text-sm !font-medium !text-[#40526b] hover:!bg-[#f8fafc]"
@@ -856,6 +881,13 @@ export function ShopOrdersPage() {
         onHide={closeDetail}
       />
 
+      <OrderShipmentLogsDialog
+        visible={isShipmentLogsOpen}
+        orderId={shipmentLogsTarget?.id ?? null}
+        orderCode={shipmentLogsTarget?.orderCode}
+        onHide={closeShipmentLogs}
+      />
+
       <InvoiceDetailDialog
         visible={isInvoiceOpen}
         loading={isInvoiceLoading}
@@ -872,7 +904,7 @@ export function ShopOrdersPage() {
 
       <Dialog
         visible={isCancelOpen}
-        onHide={() => setIsCancelOpen(false)}
+        onHide={closeCancel}
         header="Hủy đơn hàng"
         style={{ width: "100%", maxWidth: "30rem" }}
         footer={
@@ -881,7 +913,8 @@ export function ShopOrdersPage() {
               type="button"
               label="Đóng"
               icon="pi pi-times"
-              onClick={() => setIsCancelOpen(false)}
+              onClick={closeCancel}
+              disabled={isCancelSubmitting}
               className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#d9e1eb] !bg-white !px-4 !py-0 !text-sm !font-semibold !text-[#40526b] hover:!bg-[#f8fafc]"
             />
             <Button
@@ -889,21 +922,16 @@ export function ShopOrdersPage() {
               label="Xác nhận hủy"
               icon="pi pi-times-circle"
               onClick={confirmCancel}
+              loading={isCancelSubmitting}
+              disabled={isCancelSubmitting}
               className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-rose-500 !bg-rose-500 !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-rose-600 [&_.p-button-icon]:!text-white [&_.p-button-label]:!text-white"
             />
           </div>
         }
       >
-        <p className="mb-4 mt-0 text-sm text-[#73849b]">Thao tác này sẽ chuyển trạng thái đơn sang đã hủy.</p>
-        <label className="block text-sm text-slate-700">
-          <span className="mb-1 block font-medium">Lý do hủy (tùy chọn)</span>
-          <textarea
-            rows={3}
-            value={cancelNote}
-            onChange={(event) => setCancelNote(event.target.value)}
-            className="w-full resize-none rounded-lg border border-[#d9e1eb] px-3 py-2 text-sm outline-none focus:border-rose-400"
-          />
-        </label>
+        <p className="mb-0 mt-0 text-sm text-[#73849b]">
+          Thao tác này sẽ hủy vận đơn GHTK nếu đơn đã gửi sang GHTK. Nếu đơn đang ở trạng thái sớm, hệ thống sẽ hủy đơn nội bộ.
+        </p>
       </Dialog>
 
       <Dialog

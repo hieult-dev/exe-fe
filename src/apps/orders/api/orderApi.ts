@@ -5,6 +5,7 @@ import type {
   OrderDetailDTO,
   OrderDTO,
   OrderListItemDTO,
+  OrderShipmentLogDTO,
   OrderSource,
   OrderStatus,
 } from "@/apps/orders/model"
@@ -56,6 +57,10 @@ export const updateOrder = async (id: number, data: Partial<OrderDTO>) => {
 
 export const deleteOrder = async (id: number) => {
   return api.del<void>(`${ORDER_URL}/${id}`, undefined)
+}
+
+export const getOrderShipmentLogs = async (orderId: number) => {
+  return api.get<OrderShipmentLogDTO[]>(`${ORDER_URL}/${orderId}/shipment/logs`)
 }
 
 export type { OrderListItemDTO }
