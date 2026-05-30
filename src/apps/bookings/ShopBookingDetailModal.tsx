@@ -3,7 +3,6 @@ import { Button } from "primereact/button"
 import { Dialog } from "primereact/dialog"
 import { ProgressSpinner } from "primereact/progressspinner"
 import { Tag } from "primereact/tag"
-import { StaffProfile } from "@/common/component/StaffProfile"
 import { getBookingById } from "@/apps/bookings/api/bookingApi"
 import type { BookingDTO, BookingItemType, BookingStatus } from "@/apps/bookings/model"
 import { notify } from "@/common/toast/ToastHelper"
@@ -29,7 +28,6 @@ type ShopBookingDetailModalProps = {
   onAccept: (id: number) => void | Promise<void>
   onReject: (id: number) => void
   onNextStatus: (booking: BookingDTO) => boolean | Promise<boolean>
-  onAssign: (booking: BookingDTO) => void
   onLoaded?: (booking: BookingDTO) => void
 }
 
@@ -55,7 +53,7 @@ function InfoItem({ icon, label, value }: { icon: ReactNode; label: string; valu
 }
 
 function getBookingCustomerName(booking: BookingDTO) {
-  return booking.customerName || booking.userFullName || (booking.userId ? `User #${booking.userId}` : "---")
+  return booking.customerFullName || booking.customerName || booking.userFullName || (booking.userId ? `Khách #${booking.userId}` : "---")
 }
 
 function getBookingCustomerContact(booking: BookingDTO) {
@@ -105,7 +103,6 @@ export function ShopBookingDetailModal({
   onAccept,
   onReject,
   onNextStatus,
-  onAssign,
   onLoaded,
 }: ShopBookingDetailModalProps) {
   const [detail, setDetail] = useState<BookingDTO | null>(null)
@@ -214,18 +211,6 @@ export function ShopBookingDetailModal({
               className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#214388] !bg-[#214388] !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-[#19356a]"
             />
           )}
-          {detail?.status === "CONFIRMED" && (
-            <Button
-              label={detail.assignedStaffs.length ? "Đổi NV" : "Gán NV"}
-              icon="pi pi-user-plus"
-              severity="info"
-              onClick={() => {
-                onHide()
-                onAssign(detail)
-              }}
-              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-sky-500 !bg-sky-500 !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-sky-600"
-            />
-          )}
         </div>
       }
     >
@@ -298,7 +283,7 @@ export function ShopBookingDetailModal({
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div>
               <div className="rounded-xl border border-[#e2e8f0] p-4">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Trạng thái</p>
                 <span
@@ -308,19 +293,6 @@ export function ShopBookingDetailModal({
                 </span>
                 {detail.source && (
                   <p className="mt-2 text-xs text-slate-500">Nguồn: {detail.source}</p>
-                )}
-              </div>
-
-              <div className="rounded-xl border border-[#e2e8f0] p-4">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Nhân viên phụ trách</p>
-                {detail.assignedStaffs.length === 0 ? (
-                  <span className="italic text-slate-400">Chưa gán</span>
-                ) : (
-                  <div className="space-y-2">
-                    {detail.assignedStaffs.map((staff, index) => (
-                      <StaffProfile key={staff.userId ?? index} staff={staff} />
-                    ))}
-                  </div>
                 )}
               </div>
             </div>

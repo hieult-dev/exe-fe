@@ -3,17 +3,14 @@ import { useLocation } from "react-router-dom"
 import { Button } from "primereact/button"
 import { Calendar } from "primereact/calendar"
 import { Dialog } from "primereact/dialog"
-import { PickList, type PickListChangeEvent } from "primereact/picklist"
 import { DataTable } from "primereact/datatable"
 import { Toolbar } from "primereact/toolbar"
 import { TableActionMenu } from "@/common/component/TableActionMenu"
-import { StaffAvatarGroup } from "@/common/component/StaffAvatarGroup"
 import type { MenuItem } from "primereact/menuitem"
 import { Column } from "primereact/column"
 import type { ColumnBodyOptions } from "primereact/column"
 import { useShopOwnerContext } from "@/common/store/ShopOwnerContext"
-import { getBookingById, getBookings, updateBookingStatus, assignBooking, getBookingInvoice } from "@/apps/bookings/api/bookingApi"
-import { getActiveStaff, type ShopMemberDTO } from "@/apps/members/api/shopMemberApi"
+import { getBookingById, getBookings, updateBookingStatus, getBookingInvoice } from "@/apps/bookings/api/bookingApi"
 import type { BookingDTO, BookingStatus, BookingStatusFilter } from "@/apps/bookings/model"
 import { ShopBookingDetailModal } from "@/apps/bookings/ShopBookingDetailModal"
 import { InvoiceDetailDialog } from "@/apps/invoices/components/InvoiceDetailDialog"
@@ -122,11 +119,6 @@ export function ShopBookingsPage() {
   const [isRejectOpen, setIsRejectOpen] = useState(false)
   const [rejectNote, setRejectNote] = useState("")
   const [rejectTargetId, setRejectTargetId] = useState<number | null>(null)
-  const [isAssignOpen, setIsAssignOpen] = useState(false)
-  const [assignTargetId, setAssignTargetId] = useState<number | null>(null)
-  const [assignSource, setAssignSource] = useState<ShopMemberDTO[]>([])
-  const [assignTarget, setAssignTarget] = useState<ShopMemberDTO[]>([])
-  const [isAssignLoading, setIsAssignLoading] = useState(false)
   const [invoiceBooking, setInvoiceBooking] = useState<BookingDTO | null>(null)
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceDetailDTO | null>(null)
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false)
@@ -365,48 +357,6 @@ export function ShopBookingsPage() {
     setSelectedInvoice(null)
   }
 
-  // ── Assign staff ──────────────────────────────────────────────────────────
-  const openAssign = async (id: number, bookingOverride?: BookingDTO) => {
-    const booking = bookingOverride ?? bookings.find((item) => item.id === id) ?? (selectedBooking?.id === id ? selectedBooking : null)
-
-    setAssignTargetId(id)
-    setAssignSource([])
-    setAssignTarget([])
-    setIsAssignOpen(true)
-    setIsAssignLoading(true)
-
-    try {
-      const staffList = await getActiveStaff()
-      const assignedStaffIdSet = new Set(booking?.assignedStaffs.map((staff) => staff.userId) ?? [])
-      const assignedStaff = staffList.filter((staff) => assignedStaffIdSet.has(staff.userId))
-
-      setAssignTarget(assignedStaff)
-      setAssignSource(staffList.filter((staff) => !assignedStaffIdSet.has(staff.userId)))
-    } catch (err) {
-      notify.error(getErrorMessage(err, "Không tải được danh sách nhân viên."))
-    } finally {
-      setIsAssignLoading(false)
-    }
-  }
-
-  const confirmAssign = async () => {
-    if (!assignTargetId || assignTarget.length === 0) return
-    const staffUserIds = assignTarget
-      .map((member) => Number(member.userId))
-      .filter((id) => Number.isFinite(id))
-    if (staffUserIds.length === 0) return
-
-    try {
-      await assignBooking(assignTargetId, staffUserIds)
-      setIsAssignOpen(false)
-      setAssignTargetId(null)
-      notify.success("Đã gán nhân viên phụ trách.")
-      loadBookings(false)
-    } catch (err) {
-      notify.error(getErrorMessage(err, "Không thể gán nhân viên."))
-    }
-  }
-
   const handleRefreshView = () => {
     setStatusFilter("ALL")
     setCreateDateFilter(null)
@@ -463,10 +413,6 @@ export function ShopBookingsPage() {
     )
   }
 
-  const assignBody = (booking: BookingDTO) => {
-    return <StaffAvatarGroup staffs={booking.assignedStaffs} maxVisible={4} />
-  }
-
   const createdAtBody = (booking: BookingDTO) => (
     <div className="text-center text-xs text-slate-500">{formatDateTimeViVN(booking.createdAt)}</div>
   )
@@ -513,16 +459,6 @@ export function ShopBookingsPage() {
         icon: booking.status === "CONFIRMED" ? "pi pi-play-circle" : "pi pi-check-circle",
         className: "text-violet-600",
         command: () => handleNextStatus(booking),
-      })
-    }
-
-    // Gán nhân viên chỉ trước khi bắt đầu thực hiện.
-    if (booking.status === "CONFIRMED") {
-      actionItems.push({
-        label: booking.assignedStaffs.length ? "Đổi nhân viên" : "Gán nhân viên",
-        icon: "pi pi-user-plus",
-        className: "text-sky-600",
-        command: () => openAssign(booking.id),
       })
     }
 
@@ -673,7 +609,6 @@ export function ShopBookingsPage() {
                 <Column header="Tổng tiền" body={totalBody} style={{ minWidth: "120px" }} alignHeader="center" bodyStyle={{ textAlign: "center" }} />
                 <Column header="Thời gian hẹn" body={timeBody} style={{ minWidth: "150px" }} alignHeader="center" bodyStyle={{ textAlign: "center" }} />
                 <Column header="Trạng thái" body={statusBody} style={{ minWidth: "140px" }} alignHeader="center" bodyStyle={{ textAlign: "center" }} />
-                <Column header="Phụ trách" body={assignBody} style={{ minWidth: "140px" }} alignHeader="center" bodyStyle={{ textAlign: "center" }} />
                 <Column header="Ngày tạo" body={createdAtBody} style={{ minWidth: "150px" }} alignHeader="center" bodyStyle={{ textAlign: "center" }} />
                 <Column header="Thao tác" body={actionsBody} style={{ minWidth: "140px" }} alignHeader="center" bodyStyle={{ textAlign: "center" }} />
               </DataTable>
@@ -698,7 +633,6 @@ export function ShopBookingsPage() {
         onAccept={handleAccept}
         onReject={openReject}
         onNextStatus={handleNextStatus}
-        onAssign={(booking) => openAssign(booking.id, booking)}
         onLoaded={setSelectedBooking}
       />
 
@@ -753,70 +687,6 @@ export function ShopBookingsPage() {
           </label>
         </div>
       </Dialog>
-
-      {/* ── Assign staff dialog ────────────────────────────────────────────── */}
-      <Dialog
-        visible={isAssignOpen}
-        onHide={() => setIsAssignOpen(false)}
-        header="Gán nhân viên phụ trách"
-        style={{ width: "100%", maxWidth: "56rem" }}
-        footer={
-          <div className="mt-4 flex w-full flex-col-reverse items-center justify-center gap-2 sm:flex-row">
-            <Button
-              type="button"
-              label="Hủy"
-              icon="pi pi-times"
-              onClick={() => setIsAssignOpen(false)}
-              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-[#d9e1eb] !bg-white !px-4 !py-0 !text-sm !font-semibold !text-[#40526b] hover:!bg-[#f8fafc]"
-            />
-            <Button
-              type="button"
-              label="Xác nhận gán"
-              icon="pi pi-check"
-              onClick={confirmAssign}
-              disabled={assignTarget.length === 0}
-              className="!m-0 !inline-flex !h-10 !items-center !justify-center !rounded-lg !border !border-sky-500 !bg-sky-500 !px-4 !py-0 !text-sm !font-semibold !text-white hover:!bg-sky-600 disabled:!cursor-not-allowed disabled:!opacity-50 [&_.p-button-icon]:!text-white [&_.p-button-label]:!text-white"
-            />
-          </div>
-        }
-      >
-        <p className="mb-4 mt-0 text-sm text-[#73849b]">Chọn nhân viên trong shop để phụ trách lịch hẹn này.</p>
-        {isAssignLoading ? (
-          <div className="flex h-32 items-center justify-center">
-            <i className="pi pi-spinner pi-spin text-2xl text-[#214388]" />
-          </div>
-        ) : assignSource.length === 0 && assignTarget.length === 0 ? (
-          <p className="text-xs italic text-slate-400">Chưa có nhân viên nào. Hãy thêm ở mục Thành viên.</p>
-        ) : (
-          <PickList
-            dataKey="userId"
-            source={assignSource}
-            target={assignTarget}
-            onChange={(e: PickListChangeEvent) => {
-              setAssignSource(e.source as ShopMemberDTO[])
-              setAssignTarget(e.target as ShopMemberDTO[])
-            }}
-            itemTemplate={(item) => (
-              <div className="flex items-center gap-3 py-1">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e8eef8] text-xs font-semibold text-[#2c4b7a]">
-                  {(item.userFullName?.[0] || "U").toUpperCase()}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-800">{item.userFullName}</p>
-                  <p className="text-xs text-slate-500">{item.userEmail}</p>
-                </div>
-              </div>
-            )}
-            sourceHeader="Nhân viên có sẵn"
-            targetHeader="Đã chọn"
-            sourceStyle={{ height: "16rem" }}
-            targetStyle={{ height: "16rem" }}
-            showSourceControls={false}
-            showTargetControls={false}
-          />
-        )}
-      </Dialog>
-
 
     </>
   )

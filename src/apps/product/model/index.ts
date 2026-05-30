@@ -36,6 +36,13 @@ export interface ProductCategoryDTO {
   updatedAt: string
 }
 
+export type ProductCategoryWriteRequest = {
+  name: string
+  description: string | null
+  active: boolean
+  sortOrder: number
+}
+
 export interface ScrollResponse<T> {
   content: T[]
   size: number
