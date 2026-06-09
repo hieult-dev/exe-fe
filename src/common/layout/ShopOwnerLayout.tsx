@@ -21,6 +21,7 @@ type NavItemSingle = {
   to: string
   railLabel: string
   icon: string
+  hidden?: boolean
 }
 
 type NavItemGroup = {
@@ -51,12 +52,13 @@ const shopConsoleNav: NavEntry[] = [
     type: "group",
     railLabel: "Kinh doanh",
     icon: "pi pi-briefcase",
-    matchPrefix: ["/shop/sales", "/shop/services", "/shop/orders", "/shop/bookings"],
+    matchPrefix: ["/shop/sales", "/shop/services", "/shop/orders", "/shop/bookings", "/shop/platform-fees"],
     children: [
       { to: "/shop/sales", label: "Bán hàng", icon: "pi pi-calculator" },
       { to: "/shop/services", label: "Dịch vụ", icon: "pi pi-cog" },
       { to: "/shop/orders", label: "Đơn hàng", icon: "pi pi-shopping-cart" },
       { to: "/shop/bookings", label: "Lịch hẹn", icon: "pi pi-calendar" },
+      { to: "/shop/platform-fees", label: "Phí nền tảng", icon: "pi pi-percentage" },
     ],
   },
   {
@@ -84,6 +86,7 @@ const shopConsoleNav: NavEntry[] = [
     to: "/shop/subscriptions",
     railLabel: "Gói sử dụng",
     icon: "pi pi-credit-card",
+    hidden: true,
   },
 ]
 
@@ -205,7 +208,7 @@ function SidebarNav({ chatBadgeCount }: { chatBadgeCount: number }) {
 
   return (
     <nav className="pt-3">
-      {shopConsoleNav.map((entry) =>
+      {shopConsoleNav.filter((entry) => !("hidden" in entry && entry.hidden)).map((entry) =>
         entry.type === "single" ? (
           <SingleNavItem key={entry.to} item={entry} badgeCount={entry.to === "/shop/chat" ? chatBadgeCount : 0} onHover={closeImmediately} />
         ) : (

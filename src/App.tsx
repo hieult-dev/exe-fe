@@ -17,6 +17,7 @@ import { ShopBookingsPage } from "@/apps/bookings/ShopBookingsPage"
 import { ShopPaymentConfigPage } from "@/apps/payment_config/ShopPaymentConfigPage"
 import { ShopGhtkConfigPage } from "@/apps/ghtk_config/ShopGhtkConfigPage"
 import { ShopSubscriptionPage } from "@/apps/subscriptions/ShopSubscriptionPage"
+import { ShopPlatformFeePage } from "@/apps/platform-fees/ShopPlatformFeePage"
 import { ShopChatPage } from "@/apps/chat/ShopChatPage"
 import { StaffCustomerDisplayPage } from "@/apps/staff/StaffCustomerDisplayPage"
 import { StaffSalesPage } from "@/apps/staff/StaffSalesPage"
@@ -59,6 +60,7 @@ function App() {
               <Route path="/shop/payment-config" element={<ShopPaymentConfigPage />} />
               <Route path="/shop/ghtk-config" element={<ShopGhtkConfigPage />} />
               <Route path="/shop/subscriptions" element={<ShopSubscriptionPage />} />
+              <Route path="/shop/platform-fees" element={<ShopPlatformFeePage />} />
             </Route>
 
             <Route element={<AdminLayout />}>
