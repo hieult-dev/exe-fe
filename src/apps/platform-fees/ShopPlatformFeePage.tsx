@@ -31,6 +31,7 @@ import { notify } from "@/common/toast/ToastHelper"
 import { formatCurrencyVND, formatDateOnlyViVN, formatDateTimeViVN } from "@/common/utils/format"
 
 const PAGE_SIZE = 10
+const PAYMENT_STATUS_POLL_INTERVAL_MS = 5000
 type PageMergeMode = "replace" | "append"
 const ALL_FILTER_VALUE = "ALL"
 
@@ -273,6 +274,50 @@ export function ShopPlatformFeePage() {
     observer.observe(target)
     return () => observer.disconnect()
   }, [activeTab, hasMorePaidInvoices, isLoadingHistory, loadPaidInvoices, paidInvoices.page, paidInvoices.size])
+
+  useEffect(() => {
+    if (!paymentVisible || !paymentInfo?.invoiceId) return
+
+    let canceled = false
+    let checking = false
+
+    const checkPaymentStatus = async () => {
+      if (checking || canceled) return
+      checking = true
+
+      try {
+        const invoice = await getCommissionInvoiceDetail(paymentInfo.invoiceId)
+        if (canceled || invoice.status !== "PAID") return
+
+        setPaymentVisible(false)
+        setPaymentInfo(null)
+        setSelectedInvoice((currentInvoice) => (currentInvoice?.id === invoice.id ? invoice : currentInvoice))
+        setInvoiceStatus(undefined)
+        setCommissionStatus(undefined)
+        setSourceType(undefined)
+
+        await Promise.all([
+          loadSummary(),
+          loadInvoices(undefined, 0, PAGE_SIZE),
+          loadCommissions(0, PAGE_SIZE, undefined, undefined),
+          historyLoaded ? loadPaidInvoices(0, PAGE_SIZE) : Promise.resolve(),
+        ])
+        notify.success("Hóa đơn đã được thanh toán.")
+      } catch (_error) {
+        // SePay có cơ chế gửi lại webhook; frontend tiếp tục poll trong lúc modal QR còn mở.
+      } finally {
+        checking = false
+      }
+    }
+
+    void checkPaymentStatus()
+    const timer = window.setInterval(() => void checkPaymentStatus(), PAYMENT_STATUS_POLL_INTERVAL_MS)
+
+    return () => {
+      canceled = true
+      window.clearInterval(timer)
+    }
+  }, [historyLoaded, loadCommissions, loadInvoices, loadPaidInvoices, loadSummary, paymentInfo?.invoiceId, paymentVisible])
 
   const refreshPage = useCallback(async () => {
     await Promise.all([
