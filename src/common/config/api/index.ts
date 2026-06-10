@@ -1,6 +1,6 @@
 const rawGateway = import.meta.env.VITE_GATEWAY?.trim()
 
-const DEFAULT_BACKEND_ORIGIN = "https://api.pawply.site"
+const DEFAULT_BACKEND_ORIGIN = "https://api.pawly.website"
 
 function normalizeHttpUrl(value: string | undefined) {
   if (!value) return ""
