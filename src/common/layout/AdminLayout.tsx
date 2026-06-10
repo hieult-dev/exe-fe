@@ -33,7 +33,7 @@ export function AdminLayout() {
       <AppHeader
         user={user}
         homePath="/admin/shops"
-        eyebrow="PetPees System"
+        eyebrow="Pawly System"
         title="Quản trị hệ thống"
         showActionButtons={false}
       />

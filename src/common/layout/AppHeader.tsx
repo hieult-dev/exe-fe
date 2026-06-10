@@ -48,7 +48,7 @@ export function AppHeader({
           className="inline-flex items-center gap-3 text-left"
         >
           <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl">
-            <img src="/image/logo-petpees2.png" alt="PetPees logo" className="h-full w-full object-cover" />
+            <img src="/image/logo-pawly.png" alt="Pawly logo" className="h-full w-full object-cover" />
           </span>
           <div className="hidden sm:block">
             <p className="text-[11px] uppercase tracking-[0.24em] text-white/65">{eyebrow}</p>

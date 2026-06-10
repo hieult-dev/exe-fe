@@ -1,7 +1,7 @@
 import type { CustomerDisplayInvoiceSnapshot } from "@/apps/staff/model"
 
-export const CUSTOMER_DISPLAY_CHANNEL = "petpees-staff-customer-display"
-export const CUSTOMER_DISPLAY_STORAGE_KEY = "petpees.staff.customerDisplayInvoice"
+export const CUSTOMER_DISPLAY_CHANNEL = "pawly-staff-customer-display"
+export const CUSTOMER_DISPLAY_STORAGE_KEY = "pawly.staff.customerDisplayInvoice"
 
 export function publishCustomerDisplaySnapshot(snapshot: CustomerDisplayInvoiceSnapshot) {
   try {

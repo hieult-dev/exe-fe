@@ -82,7 +82,7 @@ export function StaffCustomerDisplayPage() {
       <div className="mx-auto flex min-h-[calc(100vh-24px)] w-full max-w-[1920px] flex-col rounded-xl bg-white shadow-[0_22px_70px_rgba(15,23,42,0.10)]">
         <header className="flex shrink-0 items-center justify-between border-b border-slate-100 px-8 py-8">
           <div className="min-w-0">
-            <p className="m-0 text-xs font-bold uppercase tracking-[0.24em] text-[#214388]">{currentShop?.name ?? "PetPees"}</p>
+            <p className="m-0 text-xs font-bold uppercase tracking-[0.24em] text-[#214388]">{currentShop?.name ?? "Pawly"}</p>
             <h1 className="m-0 mt-2 truncate text-2xl font-bold text-slate-950">{title}</h1>
           </div>
           <Button

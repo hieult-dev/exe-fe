@@ -296,7 +296,7 @@ Persistence rules:
 - Auth store persists under the Zustand key `user-store`.
 - `applyAuthSession` also stores `accessToken`, `refreshToken`, and `role` in either `localStorage` or `sessionStorage` based on "remember me".
 - `clearStoredAuthTokens` removes token keys from both storage types.
-- Shop-owner context persists under `petpees:shop-owner:<owner email>`.
+- Shop-owner context persists under `pawly:shop-owner:<owner email>`.
 - The context has seed data in `shopOwnerStore.ts`; do not treat seed records as backend truth.
 - The services page overwrites `data.services` with backend results after `getServices()` succeeds.
 

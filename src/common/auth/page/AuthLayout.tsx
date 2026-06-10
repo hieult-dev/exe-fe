@@ -48,19 +48,19 @@ export function AuthLayout({
       >
         <div className="flex items-center gap-2">
           <img
-            src="/image/logo-petpees2.png"
-            alt="PetPees"
+            src="/image/logo-pawly.png"
+            alt="Pawly"
             className="h-10 w-auto object-contain"
           />
           <span className="text-base font-semibold uppercase tracking-[0.18em] text-white/85">
-            PetPees
+            Pawly
           </span>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-sm text-slate-100/70">
             <i className="pi pi-phone" />
-            +84 989 762 355
+            +84858111305
           </div>
           {badge && (
             <div className="rounded-full bg-blue-500/20 px-3 py-1 text-xs font-medium text-blue-200 border border-blue-400/30">
@@ -106,8 +106,8 @@ export function AuthLayout({
             {/* Logo + title */}
             <div className="mb-5 flex flex-col items-center gap-2">
               <img
-                src="/image/logo-petpees2.png"
-                alt="PetPees"
+                src="/image/logo-pawly.png"
+                alt="Pawly"
                 className="h-20 w-auto object-contain"
               />
               <h2 className="text-lg font-semibold text-white">{title}</h2>
