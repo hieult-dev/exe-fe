@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react"
+import { useEffect, useRef, useState, type ChangeEvent } from "react"
 import { Button } from "primereact/button"
 import { Sidebar } from "primereact/sidebar"
 import { Dialog } from "primereact/dialog"
@@ -117,57 +117,33 @@ function isServiceImageFile(file: File) {
   return serviceImageExtensions.some((extension) => fileName.endsWith(extension))
 }
 
-function normalizeSearchText(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "d")
-    .toLowerCase()
-    .trim()
+function filterCategoriesByServiceType(categories: ServiceCategoryDTO[], serviceType: ServiceType) {
+  return categories.filter(
+    (category) =>
+      typeof category.id === "number" &&
+      category.active !== false &&
+      (!category.serviceType || category.serviceType === serviceType),
+  )
 }
 
-function findDefaultVeterinaryCategoryId(categories: ServiceCategoryDTO[], veterinaryServiceType: VeterinaryServiceType | null) {
-  if (!veterinaryServiceType) return null
+function findDefaultVeterinaryCategoryId(categories: ServiceCategoryDTO[], preferredCategoryId?: number | null) {
+  const veterinaryCategories = filterCategoriesByServiceType(categories, "VETERINARY")
+  if (preferredCategoryId !== null && preferredCategoryId !== undefined) {
+    const existingCategory = veterinaryCategories.find((category) => category.id === preferredCategoryId)
+    if (existingCategory?.id) return existingCategory.id
+  }
 
-  const veterinaryServiceTypeLabel = veterinaryServiceTypeOptions.find((option) => option.value === veterinaryServiceType)?.label
-  if (!veterinaryServiceTypeLabel) return null
-
-  const normalizedLabel = normalizeSearchText(veterinaryServiceTypeLabel)
-  const matchedCategory = categories.find((category) => {
-    if (!category.id) return false
-
-    const normalizedName = normalizeSearchText(category.name)
-    return normalizedName === normalizedLabel
-  })
-
-  return matchedCategory?.id ?? null
+  return veterinaryCategories[0]?.id ?? null
 }
-
-function findVeterinaryServiceTypeByCategoryName(categoryName: string) {
-  const normalizedCategoryName = normalizeSearchText(categoryName)
-  return veterinaryServiceTypeOptions.find((option) => normalizeSearchText(option.label) === normalizedCategoryName)?.value ?? null
-}
-
-function findVeterinaryServiceTypeByCategory(
-  categories: ServiceCategoryDTO[],
-  categoryId?: number | null,
-  categoryName?: string | null,
-) {
-  const category = categoryId ? categories.find((item) => item.id === categoryId) : null
-  const nextCategoryName = category?.name || categoryName
-  return nextCategoryName ? findVeterinaryServiceTypeByCategoryName(nextCategoryName) : null
-}
-
 async function resolveVeterinaryCategoryId(
   currentCategories: ServiceCategoryDTO[],
-  veterinaryServiceType: VeterinaryServiceType | null,
+  preferredCategoryId?: number | null,
 ) {
-  const localCategoryId = findDefaultVeterinaryCategoryId(currentCategories, veterinaryServiceType)
+  const localCategoryId = findDefaultVeterinaryCategoryId(currentCategories, preferredCategoryId)
   if (localCategoryId) return localCategoryId
 
   const freshCategories = await getServiceCategories(true, "VETERINARY")
-  return findDefaultVeterinaryCategoryId(freshCategories, veterinaryServiceType)
+  return findDefaultVeterinaryCategoryId(freshCategories, preferredCategoryId)
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -222,14 +198,10 @@ export function ShopServiceForm({ mode, service, shopId, initialServiceType, onC
 
   const selectedServiceType = watch("serviceType")
   const selectedVeterinaryServiceType = watch("veterinaryServiceType")
+  const selectedCategoryId = watch("categoryId")
   const selectedImageFile = watch("imageFile")
   const currentImageUrl = watch("imageUrl")
   const categoryPlaceholder = selectedServiceType ? "Chọn nhóm dịch vụ" : "Chọn phân loại dịch vụ trước"
-  const availableVeterinaryServiceTypeOptions = useMemo(() => {
-    if (selectedServiceType !== "VETERINARY") return veterinaryServiceTypeOptions
-
-    return veterinaryServiceTypeOptions.filter((option) => findDefaultVeterinaryCategoryId(categories, option.value))
-  }, [categories, selectedServiceType])
 
   useEffect(() => {
     if (!selectedImageFile) {
@@ -257,7 +229,7 @@ export function ShopServiceForm({ mode, service, shopId, initialServiceType, onC
         durationMin: service.durationMin,
         active: service.active,
         serviceType: service.serviceType,
-        veterinaryServiceType: service.veterinaryServiceType ?? findVeterinaryServiceTypeByCategoryName(service.categoryName || service.category || "") ?? null,
+        veterinaryServiceType: service.veterinaryServiceType ?? null,
         vaccineId: service.vaccineId ?? null,
         imageUrl: service.imageUrl ?? "",
         imageFile: null,
@@ -300,7 +272,7 @@ export function ShopServiceForm({ mode, service, shopId, initialServiceType, onC
     getServiceCategories(true, selectedServiceType)
       .then((result) => {
         if (!isMounted) return
-        setCategories(result.filter((category) => typeof category.id === "number" && (!category.serviceType || category.serviceType === selectedServiceType)))
+        setCategories(filterCategoriesByServiceType(result, selectedServiceType))
       })
       .catch((err) => {
         if (!isMounted) return
@@ -325,30 +297,11 @@ export function ShopServiceForm({ mode, service, shopId, initialServiceType, onC
     if (selectedServiceType !== "VETERINARY") return
     if (isLoadingCategories || categories.length === 0) return
 
-    if (!selectedVeterinaryServiceType && mode === "EDIT" && service) {
-      const mappedVeterinaryServiceType = findVeterinaryServiceTypeByCategory(categories, service.categoryId, service.categoryName || service.category)
-      if (mappedVeterinaryServiceType) {
-        setValue("veterinaryServiceType", mappedVeterinaryServiceType, { shouldDirty: false, shouldValidate: true })
-        setValue("categoryId", service.categoryId ?? findDefaultVeterinaryCategoryId(categories, mappedVeterinaryServiceType), {
-          shouldDirty: false,
-          shouldValidate: true,
-        })
-      }
-      return
-    }
+    const defaultCategoryId = findDefaultVeterinaryCategoryId(categories, selectedCategoryId ?? service?.categoryId ?? null)
+    if (!defaultCategoryId || selectedCategoryId === defaultCategoryId) return
 
-    if (selectedVeterinaryServiceType && !findDefaultVeterinaryCategoryId(categories, selectedVeterinaryServiceType)) {
-      setValue("veterinaryServiceType", null, { shouldDirty: true, shouldValidate: true })
-      setValue("categoryId", null, { shouldDirty: true, shouldValidate: true })
-      setValue("vaccineId", null, { shouldDirty: true, shouldValidate: true })
-      return
-    }
-
-    const defaultCategoryId = findDefaultVeterinaryCategoryId(categories, selectedVeterinaryServiceType)
-    if (!defaultCategoryId) return
-
-    setValue("categoryId", defaultCategoryId, { shouldDirty: true, shouldValidate: true })
-  }, [categories, isLoadingCategories, mode, selectedServiceType, selectedVeterinaryServiceType, service, setValue])
+    setValue("categoryId", defaultCategoryId, { shouldDirty: false, shouldValidate: true })
+  }, [categories, isLoadingCategories, mode, selectedCategoryId, selectedServiceType, service?.categoryId, setValue])
 
   useEffect(() => {
     if (mode !== "CREATE" && mode !== "EDIT") {
@@ -402,7 +355,7 @@ export function ShopServiceForm({ mode, service, shopId, initialServiceType, onC
       setValue("vaccineId", null, { shouldDirty: true, shouldValidate: true })
     }
 
-    const defaultCategoryId = findDefaultVeterinaryCategoryId(categories, nextVeterinaryServiceType)
+    const defaultCategoryId = findDefaultVeterinaryCategoryId(categories, selectedCategoryId)
     if (defaultCategoryId) {
       setValue("categoryId", defaultCategoryId, { shouldDirty: true, shouldValidate: true })
     }
@@ -413,7 +366,7 @@ export function ShopServiceForm({ mode, service, shopId, initialServiceType, onC
 
     try {
       const nextCategories = await getServiceCategories(true, selectedServiceType)
-      setCategories(nextCategories.filter((item) => typeof item.id === "number" && (!item.serviceType || item.serviceType === selectedServiceType)))
+      setCategories(filterCategoriesByServiceType(nextCategories, selectedServiceType))
     } catch (error) {
       notify.error(getErrorMessage(error, "Không tải được danh sách nhóm dịch vụ."))
     }
@@ -425,9 +378,8 @@ export function ShopServiceForm({ mode, service, shopId, initialServiceType, onC
       return
     }
 
-    const nextVeterinaryServiceType = findVeterinaryServiceTypeByCategoryName(category.name)
-    if (nextVeterinaryServiceType) {
-      handleVeterinaryServiceTypeChange(nextVeterinaryServiceType)
+    if (category.id) {
+      setValue("categoryId", category.id, { shouldDirty: true, shouldValidate: true })
     }
   }
 
@@ -462,7 +414,7 @@ export function ShopServiceForm({ mode, service, shopId, initialServiceType, onC
     try {
       const resolvedCategoryId =
         data.serviceType === "VETERINARY"
-          ? await resolveVeterinaryCategoryId(categories, data.veterinaryServiceType)
+          ? await resolveVeterinaryCategoryId(categories, data.categoryId)
           : data.categoryId
 
       const payload: ServiceWriteRequest = {
@@ -689,13 +641,13 @@ export function ShopServiceForm({ mode, service, shopId, initialServiceType, onC
                     <div className="flex gap-2">
                       <Dropdown
                         value={field.value}
-                        options={availableVeterinaryServiceTypeOptions}
+                        options={veterinaryServiceTypeOptions}
                         onChange={(event) => handleVeterinaryServiceTypeChange(event.value)}
                         filter
                         filterBy="label"
                         filterPlaceholder="Tìm loại dịch vụ thú y"
                         emptyFilterMessage="Không tìm thấy loại dịch vụ thú y"
-                        emptyMessage="Chưa có loại dịch vụ thú y phù hợp"
+                        emptyMessage="Không có loại dịch vụ thú y"
                         placeholder="Chọn loại dịch vụ thú y"
                         className={`w-full !rounded-lg !bg-[#f8fafc] !text-sm ${errors.veterinaryServiceType ? '!border-red-500' : '!border-transparent focus:!border-blue-500'}`}
                       />
