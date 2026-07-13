@@ -11,6 +11,11 @@ type AdminNavItem = {
 
 const adminNav: AdminNavItem[] = [
   {
+    to: "/admin/commissions",
+    label: "Hoa hồng",
+    icon: "pi pi-chart-bar",
+  },
+  {
     to: "/admin/shops",
     label: "Duyệt shop",
     icon: "pi pi-building",

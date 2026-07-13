@@ -44,6 +44,23 @@ export function formatDateForApi(value: Date | null | undefined) {
   return `${year}-${month}-${day}`
 }
 
+export function formatMonthForApi(value: Date | null | undefined) {
+  if (!value || Number.isNaN(value.getTime())) return ""
+
+  const year = value.getFullYear()
+  const month = String(value.getMonth() + 1).padStart(2, "0")
+  return `${year}-${month}`
+}
+
+export function formatMonthViVN(value: Date | string | null | undefined, fallback = "—") {
+  if (!value) return fallback
+
+  const date = value instanceof Date ? value : new Date(`${value}-01T00:00:00`)
+  if (Number.isNaN(date.getTime())) return fallback
+
+  return `Tháng ${date.getMonth() + 1}/${date.getFullYear()}`
+}
+
 export function formatFileSize(bytes: number | null | undefined) {
   const value = Number(bytes ?? 0)
   if (!Number.isFinite(value) || value <= 0) return "0 KB"

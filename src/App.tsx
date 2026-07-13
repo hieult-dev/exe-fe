@@ -24,6 +24,7 @@ import { StaffSalesPage } from "@/apps/staff/StaffSalesPage"
 import { NotificationRealtimeBridge } from "@/apps/notifications/NotificationRealtimeBridge"
 import ToastProvider from "@/common/toast/ToastProvider"
 import { AdminShopApprovalPage } from "@/apps/admin/AdminShopApprovalPage"
+import { AdminCommissionPage } from "@/apps/admin-commissions/AdminCommissionPage"
 function App() {
   return (
     <>
@@ -66,6 +67,7 @@ function App() {
             <Route element={<AdminLayout />}>
               <Route path="/admin" element={<AdminDefaultRedirect />} />
               <Route path="/admin/shops" element={<AdminShopApprovalPage />} />
+              <Route path="/admin/commissions" element={<AdminCommissionPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />
